@@ -1,0 +1,39 @@
+\documentclass[12pt,a4paper]{report}
+\input{report/preamble}
+
+\title{Nghiên cứu cơ chế xác thực và quản lý chứng thư số X.509 trong PKI\\
+Kiến trúc, chuỗi tin cậy và đánh giá thực nghiệm}
+\author{Nhóm: [Tên nhóm]\\Thành viên: [Họ tên 1], [Họ tên 2], [Họ tên 3]\\
+Học phần: Mật mã và An toàn thông tin}
+\date{[Tháng/năm nộp]}
+
+\begin{document}
+\maketitle
+\pagenumbering{roman}
+
+\chapter*{Tóm tắt}
+\addcontentsline{toc}{chapter}{Tóm tắt}
+\textbf{Cần viết sau khi có kết quả thực nghiệm:} nêu vấn đề, phương pháp, số ca kiểm thử, kết quả quan sát và đóng góp thực tế của nhóm trong khoảng 150--250 từ.
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\textbf{To be written after the experiment:} summarize the research question, method, observed results, and limitations.
+
+\tableofcontents
+\listoftables
+\listoffigures
+\clearpage
+\pagenumbering{arabic}
+
+\input{report/chapters/01-gioi-thieu}
+\input{report/chapters/02-co-so-mat-ma}
+\input{report/chapters/03-kien-truc-pki}
+\input{report/chapters/04-x509-xac-thuc}
+\input{report/chapters/05-bao-mat-so-sanh}
+\input{report/chapters/06-thuc-nghiem}
+\input{report/chapters/07-ung-dung-xu-huong}
+\input{report/chapters/08-ket-luan}
+
+\bibliographystyle{unsrt}
+\bibliography{report/references}
+\end{document}

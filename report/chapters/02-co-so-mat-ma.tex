@@ -1,0 +1,13 @@
+\chapter{Cơ sở mật mã khóa công khai và PKI}
+\section{Yêu cầu bảo mật và quản lý khóa}
+Cần viết: tính bí mật, toàn vẹn, xác thực, tính sẵn sàng; PKI hỗ trợ trực tiếp thuộc tính nào và thuộc tính nào cần cơ chế khác.
+
+\section{Khóa công khai, hàm băm và chữ ký số}
+Cần phân biệt khóa công khai/bí mật, chữ ký số, hàm băm và chứng thư. Biểu thức dưới đây chỉ là mô hình khái niệm; thao tác thật phụ thuộc lược đồ chữ ký:
+\[
+\sigma=\operatorname{Sign}(SK,H(m)),\qquad
+\operatorname{Verify}(PK,H(m),\sigma).
+\]
+
+\section{Vai trò thuật toán trong TLS}
+Cần phân biệt thuật toán ký chứng thư với thỏa thuận khóa phiên và mã hóa dữ liệu ứng dụng trong TLS 1.3~\cite{rfc8446}. Không mô tả public key trong chứng thư như công cụ mã hóa trực tiếp mọi gói dữ liệu.

@@ -1,0 +1,34 @@
+\chapter{Thiết kế và đánh giá thực nghiệm}
+\label{chap:experiment}
+\section{Giả thuyết và môi trường}
+H1: chữ ký hợp lệ chưa đủ để chứng thư được tin cậy. H2: thay đổi thời hạn, hostname, trust anchor hoặc trạng thái thu hồi làm thay đổi quyết định xác minh. H3: các cơ chế xác minh có giới hạn và chi phí vận hành khác nhau. Cần điền phiên bản OpenSSL, hệ điều hành, ngày chạy và thiết bị thực tế.
+
+\section{Mô hình và quy trình}
+Lab sử dụng Root CA $\rightarrow$ Intermediate CA $\rightarrow$ chứng thư máy chủ. Quy trình tái lập được ghi trong \texttt{demo/README.md}. Cần bổ sung sơ đồ do nhóm tự xây dựng, giải thích extension của từng chứng thư và chính sách xác minh được bật.
+
+\section{Test cases và kết quả}
+\begin{table}[ht]
+\centering
+\caption{Bộ kiểm thử dự kiến; cột quan sát chỉ điền sau khi chạy lab}
+\begin{tabular}{p{1.4cm}p{9cm}p{2cm}}
+\toprule
+ID & Điều kiện & Kỳ vọng \\
+\midrule
+TC01 & Chuỗi tin cậy, hostname và mục đích phù hợp & PASS \\
+TC02 & CA phát hành không được tin cậy & FAIL \\
+TC03 & Thời điểm kiểm tra sau ngày hết hạn & FAIL \\
+TC04 & Hostname không khớp SAN & FAIL \\
+TC05 & Chữ ký chứng thư bị sửa & FAIL \\
+TC06 & Thiếu chứng thư Intermediate CA & FAIL \\
+TC07 & Đã thu hồi, bật kiểm tra CRL & FAIL \\
+TC08 & EKU không cho phép TLS server & FAIL \\
+TC09 & Còn hiệu lực, chưa thu hồi tại thời điểm kiểm tra & PASS \\
+TC10 & Chuỗi hợp lệ nhưng không dẫn tới trust anchor được cấu hình & FAIL \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Sau khi chạy \texttt{make demo-test}, lấy \texttt{demo/out/results.tsv}, kiểm tra từng lệnh/exit code và thêm bảng \emph{kết quả quan sát} với trích đoạn output. Không coi kỳ vọng ở bảng trên là bằng chứng thực nghiệm.
+
+\section{Thảo luận và hạn chế}
+Cần trả lời H1--H2 dựa trên dữ liệu. H3 đòi hỏi phép đo hoặc phương pháp so sánh riêng; nếu nhóm không làm, ghi rõ chưa kiểm chứng thực nghiệm. Lab CA nội bộ và OpenSSL không đại diện cho toàn bộ Web PKI; kiểm tra CRL ở đây được bật tường minh và không tương đương hành vi mặc định của mọi client. Nếu làm benchmark, ghi phần cứng, thông số khóa, số lần lặp, trung vị và độ lệch chuẩn.

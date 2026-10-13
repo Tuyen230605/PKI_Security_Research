@@ -1,0 +1,12 @@
+\chapter{X.509, chuỗi tin cậy và cơ chế xác thực}
+\section{Cấu trúc chứng thư X.509 v3}
+Cần giải thích serial number, issuer, subject, validity, Subject Public Key Info, SAN, Basic Constraints, Key Usage và Extended Key Usage theo RFC 5280~\cite{rfc5280}. Đưa ảnh chụp \texttt{openssl x509 -text} của chứng thư trong lab sau khi chạy.
+
+\section{Xây dựng và xác minh đường dẫn}
+Minh họa Root CA $\rightarrow$ Intermediate CA $\rightarrow$ server. Cần mô tả chữ ký từng mắt xích, trust anchor, hiệu lực, mục đích sử dụng, tên máy chủ và trạng thái thu hồi. Root CA tự ký chỉ trở thành trust anchor khi client cấu hình tin cậy nó.
+
+\section{Thu hồi và trạng thái chứng thư}
+Cần so sánh CRL và OCSP; trích RFC 5280 và RFC 6960~\cite{rfc5280,rfc6960}. Phân biệt trạng thái OCSP \emph{good} với việc chứng thư vượt qua mọi bước validation.
+
+\section{Liên hệ TLS}
+Cần diễn giải vai trò của chứng thư và CertificateVerify trong TLS 1.3~\cite{rfc8446}; giải thích đâu là kiểm tra do ứng dụng thực hiện và đâu là chính sách riêng của trình duyệt.

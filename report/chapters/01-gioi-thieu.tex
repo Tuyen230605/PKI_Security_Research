@@ -1,0 +1,15 @@
+\chapter{Giới thiệu và xác định vấn đề nghiên cứu}
+\section{Bối cảnh và bài toán}
+Cần viết: mô tả bài toán phân phối khóa công khai đáng tin cậy qua ví dụ Alice--Bob và một đối thủ thay khóa.
+
+\section{Mục tiêu và câu hỏi nghiên cứu}
+Mục tiêu: phân tích kiến trúc PKI, xác thực X.509 và xây dựng một lab để kiểm chứng các điều kiện chấp nhận chứng thư.
+\begin{enumerate}
+  \item RQ1: PKI liên kết danh tính với khóa công khai bằng cách nào?
+  \item RQ2: Điều kiện nào khiến chứng thư X.509 được chấp nhận hoặc từ chối?
+  \item RQ3: CRL/OCSP giúp giảm rủi ro thu hồi như thế nào?
+  \item RQ4: PKI còn yếu ở đâu dù thuật toán mật mã vẫn an toàn?
+\end{enumerate}
+
+\section{Phạm vi và phương pháp}
+Phạm vi: PKI X.509 phân cấp và xác thực máy chủ TLS trong lab nội bộ. Nghiên cứu tài liệu chuẩn, triển khai OpenSSL, ghi lại kết quả kiểm thử và phân tích giới hạn. Cần chỉnh phần này sau khi phương pháp cuối cùng được chốt.

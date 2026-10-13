@@ -1,0 +1,35 @@
+# LaTeX output
+build/
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.lof
+*.lot
+*.out
+*.synctex.gz
+*.toc
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+
+# Lab: private keys, issued certificates, CA database and raw test output
+demo/out/
+
+# Secret key material accidentally created outside demo/out/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Editor and OS files
+.vscode/
+.agents/
+.aws/
+.codex/
+.DS_Store
+*.swp
