@@ -1,15 +1,197 @@
 \chapter{Giới thiệu và xác định vấn đề nghiên cứu}
 \section{Bối cảnh và bài toán}
-Cần viết: mô tả bài toán phân phối khóa công khai đáng tin cậy qua ví dụ Alice--Bob và một đối thủ thay khóa.
+\subsection{Bối cảnh mật mã khóa công khai}
+Trong các hệ thống thông tin hiện đại, việc truyền thông qua các mạng công cộng như Internet luôn đối mặt với nguy cơ bị nghe lén, can thiệp và sửa đổi dữ liệu. Mật mã khóa công khai (Public-Key Cryptography hay mật mã bất đối xứng) ra đời như một bước đột phá quan trọng nhằm giải quyết hạn chế cốt tử của mật mã đối xứng: bài toán phân phối trước một khóa bí mật chung qua kênh truyền an toàn. Trong mật mã khóa công khai, mỗi thực thể tham gia sở hữu một cặp khóa có quan hệ toán học chặt chẽ nhưng không thể suy dẫn khóa này từ khóa kia với năng lực tính toán thực tế:
+\begin{itemize}
+    \item \textbf{Khóa công khai (Public Key - $PU$):} Được công bố rộng rãi cho mọi đối tượng trong hệ thống mà không cần giữ bí mật.
+    \item \textbf{Khóa bí mật (Private Key - $PR$):} Được chủ sở hữu lưu giữ tuyệt đối bí mật và không bao giờ tiết lộ cho bất kỳ ai.
+\end{itemize}
+
+Xét kịch bản trao đổi thông tin kinh điển: \textbf{Alice} là bên gửi thông điệp, \textbf{Bob} là bên nhận thông điệp, và \textbf{Eve} là đối thủ tiềm tàng có khả năng giám sát, đánh chặn hoặc sửa đổi các gói tin lưu thông trên mạng. Để gửi một thông điệp bí mật đến Bob, Alice cần sử dụng khóa công khai của Bob để mã hóa. Tuy nhiên, một bài toán then chốt xuất hiện: \textit{Làm thế nào để Alice xác minh rằng khóa công khai mà mình nhận được qua mạng thực sự thuộc về Bob, chứ không phải do đối thủ Eve giả mạo?}
+
+\subsection{Quá trình trao đổi khóa trong điều kiện bình thường}
+Trong điều kiện lý tưởng, khi kênh truyền thông không bị can thiệp và khóa công khai được chuyển giao một cách toàn vẹn:
+\begin{enumerate}
+    \item Bob khởi tạo cặp khóa cá nhân gồm khóa công khai $PU_B$ và khóa bí mật $PR_B$.
+    \item Bob cung cấp khóa công khai $PU_B$ cho Alice qua kênh mạng.
+    \item Alice sử dụng khóa công khai $PU_B$ của Bob cùng hàm mã hóa $E(\cdot)$ để mã hóa thông điệp $M$, tạo thành bản mã $C$:
+    \begin{equation}
+        C = E(PU_B, M)
+    \end{equation}
+    \item Bob nhận bản mã $C$ và sử dụng khóa bí mật duy nhất tương ứng $PR_B$ cùng hàm giải mã $D(\cdot)$ để khôi phục lại thông điệp gốc $M$:
+    \begin{equation}
+        M = D(PR_B, C)
+    \end{equation}
+\end{enumerate}
+
+Mối quan hệ toán học giữa hai quá trình được tóm lược bằng biểu thức:
+\begin{equation}
+    C = E(PU_B, M), \qquad M = D(PR_B, C).
+\end{equation}
+
+Quy trình này chỉ đạt được mục tiêu bảo mật dự kiến khi hai điều kiện tiên quyết được thỏa mãn đồng thời: (1) Alice nhận đúng khóa công khai $PU_B$ của Bob, và (2) giao thức cùng thuật toán mã hóa được sử dụng là an toàn. Nếu Alice bị lừa sử dụng một chiếc khóa khác, tính bí mật của toàn bộ thông điệp sẽ bị vô hiệu hóa hoàn toàn.
+
+\subsection{Cuộc tấn công thay thế khóa của Eve}
+Khi việc phân phối khóa công khai diễn ra trên kênh truyền mở mà thiếu cơ chế xác thực nguồn gốc, đối thủ Eve có thể thực hiện một cuộc tấn công thay thế khóa theo phương thức người đứng giữa (\textit{Man-in-the-Middle - MITM}). Giả sử Eve sở hữu một cặp khóa của riêng mình gồm khóa công khai $PU_E$ và khóa bí mật $PR_E$. Cuộc tấn công diễn ra theo trình tự 6 bước:
+\begin{enumerate}
+    \item Bob gửi khóa công khai $PU_B$ của mình cho Alice qua mạng.
+    \item Eve chặn thông điệp chứa $PU_B$ trên đường truyền và thay thế bằng khóa công khai của mình là $PU_E$.
+    \item Alice nhận được $PU_E$ nhưng nhầm tưởng đó là khóa của Bob; do đó Alice sử dụng $PU_E$ để mã hóa thông điệp $M$:
+    \begin{equation}
+        C_1 = E(PU_E, M)
+    \end{equation}
+    \item Alice gửi bản mã $C_1$ đi. Eve chặn bắt $C_1$ và sử dụng khóa bí mật $PR_E$ của mình để giải mã:
+    \begin{equation}
+        M = D(PR_E, C_1)
+    \end{equation}
+    Tại thời điểm này, Eve đọc được trọn vẹn nội dung thông điệp gốc $M$ của Alice.
+    \item Để duy trì sự ngụy trang, Eve sử dụng khóa công khai thật sự của Bob ($PU_B$) để mã hóa lại thông điệp $M$:
+    \begin{equation}
+        C_2 = E(PU_B, M)
+    \end{equation}
+    sau đó Eve chuyển tiếp bản mã $C_2$ tới Bob dưới danh nghĩa Alice.
+    \item Bob nhận được $C_2$, sử dụng khóa bí mật $PR_B$ của mình để giải mã:
+    \begin{equation}
+        M = D(PR_B, C_2)
+    \end{equation}
+    Bob khôi phục được đúng thông điệp $M$ ban đầu và hoàn toàn không nhận ra cuộc tấn công nếu không có cơ chế xác thực thích hợp.
+\end{enumerate}
+
+Ý nghĩa của các biểu thức trong cuộc tấn công:
+\begin{itemize}
+    \item $C_1 = E(PU_E, M)$ thể hiện bản mã tạo ra do Alice mã hóa bằng khóa công khai của kẻ tấn công Eve thay vì của Bob.
+    \item $M = D(PR_E, C_1)$ chứng minh Eve có khả năng giải mã trực tiếp và thu thập nội dung thông tin mật nhờ nắm giữ khóa bí mật $PR_E$.
+    \item $C_2 = E(PU_B, M)$ thể hiện việc Eve tái mã hóa thông điệp bằng khóa công khai hợp lệ của Bob để che đậy sự can thiệp của mình.
+\end{itemize}
+
+Cuộc tấn công người đứng giữa (MITM) này thành công vì Eve đã lợi dụng việc Alice hoàn toàn không có khả năng xác minh nguồn gốc và tính hợp lệ của khóa công khai nhận được. Mô hình trao đổi bình thường và cuộc tấn công thay thế khóa được minh họa tổng hợp tại Hình~\ref{fig:mitm-key-exchange}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    scale=0.88,
+    actor/.style={draw, thick, rounded corners=3pt, minimum width=2.6cm, minimum height=0.8cm, align=center, fill=blue!8, font=\small\bfseries},
+    eve/.style={draw=red!80!black, thick, rounded corners=3pt, minimum width=2.8cm, minimum height=0.8cm, align=center, fill=red!10, font=\small\bfseries},
+    note/.style={draw=gray!50, fill=gray!5, font=\scriptsize, align=center, inner sep=3.5pt, rounded corners=2pt},
+    evenote/.style={draw=red!50, fill=red!5, font=\scriptsize, align=center, inner sep=3.5pt, rounded corners=2pt, text=red!80!black},
+    msg/.style={-{Stealth[scale=1.0]}, thick},
+    evemsg/.style={-{Stealth[scale=1.0]}, thick, red!80!black},
+    lifeline/.style={thick, dashed, gray!45}
+]
+    % ==============================================================
+    % (a) KỊCH BẢN BÌNH THƯỜNG
+    % ==============================================================
+    \node[anchor=west, font=\bfseries\normalsize] at (0.2, 6.0) {(a) Trao đổi bình thường (Lý tưởng)};
+
+    \node[actor] (bobA) at (2.2, 4.8) {Bob\\{\scriptsize Khóa: $(PU_B, PR_B)$}};
+    \node[actor] (aliceA) at (11.0, 4.8) {Alice\\{\scriptsize Nhận đúng $PU_B$}};
+
+    % Lifelines
+    \draw[lifeline] (bobA.south) -- ++(0, -2.6);
+    \draw[lifeline] (aliceA.south) -- ++(0, -2.6);
+
+    % Bước 1: Gửi PU_B
+    \draw[msg] ($(bobA.south)+(0, -0.6)$) -- ($(aliceA.south)+(0, -0.6)$)
+        node[midway, above, font=\footnotesize] {1. Gửi khóa công khai $PU_B$};
+
+    % Bước 2: Gửi C
+    \draw[msg] ($(aliceA.south)+(0, -1.4)$) -- ($(bobA.south)+(0, -1.4)$)
+        node[midway, above, font=\footnotesize] {2. Gửi bản mã $C = E(PU_B, M)$};
+
+    % Bob giải mã
+    \node[note] at ($(bobA.south)+(0, -2.1)$) {\textbf{Bob giải mã:}\\$M = D(PR_B, C)$};
+
+    % ==============================================================
+    % (b) KỊCH BẢN TẤN CÔNG MITM (EVE THAY THẾ KHÓA)
+    % ==============================================================
+    \node[anchor=west, font=\bfseries\normalsize] at (0.2, 1.4) {(b) Tấn công người đứng giữa (Eve thay thế khóa)};
+
+    \node[actor] (bobB) at (1.2, 0.2) {Bob\\{\scriptsize Khóa: $(PU_B, PR_B)$}};
+    \node[eve]   (eveB) at (6.6, 0.2) {Eve (Kẻ tấn công)\\{\scriptsize Khóa: $(PU_E, PR_E)$}};
+    \node[actor] (aliceB) at (12.0, 0.2) {Alice\\{\scriptsize Nhận $PU_E$ (nhầm là Bob)}};
+
+    % Lifelines
+    \draw[lifeline] (bobB.south) -- ++(0, -5.3);
+    \draw[lifeline, red!30] (eveB.south) -- ++(0, -5.3);
+    \draw[lifeline] (aliceB.south) -- ++(0, -5.3);
+
+    % Bước 1: Bob gửi PU_B -> Eve chặn
+    \node[evenote] (chaneve) at (6.6, -0.9) {\textbf{Eve chặn $PU_B$}};
+    \draw[msg] ($(bobB.south)+(0, -0.9)$) -- (chaneve.west)
+        node[midway, above, font=\footnotesize] {1. Gửi khóa $PU_B$};
+
+    % Bước 2: Eve thay bằng PU_E gửi Alice
+    \draw[evemsg] ($(eveB.south)+(0, -1.7)$) -- ($(aliceB.south)+(0, -1.7)$)
+        node[midway, above, font=\footnotesize, text=red!80!black] {2. Gửi $PU_E$ (mạo danh Bob)};
+
+    % Bước 3: Alice gửi C1
+    \draw[msg] ($(aliceB.south)+(0, -2.5)$) -- ($(eveB.south)+(0, -2.5)$)
+        node[midway, above, font=\footnotesize] {3. Gửi bản mã $C_1 = E(PU_E, M)$};
+
+    % Eve giải mã & đọc trộm
+    \node[evenote] at (6.6, -3.3) {\textbf{Eve giải mã \& đọc trộm:}\\$M = D(PR_E, C_1)$};
+
+    % Bước 4: Eve gửi C2 cho Bob
+    \draw[evemsg] ($(eveB.south)+(0, -4.1)$) -- ($(bobB.south)+(0, -4.1)$)
+        node[midway, above, font=\footnotesize, text=red!80!black] {4. Chuyển tiếp bản mã $C_2 = E(PU_B, M)$};
+
+    % Bob giải mã
+    \node[note] at ($(bobB.south)+(0, -4.8)$) {\textbf{Bob giải mã:}\\$M = D(PR_B, C_2)$};
+
+\end{tikzpicture}
+\caption{Mô hình trao đổi thông tin thông thường và kịch bản tấn công thay thế khóa của Eve.}
+\label{fig:mitm-key-exchange}
+\end{figure}
+
+\subsection{Phân tích bản chất của bài toán}
+Phân tích kịch bản tấn công của Eve làm bộc lộ những bài học cơ bản về an toàn mật mã:
+\begin{itemize}
+    \item \textbf{Phân biệt tính bí mật của dữ liệu và tính xác thực của khóa công khai:} Mật mã hóa chỉ đảm bảo tính bí mật (confidentiality) của thông điệp đối với đối tượng sở hữu khóa bí mật tương ứng. Tuy nhiên, tính bí mật đó trở nên vô nghĩa nếu bản thân chiếc khóa công khai được dùng để mã hóa không bảo đảm tính xác thực (authenticity) và không có căn cứ xác thực nguồn gốc (origin authenticity).
+    \item \textbf{Nghịch lý toán học trong bảo mật hệ thống:} Các thuật toán mật mã cơ sở (như các hàm mã hóa phi đối xứng) vẫn hoạt động hoàn toàn chính xác theo đúng các định lý toán học ($C_1$ giải mã chính xác bằng $PR_E$, và $C_2$ giải mã chính xác bằng $PR_B$). Mặc dù thuật toán không hề bị bẻ gãy, hệ thống bảo mật tổng thể vẫn bị phá vỡ vì khóa đưa vào thuật toán không thuộc về đúng đối tượng dự kiến.
+    \item \textbf{Các nguy cơ và hậu quả bảo mật:}
+    \begin{itemize}
+        \item \textit{Lộ lọt dữ liệu bí mật:} Kẻ tấn công có thể đọc trộm toàn bộ thông điệp trao đổi giữa các bên.
+        \item \textit{Giả mạo danh tính (Impersonation):} Kẻ tấn công có thể thay phiên đóng vai cả hai bên đối thoại một cách trót lọt.
+        \item \textit{Sửa đổi và thao túng thông điệp (Tampering):} Eve không chỉ dừng lại ở việc đọc trộm mà còn có thể can thiệp, sửa đổi nội dung $M$ thành $M'$ trước khi mã hóa lại thành $C_2 = E(PU_B, M')$, gây sai lệch hoàn toàn dữ liệu nếu giao thức không có cơ chế bảo vệ tính toàn vẹn và chữ ký số thích hợp.
+    \end{itemize}
+\end{itemize}
+
+Do đó, thách thức cốt lõi đặt ra là: \textbf{Phải có một cơ chế đáng tin cậy để liên kết (bind) một khóa công khai cụ thể với danh tính thực tế của chủ sở hữu hợp pháp}.
+
+\subsection{Dẫn dắt đến vai trò của Hạ tầng khóa công khai (PKI)}
+Để thiết lập mối liên kết đáng tin cậy giữa danh tính và khóa công khai mà không đòi hỏi các bên phải gặp mặt trực tiếp hoặc thiết lập kênh bí mật trước, \textbf{Hạ tầng khóa công khai (Public Key Infrastructure - PKI)} đã được chuẩn hóa và triển khai như một giải pháp nền tảng.
+
+PKI là một hệ thống hạ tầng toàn diện bao gồm phần cứng, phần mềm, chính sách và tiêu chuẩn hỗ trợ quản lý, phân phối, lưu trữ và xác thực mối liên hệ giữa khóa công khai với danh tính của các thực thể thông qua các cấu phần và cơ chế then chốt:
+\begin{itemize}
+    \item \textbf{Tổ chức chứng thực số (Certificate Authority - CA):} Là một bên thứ ba đáng tin cậy (Trusted Third Party). CA có trách nhiệm thẩm tra tính chính xác về danh tính của đối tượng yêu cầu trước khi cấp phát chứng chỉ.
+    \item \textbf{Chứng chỉ số (Digital Certificate):} Là cấu trúc dữ liệu điện tử (thường theo chuẩn quốc tế ITU-T X.509) đóng gói khóa công khai cùng với các thông tin định danh của chủ thể (Subject) sở hữu khóa đó.
+    \item \textbf{Chữ ký số (Digital Signature):} CA sử dụng khóa bí mật của chính mình để tạo chữ ký số trên toàn bộ nội dung của chứng chỉ, bảo đảm tính toàn vẹn và chống chối bỏ cho mối liên kết giữa danh tính và khóa công khai.
+\end{itemize}
+
+Trong môi trường có sự hỗ trợ của PKI, khi Alice muốn liên lạc với Bob, thay vì nhận một khóa công khai trần dễ bị đánh tráo, Alice sẽ nhận được một chứng chỉ số của Bob do một CA đáng tin cậy ban hành. Alice có thể thực hiện quy trình kiểm tra toàn diện:
+\begin{enumerate}
+    \item \textbf{Kiểm tra chữ ký của CA:} Alice sử dụng khóa công khai của CA (vốn đã được cài đặt sẵn và tin cậy trước trong hệ thống) để xác thực chữ ký số trên chứng chỉ của Bob.
+    \item \textbf{Xác minh danh tính chủ thể:} Alice kiểm tra xem thông tin định danh (như tên chủ thể, tên miền) có khớp chính xác với Bob hay không.
+    \item \textbf{Kiểm tra thời hạn hiệu lực:} Alice đối chiếu thời điểm hiện tại với khoảng thời gian hợp lệ được quy định trên chứng chỉ (các trường \texttt{notBefore} và \texttt{notAfter}).
+    \item \textbf{Kiểm tra trạng thái thu hồi:} Alice kiểm tra xem chứng chỉ có bị thu hồi trước thời hạn (ví dụ do lộ khóa bí mật) hay không thông qua danh sách thu hồi chứng thư (CRL) hoặc giao thức trạng thái chứng thư trực tuyến (OCSP) theo các chính sách áp dụng.
+\end{enumerate}
+
+Cần khẳng định rằng, PKI không phải là một giải pháp loại bỏ hoàn toàn mọi nguy cơ an ninh. PKI là một hạ tầng quản trị niềm tin và chịu ràng buộc bởi các chính sách vận hành, sự toàn vẹn của các CA gốc (Trust Anchors), cũng như việc tuân thủ đầy đủ quy trình xác thực từ phía phần mềm máy trạm (client). Nếu CA bị tấn công, chứng chỉ bị cấp sai hoặc client bỏ qua các bước kiểm tra hợp lệ, hệ thống vẫn có thể bị xâm phạm.
+
+Chính vì vậy, bài toán nghiên cứu trọng tâm được xác định là: \textbf{Làm thế nào để phân phối và xác thực khóa công khai một cách đáng tin cậy, hạn chế tối đa nguy cơ giả mạo và tấn công thay thế khóa, đồng thời đánh giá được các điều kiện chấp nhận và giới hạn an ninh của hệ thống trong thực tế triển khai?} Đây là động lực thúc đẩy các mục tiêu và câu hỏi nghiên cứu cụ thể trong đề tài này.
 
 \section{Mục tiêu và câu hỏi nghiên cứu}
-Mục tiêu: phân tích kiến trúc PKI, xác thực X.509 và xây dựng một lab để kiểm chứng các điều kiện chấp nhận chứng thư.
+Mục tiêu của đề tài là phân tích kiến trúc hạ tầng khóa công khai (PKI), tìm hiểu cơ chế xác thực chứng thư số theo tiêu chuẩn X.509 và xây dựng một môi trường thực nghiệm (lab) nhằm kiểm chứng các điều kiện chấp nhận hoặc từ chối chứng thư. Thông qua đó, đề tài làm rõ cách PKI thiết lập mối liên hệ tin cậy giữa danh tính và khóa công khai, đồng thời đánh giá vai trò của cơ chế thu hồi chứng thư trong việc bảo đảm an toàn thông tin.
+
+Để đạt được mục tiêu trên, đề tài tập trung giải quyết các câu hỏi nghiên cứu sau:
 \begin{enumerate}
-  \item RQ1: PKI liên kết danh tính với khóa công khai bằng cách nào?
-  \item RQ2: Điều kiện nào khiến chứng thư X.509 được chấp nhận hoặc từ chối?
-  \item RQ3: CRL/OCSP giúp giảm rủi ro thu hồi như thế nào?
-  \item RQ4: PKI còn yếu ở đâu dù thuật toán mật mã vẫn an toàn?
+  \item \textbf{RQ1:} PKI liên kết danh tính với khóa công khai bằng cách nào?
+  \item \textbf{RQ2:} Những điều kiện nào khiến chứng thư X.509 được chấp nhận hoặc từ chối?
+  \item \textbf{RQ3:} CRL và OCSP giúp giảm thiểu rủi ro liên quan đến chứng thư bị thu hồi như thế nào?
+  \item \textbf{RQ4:} Những điểm yếu nào vẫn tồn tại trong PKI ngay cả khi các thuật toán mật mã được sử dụng vẫn bảo đảm an toàn?
 \end{enumerate}
+
+Thông qua việc trả lời các câu hỏi nghiên cứu và kiểm chứng bằng thực nghiệm, đề tài hướng đến việc làm rõ các yếu tố quyết định độ tin cậy của PKI, nhận diện những hạn chế trong quá trình xác thực và quản lý chứng thư số, từ đó nâng cao hiểu biết về khả năng ứng dụng cũng như các rủi ro an toàn thông tin của hệ thống PKI trong thực tế.
 
 \section{Phạm vi và phương pháp}
 Phạm vi: PKI X.509 phân cấp và xác thực máy chủ TLS trong lab nội bộ. Nghiên cứu tài liệu chuẩn, triển khai OpenSSL, ghi lại kết quả kiểm thử và phân tích giới hạn. Cần chỉnh phần này sau khi phương pháp cuối cùng được chốt.
