@@ -1,12 +1,119 @@
 \chapter{X.509, chuỗi tin cậy và cơ chế xác thực}
-\section{Cấu trúc chứng thư X.509 v3}
-Cần giải thích serial number, issuer, subject, validity, Subject Public Key Info, SAN, Basic Constraints, Key Usage và Extended Key Usage theo RFC 5280~\cite{rfc5280}. Đưa ảnh chụp \texttt{openssl x509 -text} của chứng thư trong lab sau khi chạy.
+\label{chap:x509}
 
-\section{Xây dựng và xác minh đường dẫn}
-Minh họa Root CA $\rightarrow$ Intermediate CA $\rightarrow$ server. Cần mô tả chữ ký từng mắt xích, trust anchor, hiệu lực, mục đích sử dụng, tên máy chủ và trạng thái thu hồi. Root CA tự ký chỉ trở thành trust anchor khi client cấu hình tin cậy nó.
+\section{Chứng thư X.509 v3 khẳng định điều gì?}
+Chứng thư X.509 là cấu trúc dữ liệu được CA ký, không phải khóa bí mật và cũng không phải một quyết định chấp nhận của client. Nó gồm \emph{TBSCertificate}, thuật toán chữ ký và giá trị chữ ký. Trong TBSCertificate có thông tin chủ thể, khóa công khai, thời hạn, bên phát hành và extension. Bảng~\ref{tab:x509-fields} nêu các trường cần đọc để hiểu chứng thư máy chủ trong lab~\cite{rfc5280}.
 
-\section{Thu hồi và trạng thái chứng thư}
-Cần so sánh CRL và OCSP; trích RFC 5280 và RFC 6960~\cite{rfc5280,rfc6960}. Phân biệt trạng thái OCSP \emph{good} với việc chứng thư vượt qua mọi bước validation.
+\begingroup\small
+\begin{longtable}{p{3.0cm}p{6.4cm}p{3.2cm}}
+\caption{Các trường X.509 quan trọng và cách đọc trong lab}\label{tab:x509-fields}\\
+\toprule
+Trường & Ý nghĩa và lưu ý & Ví dụ trong lab \\
+\midrule
+\endfirsthead
+\toprule
+Trường & Ý nghĩa và lưu ý & Ví dụ trong lab \\
+\midrule
+\endhead
+Version, serial number & Version 3 cho phép extension; serial định danh chứng thư trong phạm vi CA phát hành và được dùng khi thu hồi. & Leaf do Intermediate cấp có serial riêng. \\
+Signature algorithm & Thuật toán CA dùng để ký TBSCertificate; bên kiểm tra còn phải đánh giá thuật toán theo chính sách. & RSA với SHA-256. \\
+Issuer và Subject & Issuer định danh bên phát hành; Subject định danh chủ thể theo trường tên phân biệt. Chỉ so khớp chuỗi tên chưa đủ để tìm CA đúng. & Issuer của leaf là Lab Intermediate CA. \\
+Validity & Cặp mốc \texttt{notBefore}, \texttt{notAfter}; client kiểm tra tại một thời điểm xác định. & Leaf có hiệu lực 30 ngày từ lúc cấp. \\
+Subject Public Key Info & Thuật toán và khóa công khai của chủ thể; khóa bí mật tương ứng không nằm trong chứng thư. & Khóa RSA của server A. \\
+Subject Alternative Name (SAN) & Tên dịch vụ như \texttt{dNSName} hoặc địa chỉ IP theo kiểu định danh; dùng để đối chiếu tên truy cập. & server-a.test. \\
+Basic Constraints & Phân biệt chứng thư CA và thực thể cuối; \texttt{pathLenConstraint} hạn chế số CA cấp dưới. & Intermediate: CA:TRUE, pathlen:0; leaf: CA:FALSE. \\
+Key Usage (KU) & Hạn chế kiểu thao tác của khóa, như \texttt{keyCertSign}, \texttt{cRLSign}, \texttt{digitalSignature}. & CA được ký chứng thư/CRL; leaf có digitalSignature. \\
+Extended Key Usage (EKU) & Giới hạn mục đích ở mức ứng dụng, ví dụ \texttt{serverAuth} hoặc \texttt{clientAuth}. & TC08 dùng leaf chỉ có clientAuth. \\
+SKI và AKI & Subject/Authority Key Identifier hỗ trợ chọn khóa CA khi xây dựng chuỗi, nhất là khi có nhiều khóa/tên giống nhau; không thay cho kiểm tra chữ ký. & Intermediate có SKI và AKI. \\
+\bottomrule
+\end{longtable}
+\endgroup
 
-\section{Liên hệ TLS}
-Cần diễn giải vai trò của chứng thư và CertificateVerify trong TLS 1.3~\cite{rfc8446}; giải thích đâu là kiểm tra do ứng dụng thực hiện và đâu là chính sách riêng của trình duyệt.
+Extension có cờ \emph{critical}: bên xác minh không hiểu một extension critical thì phải từ chối, thay vì bỏ qua ràng buộc có thể quan trọng. Trong lab, \texttt{basicConstraints} và \texttt{keyUsage} của CA/leaf được đặt critical; SAN và EKU của leaf được cấp theo cấu hình. Có thể đọc chứng thư thật bằng lệnh sau:
+\begin{quote}
+\small\begin{verbatim}
+openssl x509 -in demo/out/servers/server-a.crt \
+  -noout -text
+\end{verbatim}
+\end{quote}
+Khi trình bày chỉ cần đánh dấu Issuer, Subject, Validity, SAN, KU, EKU và Basic Constraints; toàn bộ dump dài không hữu ích trên slide.
+
+\section{CA ký và client xây dựng đường dẫn ra sao}
+CA phát hành tính chữ ký trên TBSCertificate của chứng thư con bằng khóa bí mật CA. Client lấy khóa công khai từ chứng thư CA ứng viên để xác minh chữ ký, rồi tiếp tục với chứng thư của chính CA đó. Với lab, thứ tự phát hành là Root $\rightarrow$ Intermediate $\rightarrow$ server; thứ tự kiểm tra đi từ server về Root. Kết quả của một chữ ký chỉ có nghĩa khi đúng chứng thư của bên phát hành được chọn và đường dẫn cuối cùng tới trust anchor chấp nhận được~\cite{rfc5280}.
+
+\emph{Xây dựng đường dẫn} là tìm dãy chứng thư có thể nối leaf đến điểm neo; \emph{xác minh đường dẫn} là đánh giá dãy đó. Client có thể nhận Intermediate từ server, kho chứng thư hoặc cấu hình cục bộ. Trong TC06, lệnh không được cấp Intermediate qua \texttt{-untrusted}, nên không dựng được đường dẫn dù Root được tin và chữ ký leaf vốn đúng. Trong TC10, leaf do một Root khác ký đúng nhưng \texttt{-CAfile} vẫn chỉ chứa Root chính, nên đường dẫn không tới điểm neo phù hợp. Chứng thư Root tự ký không tự chứng minh tin cậy; khóa/chứng thư Root phải được đưa vào trust store theo kênh đáng tin. RFC 5280 xem trust anchor là đầu vào của thuật toán xác minh, không phải một chứng thư tự động được tin vì tự ký~\cite{rfc5280}.
+
+\section{Các điều kiện chấp nhận trong ngữ cảnh máy chủ TLS}
+Để ra quyết định, client cần biết trước hostname kỳ vọng, thời điểm kiểm tra, mục đích sử dụng, trust anchor và chính sách trạng thái. Có thể diễn tả bằng điều kiện tổng quát:
+\[
+\text{Accept} =
+\text{PathOK}\land\text{TimeOK}\land\text{UsageOK}\land
+\text{NameOK}\land\text{StatusOK}_{\text{nếu yêu cầu}}.
+\]
+Đây là mô hình giảng giải, không phải mã giả đầy đủ của RFC 5280. \texttt{StatusOK} phụ thuộc chính sách ứng dụng và nguồn trạng thái; có client không kiểm tra theo cùng cách. Các bước path validation có thể kiểm tra chữ ký, hiệu lực, Basic Constraints, KU/EKU, Name Constraints và chính sách chứng thư khi áp dụng. Kiểm tra tên dịch vụ là bước ứng dụng thêm vào path validation: tên tham chiếu phải được xây dựng độc lập với tên do server tự khai. RFC 9525 yêu cầu dùng định danh SAN đúng kiểu, ví dụ DNS-ID cho tên DNS, và không dựa vào Common Name để so tên dịch vụ~\cite{rfc5280,rfc9525}.
+
+\begin{figure}[ht]
+\centering
+\fbox{\begin{minipage}{0.88\textwidth}
+\centering
+Nhận leaf, Intermediate, tên truy cập và trust anchor đã cấu hình\\
+$\downarrow$\\
+Dựng đường dẫn đến điểm neo; kiểm chữ ký, thời gian và ràng buộc CA\\
+$\downarrow$ nếu đạt\\
+Kiểm KU/EKU theo mục đích và so SAN với tên truy cập\\
+$\downarrow$ nếu đạt\\
+Kiểm trạng thái khi chính sách yêu cầu\\
+$\downarrow$\\
+\textbf{Chấp nhận nếu mọi điều kiện áp dụng đều đạt; ngược lại từ chối}
+\end{minipage}}
+\caption{Luồng quyết định xác minh máy chủ ở mức khái niệm; sơ đồ do tác giả tổng hợp từ RFC 5280 và RFC 9525}
+\label{fig:validation-flow}
+\end{figure}
+
+Với OpenSSL trong dự án, \texttt{-CAfile} chọn Root đáng tin và \texttt{-untrusted} cung cấp Intermediate để dựng chuỗi. Tùy chọn \texttt{-purpose sslserver} kiểm tra mục đích máy chủ; \texttt{-verify\_hostname} kiểm tra tên; \texttt{-attime} thay thời điểm đánh giá. \texttt{-CRLfile} cung cấp CRL và \texttt{-crl\_check} bật kiểm tra thu hồi của leaf. Không có tùy chọn đó, lệnh không dùng CRL chỉ vì file CRL tồn tại~\cite{opensslverify}. Cần đọc câu lệnh trước khi diễn giải PASS/FAIL. Chẳng hạn TC01 có thể PASS với server A đã bị thu hồi, vì lệnh TC01 không bật CRL; TC07 dùng cùng chứng thư với kiểm tra CRL thì FAIL.
+
+\begin{table}[ht]
+\centering\small
+\caption{Điều kiện xác minh và ca thử minh họa}\label{tab:validation-map}
+\begin{tabular}{p{3.1cm}p{3.7cm}p{5.3cm}}
+\toprule
+Điều kiện & Ca thử & Ý nghĩa khi thất bại \\
+\midrule
+Chuỗi và trust anchor & TC01, TC02, TC06, TC10 & Thiếu điểm neo đáng tin hoặc không dựng được chuỗi tới điểm neo đó. \\
+Hiệu lực thời gian & TC03 & \texttt{-attime} đặt thời điểm sau \texttt{notAfter}; không phải chờ 40 ngày thật. \\
+Đúng tên dịch vụ & TC04 & SAN là server-a.test nhưng tên truy cập được yêu cầu là wrong.test. \\
+Toàn vẹn/chữ ký & TC05 & Chữ ký leaf đã sửa bit; kiểm tra bằng khóa CA phát hành thất bại. \\
+Mục đích sử dụng & TC08 & EKU clientAuth không phù hợp với \texttt{sslserver}. \\
+Trạng thái khi có CRL & TC07, TC09 & Server A đã thu hồi; server B còn hợp lệ theo CRL lab được cấp. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Thứ tự thông báo lỗi của một thư viện có thể phụ thuộc cách dựng chuỗi và tùy chọn; một chứng thư có thể đồng thời sai nhiều điều kiện. Bảng trên gán mỗi ca cho nguyên nhân được script chủ động tạo và kiểm tra. Khi áp dụng vào hệ thống khác cần ghi rõ phiên bản thư viện, trust store, thời điểm, chính sách và dữ liệu thu hồi.
+
+\section{Thu hồi: CRL, OCSP và giới hạn của trạng thái}
+Thu hồi cho phép CA công bố rằng một chứng thư không nên được dùng trước \texttt{notAfter}, chẳng hạn khi nghi lộ khóa hoặc thông tin bị cấp sai. Với CRL, CA ký danh sách gồm các serial đã thu hồi cùng thời điểm phát hành và thời điểm cập nhật tiếp theo. Client phải lấy đúng CRL của CA phát hành, xác minh chữ ký và tính hiện hành của nó, rồi kiểm tra serial chứng thư~\cite{rfc5280}. Một CRL cũ hoặc không sẵn có tạo ra quyết định phụ thuộc chính sách: ứng dụng có thể từ chối khi không xác định được trạng thái hoặc chọn tiếp tục trong một số môi trường.
+
+OCSP cho phép hỏi một responder về trạng thái của một chứng thư cụ thể. Các trạng thái chính là \emph{good}, \emph{revoked} và \emph{unknown}; phản hồi có thời gian hiệu lực và cần được xác thực. Theo RFC 6960, \emph{good} chỉ là trả lời tích cực cho truy vấn trạng thái theo nghĩa tối thiểu, không tự chứng minh chứng thư từng được cấp hoặc đang trong thời hạn hiệu lực~\cite{rfc6960}. OCSP cũng không thay kiểm tra hostname, mục đích hoặc đường dẫn. Phản hồi phải được dùng theo chính sách client, gồm xử lý khi responder không trả lời.
+
+\begin{table}[ht]
+\centering\small
+\caption{So sánh chức năng của CRL và OCSP}\label{tab:revocation}
+\begin{tabular}{p{2.2cm}p{4.6cm}p{5.4cm}}
+\toprule
+Cơ chế & Dữ liệu và ưu điểm & Giới hạn cần quản lý \\
+\midrule
+CRL & CA ký danh sách serial; client có thể tải và dùng offline đến kỳ cập nhật. & Danh sách có thể lớn; độ mới tùy chu kỳ công bố/tải và quy tắc xử lý khi thiếu CRL. \\
+OCSP & Trả lời theo chứng thư; tránh tải toàn bộ danh sách trong một số kịch bản. & Phụ thuộc responder hoặc phản hồi được đính kèm; phải xác thực, kiểm tra thời gian và xử lý unknown/mất kết nối. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Chứng thư sống ngắn giảm khoảng thời gian một leaf sai có thể tồn tại nếu không được cấp lại, nhưng không tự thay thế mọi nhu cầu thu hồi. Lab chỉ hiện thực CRL bằng file và tùy chọn \texttt{-crl\_check}; chưa chạy OCSP responder, chưa đo độ trễ, tính sẵn sàng hoặc tính riêng tư của các cơ chế. TC07/TC09 kiểm tra cùng CRL đối với hai leaf để thấy thu hồi là thuộc tính theo chứng thư, không phải trạng thái chung của cả Intermediate.
+
+\section{Liên hệ TLS và ranh giới của demo}
+Trong TLS 1.3 dùng chứng thư, máy chủ gửi thông điệp Certificate chứa chứng thư và có thể kèm các chứng thư CA trung gian. Client kiểm tra đường dẫn và tên dịch vụ; thông điệp CertificateVerify do máy chủ ký trên transcript bắt tay chứng minh quyền kiểm soát khóa bí mật tương ứng. Finished xác nhận các bên đã dẫn xuất khóa nhất quán và transcript không bị sửa. Dữ liệu ứng dụng sau đó được bảo vệ bằng khóa phiên, không được mã hóa trực tiếp bằng khóa công khai trong chứng thư~\cite{rfc8446}.
+
+Các ca \texttt{openssl verify} của dự án mô phỏng quyết định xác minh chứng thư với chính sách được viết thành tùy chọn. Chúng không tái hiện mọi bước handshake TLS, hành vi tự động của trình duyệt hoặc chính sách Web PKI công cộng. Nếu chạy bước HTTPS tùy chọn bằng \texttt{openssl s\_server} và \texttt{curl}, cần mô tả đó là một phép thử kết nối riêng; \texttt{curl --cacert} chỉ cấu hình Root CA lab cho kết nối ấy và không chứng minh CRL/OCSP đã được kiểm tra.
+
+Khi chuyển chương này thành slide, nên giữ một sơ đồ luồng gồm: nhận leaf và Intermediate $\rightarrow$ dựng đường dẫn tới Root đã tin $\rightarrow$ kiểm tra chữ ký, thời gian, ràng buộc CA/KU/EKU $\rightarrow$ so SAN với tên truy cập $\rightarrow$ kiểm tra trạng thái theo chính sách $\rightarrow$ chấp nhận hoặc từ chối. Bảng~\ref{tab:validation-map} là cầu nối trực tiếp tới các ca thử ở Chương~\ref{chap:experiment}; trên slide chỉ nên chọn vài hàng tiêu biểu và cho thấy tùy chọn nào đã bật.

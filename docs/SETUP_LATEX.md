@@ -1,6 +1,6 @@
 # Cài LaTeX và build báo cáo sau khi clone/pull
 
-Tài liệu này dành cho hai thành viên còn lại. Báo cáo dùng **pdfLaTeX + latexmk + BibTeX**, file nguồn UTF-8. Chạy mọi lệnh build từ **thư mục gốc**, nơi có `Makefile` và `report/`; không chạy trong `report/`. Không cần `npm install`, `pip install` hay tải riêng source LaTeX sau khi clone. Lần build đầu trên Windows có thể cần Internet để MiKTeX tải gói còn thiếu.
+Hướng dẫn dựng báo cáo trên máy mới. Báo cáo dùng **pdfLaTeX + latexmk + BibTeX**, file nguồn UTF-8. Chạy mọi lệnh build từ **thư mục gốc**, nơi có `Makefile` và `report/`; không chạy trong `report/`. Không cần `npm install`, `pip install` hay tải riêng source LaTeX sau khi clone. Lần build đầu trên Windows có thể cần Internet để MiKTeX tải gói còn thiếu.
 
 ## 1. Ubuntu: cài một lần trên mỗi máy
 
@@ -109,9 +109,9 @@ PDF nằm ở `build/main.pdf`. `latexmk` tự chạy BibTeX và biên dịch l�
 
 Nếu build lỗi, đọc lỗi đầu tiên trong `build/main.log` hoặc ngay trên terminal. Các lỗi thường gặp: `File vietnam.sty not found` (thiếu `vntex`), `latexmk` không chạy trên Windows (thiếu Perl/PATH), `undefined citation` (sai key trong `references.bib`), thiếu file hình, hoặc ký tự `%`, `&`, `_`, `#` chưa escape trong LaTeX. Sau khi sửa, chạy lại lệnh build.
 
-## 5. Sửa nội dung cùng nhóm
+## 5. Sửa nội dung báo cáo
 
-1. Nhận chương theo [kế hoạch](HOAN_THANH_DU_AN.md), sửa file tương ứng trong `report/chapters/`. Mỗi người lưu file `.tex` dưới dạng UTF-8.
+1. Theo [kế hoạch](HOAN_THANH_DU_AN.md), sửa file tương ứng trong `report/chapters/`. Lưu file `.tex` dưới dạng UTF-8.
 2. Đặt hình nguồn trong `report/figures/`, bảng/CSV đã lọc trong `report/tables/`. Thêm chú thích và nguồn cho hình/bảng.
 3. Thêm tài liệu vào `report/references.bib` rồi dùng `\cite{key}`. Hạn chế sửa `report/preamble.tex` và `report/main.tex` cùng lúc với người khác.
 4. Chạy build và đọc PDF trước khi bàn giao. Kiểm tra lỗi font tiếng Việt, hình/bảng tràn lề và cảnh báo trích dẫn.

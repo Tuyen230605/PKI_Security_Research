@@ -1,9 +1,77 @@
 \chapter{Kiến trúc PKI và vòng đời chứng thư}
-\section{Thành phần và mô hình tin cậy}
-Cần trình bày Root CA, Intermediate CA, RA, chủ thể, nơi công bố chứng thư, relying party và trust anchor. Thêm sơ đồ nhóm tự vẽ vào \texttt{report/figures/}.
+\label{chap:architecture}
 
-\section{Vòng đời chứng thư}
-Cần phân tích sinh khóa, xác minh danh tính, CSR, cấp phát, cài đặt, xác minh, gia hạn, thu hồi, hết hạn và tiêu hủy. Phân biệt CSR với chứng thư được phát hành.
+\section{Các vai trò trong một PKI}
+PKI không chỉ là một lệnh tạo chứng thư. Nó gồm bên tạo và giữ khóa, bên kiểm tra yêu cầu, bên ký phát hành, bên công bố thông tin và bên dựa vào chứng thư để ra quyết định. Bảng~\ref{tab:pki-roles} phân biệt trách nhiệm của từng vai trò. Trong tổ chức nhỏ, một người hoặc một hệ thống có thể kiêm nhiều vai trò, nhưng việc kiêm nhiệm làm tăng yêu cầu kiểm soát và kiểm toán~\cite{rfc3647}.
 
-\section{Chính sách vận hành}
-Cần nêu vai trò CP/CPS, bảo vệ khóa CA, phân quyền và kiểm toán theo khung RFC 3647~\cite{rfc3647}; chính sách thực tế của CA không được suy ra chỉ từ ví dụ lab.
+\begin{table}[ht]
+\centering\small
+\caption{Thành phần PKI và trách nhiệm}\label{tab:pki-roles}
+\begin{tabular}{p{2.8cm}p{6.0cm}p{3.3cm}}
+\toprule
+Thành phần & Trách nhiệm chính & Hiện diện trong lab \\
+\midrule
+Root CA & Tạo điểm neo cho một miền tin cậy; cấp chứng thư cho CA cấp dưới. & Có, chứng thư tự ký và khóa RSA. \\
+Intermediate CA & Cấp chứng thư cho thực thể cuối; quản lý số serial và thu hồi. & Có, ký ba leaf và phát hành CRL. \\
+Registration Authority (RA) & Xác minh yêu cầu/danh tính hoặc quyền kiểm soát trước khi CA ký. & Không có RA riêng hay quy trình xác minh thật. \\
+Chủ thể/Subscriber & Giữ khóa bí mật, gửi CSR, cài và dùng chứng thư được cấp. & Các máy chủ thử nghiệm. \\
+Repository và dịch vụ trạng thái & Cung cấp chứng thư chuỗi, CRL hoặc phản hồi OCSP. & CRL nằm trong file; không có dịch vụ mạng/OCSP. \\
+Relying party & Tự quyết định có chấp nhận chứng thư cho mục đích cụ thể không. & Lệnh \texttt{openssl verify} với các tùy chọn. \\
+HSM/thiết bị bảo vệ khóa & Giữ khóa nhạy cảm, hạn chế thao tác ký, phục vụ kiểm soát truy cập. & Không có; khóa lab nằm trong file. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Trong chuỗi của lab, Root CA ký chứng thư Intermediate, Intermediate ký chứng thư máy chủ. Hướng các mũi tên trong Hình~\ref{fig:ca-chain} là hướng \emph{phát hành}; client xác minh theo chiều ngược lại.
+\begin{figure}[ht]
+\centering
+\fbox{\begin{tabular}{c}
+Root CA (trust anchor khi client cấu hình)\\
+$\downarrow$ ký chứng thư CA cấp dưới\\
+Intermediate CA (CA:TRUE, pathlen:0)\\
+$\downarrow$ ký chứng thư thực thể cuối\\
+server-a.test / server-b.test (CA:FALSE, serverAuth)
+\end{tabular}}
+\caption{Chuỗi phát hành chứng thư trong lab; sơ đồ do tác giả xây dựng từ script}
+\label{fig:ca-chain}
+\end{figure}
+
+RA nằm trước bước CA quyết định ký, không phải một mắt xích bắt buộc của chuỗi chứng thư. Repository và OCSP/CRL hỗ trợ phân phối dữ liệu, cũng không thay cho trust anchor. Một client nhận đủ chứng thư qua mạng vẫn cần tự kiểm tra chữ ký, ràng buộc và điểm neo; không thể xem việc server gửi Intermediate là bằng chứng Intermediate đáng tin.
+
+\section{Mô hình tin cậy và phạm vi áp dụng}
+Ở mô hình phân cấp, nhiều leaf có thể được xác minh từ một số ít Root CA đã cài trong trust store. CA trung gian giúp tách hoạt động cấp phát khỏi Root CA; giới hạn \texttt{pathlen:0} trên Intermediate lab cấm nó cấp thêm CA cấp dưới trong đường dẫn phù hợp. Một PKI dạng lưới hoặc bridge có thể liên kết các miền quản trị qua chứng thư chéo, nhưng việc tìm và đánh giá đường dẫn, chính sách chấp nhận và giới hạn tên phức tạp hơn. Tin cậy trực tiếp một khóa hoặc chứng thư cụ thể cũng có thể hợp lý cho một dịch vụ nhỏ, đổi lại cần quản lý việc cập nhật khóa ở các client. Bài này không triển khai chứng thư chéo hoặc so sánh định lượng các mô hình.
+
+Private PKI cho phép một tổ chức tự chọn trust anchor và quy tắc phát hành trong phạm vi quản trị của mình. Public Web PKI dựa vào các CA được phần mềm khách chấp nhận cùng các yêu cầu công khai tương ứng. Root CA trong lab là private CA: trình duyệt thông thường sẽ không tự tin nó, và việc thêm Root vào hệ thống thật là một quyết định tin cậy rất rộng. TC02 và TC10 minh họa rằng chứng thư được tự ký hoặc được CA khác ký đúng vẫn không tạo ra niềm tin nếu không dẫn đến điểm neo được cấu hình.
+
+\section{Vòng đời chứng thư từ yêu cầu đến chấm dứt}
+Vòng đời bắt đầu bằng việc xác định danh tính cần chứng thực, mục đích sử dụng, thời hạn và ai được phép yêu cầu. Chủ thể sinh cặp khóa, bảo vệ khóa bí mật và gửi CSR. RA hoặc CA xác minh yêu cầu theo chính sách, rồi CA chọn serial, thời hạn và extension trước khi ký. Chứng thư được phân phối cho chủ thể; phía server cài chứng thư leaf, khóa bí mật tương ứng và thường cung cấp Intermediate cho client. Khi sử dụng, client xây dựng đường dẫn và kiểm tra theo ngữ cảnh. Trước khi hết hạn, chủ thể cần cấp lại; nếu có sự cố như lộ khóa hoặc sai thông tin, CA có thể thu hồi trước hạn. Cuối đời, khóa không còn được dùng để ký thêm và được lưu/hủy theo chính sách~\cite{rfc5280,rfc3647,nist80057}.
+
+\begin{table}[ht]
+\centering\small
+\caption{Vòng đời chứng thư và phép kiểm chứng tương ứng trong dự án}\label{tab:lifecycle}
+\begin{tabular}{p{2.4cm}p{5.2cm}p{4.5cm}}
+\toprule
+Giai đoạn & Việc phải kiểm soát & Bằng chứng hoặc giới hạn của lab \\
+\midrule
+Sinh khóa, CSR & Giữ bí mật private key; CSR nêu khóa công khai và danh tính yêu cầu. & \texttt{openssl req} sinh khóa RSA và CSR cho Intermediate/leaf. \\
+Xác minh, cấp phát & Kiểm tra quyền sở hữu tên; CA tự quyết định extension và thời hạn. & Script dùng cấu hình cố định; không kiểm tra quyền sở hữu tên thực. \\
+Cài đặt, sử dụng & Khóa khớp chứng thư; client nhận đủ chuỗi và kiểm tra đúng tên/mục đích. & TC01, TC04, TC06, TC08; HTTPS là bước tùy chọn. \\
+Cấp lại, thay khóa & Theo dõi hết hạn; cấp chứng thư mới, có thể với khóa mới. & TC03 chỉ mô phỏng kiểm tra ở thời điểm tương lai; chưa tự động cấp lại. \\
+Thu hồi, kết thúc & Ghi lý do, cập nhật CRL/OCSP và ngừng dùng khóa có vấn đề. & Thu hồi server A, tạo CRL; TC07 và TC09 kiểm tra khi bật CRL. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Gia hạn đôi khi là cách gọi chung cho việc có chứng thư mới. Về mặt vận hành, cần phân biệt cấp lại với cùng khóa và thay khóa (\emph{re-keying}); quyết định tái sử dụng khóa phụ thuộc chính sách và mức độ rủi ro. Chứng thư đã hết hạn không tự bị xóa khỏi máy chủ; nếu client kiểm tra thời gian, nó bị từ chối cho sử dụng tại thời điểm đó. Thu hồi là quyết định trước hạn của CA, còn việc client biết và áp dụng quyết định ấy cần kênh trạng thái và chính sách kiểm tra riêng.
+
+\section{CSR và trách nhiệm của CA}
+CSR ở dạng PKCS\#10 thường gồm thông tin chủ thể, khóa công khai và chữ ký bằng khóa bí mật tương ứng. Chữ ký CSR hỗ trợ chứng minh quyền kiểm soát khóa khi tạo yêu cầu; nó không chứng minh người yêu cầu có quyền với tên DNS được nêu. Việc xác minh quyền đối với tên thuộc quy trình RA/CA. CA có thể sửa hoặc từ chối các extension yêu cầu; không nên chép mù quáng SAN, CA:TRUE hay EKU từ CSR vào chứng thư.
+
+Script của dự án đặt \texttt{copy\_extensions = none} trong cấu hình CA Intermediate rồi cấp extension từ ba mục cấu hình \texttt{server\_a}, \texttt{server\_b} và \texttt{client\_only}. Điều này minh họa CA kiểm soát nội dung chứng thư đã ký. Mặt khác, script cấp cho tên \texttt{*.test} theo cấu hình định sẵn mà không có RA hay thử thách kiểm soát DNS. Vì vậy, nó kiểm tra cơ chế ký và xác minh, không chứng minh một quy trình đăng ký đủ an toàn để cấp chứng thư công cộng.
+
+\section{Chính sách và bảo vệ khóa CA}
+RFC 3647 phân biệt \emph{Certificate Policy} (CP), bộ quy tắc xác định chứng thư phù hợp với cộng đồng/mục đích nào, và \emph{Certification Practice Statement} (CPS), cách CA thực hiện phát hành, quản lý, cấp lại và thu hồi~\cite{rfc3647}. Một CP/CPS có ích phải nêu ít nhất: phương pháp xác minh danh tính; phạm vi tên/mục đích cấp; cách sinh, lưu, sao lưu và hủy khóa; vai trò được phép ký/thu hồi; thời điểm công bố CRL/OCSP; ghi log, kiểm toán và xử lý sự cố. Chỉ có extension \texttt{CA:TRUE} không chứng minh CA thực hiện các quy trình đó.
+
+Trong một triển khai thật, khóa Root CA thường cần bảo vệ chặt hơn vì sự cố của nó ảnh hưởng cả miền tin cậy; Intermediate có thể dùng cho hoạt động cấp phát thường xuyên, theo phân quyền và giám sát riêng. Khóa của lab được tạo với \texttt{-nodes} và nằm dưới \texttt{demo/out/}, không được mã hóa bằng mật khẩu hay giữ trong HSM. Đây là lựa chọn cho thí nghiệm tái lập, không phải mẫu triển khai an toàn. Các bước cần thiết trước khi vận hành một PKI thật gồm phân quyền, bảo vệ khóa, sao lưu/khôi phục có kiểm soát, kiểm toán cấp phát và quy trình thu hồi khi nghi lộ khóa~\cite{nist80057,rfc3647}.
+
+Khi đưa chương này lên slide, dùng một sơ đồ Root--Intermediate--Server--Client và một vòng đời ngắn từ CSR đến thu hồi. Gắn nhãn có trong demo tại CA, leaf, CRL và client; gắn nhãn chưa triển khai tại RA, HSM, OCSP và tự động cấp lại. Nhờ vậy, người nghe phân biệt kiến trúc chuẩn với phạm vi thí nghiệm.

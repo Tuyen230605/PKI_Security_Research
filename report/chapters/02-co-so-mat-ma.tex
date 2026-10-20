@@ -1,13 +1,49 @@
 \chapter{Cơ sở mật mã khóa công khai và PKI}
-\section{Yêu cầu bảo mật và quản lý khóa}
-Cần viết: tính bí mật, toàn vẹn, xác thực, tính sẵn sàng; PKI hỗ trợ trực tiếp thuộc tính nào và thuộc tính nào cần cơ chế khác.
+\label{chap:crypto}
 
-\section{Khóa công khai, hàm băm và chữ ký số}
-Cần phân biệt khóa công khai/bí mật, chữ ký số, hàm băm và chứng thư. Biểu thức dưới đây chỉ là mô hình khái niệm; thao tác thật phụ thuộc lược đồ chữ ký:
+\section{Mục tiêu an toàn và vai trò của PKI}
+\emph{Bí mật} nghĩa là người không có quyền không đọc được nội dung; \emph{toàn vẹn} cho phép phát hiện sửa đổi; \emph{xác thực} cung cấp căn cứ về chủ thể hoặc nguồn của thông điệp; \emph{sẵn sàng} là dịch vụ còn hoạt động khi cần. Chữ ký số hỗ trợ kiểm tra toàn vẹn và nguồn gốc gắn với một khóa. Chứng thư cùng đường dẫn tin cậy giúp liên hệ khóa ấy với danh tính theo chính sách phát hành. PKI không tự mã hóa dữ liệu ứng dụng và cũng không bảo đảm tính sẵn sàng của máy chủ, mạng hay dịch vụ trạng thái chứng thư.
+
+Thuật ngữ \emph{không thể chối bỏ} cần dùng thận trọng: chữ ký hợp lệ là một bằng chứng kỹ thuật, nhưng giá trị quy trách nhiệm còn phụ thuộc việc bảo vệ khóa, quy trình cấp phát, thời điểm ký và quy định áp dụng. Nếu khóa bí mật bị lộ, phép kiểm tra chữ ký không tự chứng minh ai đã thực hiện thao tác. NIST SP 800-57 nhấn mạnh vòng đời và bảo vệ khóa là điều kiện để cơ chế mật mã còn đáng tin~\cite{nist80057}.
+
+\section{Khóa đối xứng và bất đối xứng}
+Mật mã đối xứng dùng một khóa bí mật chung $K$ cho các phép bảo vệ và khôi phục dữ liệu; nó thích hợp cho khối lượng dữ liệu phiên lớn nhưng cần cách phân phối $K$ an toàn. Mật mã bất đối xứng dùng cặp khóa $(SK,PK)$: khóa bí mật $SK$ được giữ kín, khóa công khai $PK$ có thể phổ biến. Việc công bố $PK$ không làm lộ $SK$ khi thuật toán và tham số được chọn đúng, nhưng không bảo đảm $PK$ thuộc chủ thể như người nhận kỳ vọng. Đó là khoảng trống PKI giải quyết bằng chứng thư và chính sách xác minh.
+
+\begin{table}[ht]
+\centering\small
+\caption{Vai trò của các cơ chế mật mã trong ngữ cảnh báo cáo}\label{tab:crypto-roles}
+\begin{tabular}{p{2.3cm}p{4.4cm}p{5.4cm}}
+\toprule
+Cơ chế & Đầu vào và tác dụng & Liên hệ với PKI/TLS \\
+\midrule
+Hàm băm, ví dụ SHA-256 & Biến thông điệp thành giá trị băm độ dài cố định; sửa dữ liệu thường làm thay đổi giá trị băm. & Không xác thực người tạo nếu chỉ gửi bản băm kèm dữ liệu. \\
+Chữ ký số, ví dụ RSA hoặc ECDSA & Người ký dùng $SK$; người kiểm tra dùng $PK$ để xác minh chữ ký trên dữ liệu được ký. & CA ký chứng thư; máy chủ TLS 1.3 ký bản ghi bắt tay bằng khóa của mình. \\
+Thỏa thuận khóa, ví dụ ECDHE & Hai phía tính bí mật dùng chung từ trao đổi công khai và bí mật riêng. & Dùng để tạo vật liệu khóa phiên trong một phiên TLS thông thường. \\
+Mã hóa xác thực, ví dụ AES-GCM & Bảo vệ bí mật và toàn vẹn của dữ liệu bằng khóa phiên đối xứng. & Bảo vệ bản ghi TLS sau khi khóa phiên được thiết lập. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+RSA là họ thuật toán khóa công khai có thể dùng với các lược đồ chữ ký hoặc mã hóa khác nhau; ECDSA và EdDSA là các họ chữ ký, còn ECDHE là thỏa thuận khóa. Không thể suy từ tên thuật toán khóa trong chứng thư ra cách mã hóa mọi gói tin. Trong lab, script sinh khóa RSA 2048 bit, ký chứng thư với SHA-256 và dùng OpenSSL để kiểm tra; nó không đo tốc độ hay so sánh độ an toàn tương đối giữa RSA, ECDSA và EdDSA.
+
+\section{Hàm băm, chữ ký số và chứng thư}
+Hàm băm mật mã $H(m)$ tóm tắt thông điệp $m$; thuộc tính kháng va chạm và kháng tìm tiền ảnh làm việc thay đổi dữ liệu mà giữ nguyên bản băm trở nên khó trong điều kiện thuật toán còn an toàn. Tuy nhiên, một kẻ tấn công có thể thay cả $m$ và $H(m)$ nếu không có cơ chế xác thực. Chữ ký số giải quyết điểm này bằng khóa bí mật của người ký. Mô hình khái niệm là
 \[
-\sigma=\operatorname{Sign}(SK,H(m)),\qquad
-\operatorname{Verify}(PK,H(m),\sigma).
+\sigma=\operatorname{Sign}(SK,m),\qquad
+\operatorname{Verify}(PK,m,\sigma)\in\{\text{đúng},\text{sai}\}.
 \]
+Các lược đồ thực tế có thể băm, mã hóa và định dạng dữ liệu nội bộ khác nhau; công thức không phải lệnh triển khai trực tiếp. Phép xác minh thành công chỉ gắn chữ ký với $PK$ đã dùng để kiểm tra. Để gắn $PK$ với tên dịch vụ, client phải xác minh chứng thư và đường dẫn phát hành của nó.
 
-\section{Vai trò thuật toán trong TLS}
-Cần phân biệt thuật toán ký chứng thư với thỏa thuận khóa phiên và mã hóa dữ liệu ứng dụng trong TLS 1.3~\cite{rfc8446}. Không mô tả public key trong chứng thư như công cụ mã hóa trực tiếp mọi gói dữ liệu.
+Với X.509, CA ký phần \emph{TBSCertificate} (phần chứng thư cần ký) gồm Subject, khóa công khai, thời hạn, Issuer và các extension. Chứng thư phát hành gồm phần dữ liệu này, thông tin thuật toán chữ ký và chữ ký của CA~\cite{rfc5280}. Người kiểm tra lấy khóa công khai của CA phát hành để kiểm tra chữ ký. Nếu thay một bit ở phần đã ký hoặc chữ ký, phép xác minh thường thất bại; TC05 thay một bit chữ ký DER để minh họa tình huống đó. Nếu chữ ký còn đúng nhưng CA không được tin, đường dẫn vẫn bị từ chối, như TC10.
+
+Cần phân biệt ba vật thể: \emph{cặp khóa} là vật liệu mật mã; \emph{CSR} là yêu cầu do chủ thể lập, thường chứa khóa công khai và được ký để chứng minh người gửi kiểm soát khóa bí mật tương ứng; \emph{chứng thư} là khẳng định do CA phát hành sau kiểm tra theo chính sách. CSR tự ký hợp lệ không đồng nghĩa CA đã xác minh tên miền hoặc chấp nhận mọi extension mà người gửi yêu cầu.
+
+\section{Điểm neo và chuỗi tin cậy}
+Một client chỉ có thể đi từ chữ ký của leaf tới niềm tin khi nó đã có một khóa hoặc chứng thư được chấp nhận từ trước. Đó là \emph{trust anchor}. Trong lab, \texttt{root.crt} là điểm neo chỉ khi được đưa cho lệnh xác minh qua \texttt{-CAfile}; tính tự ký của Root CA không tự tạo lòng tin. Intermediate CA được Root CA cấp chứng thư; chứng thư máy chủ được Intermediate CA cấp. Client đi ngược từ leaf, kiểm tra các chữ ký và ràng buộc theo từng mắt xích cho tới điểm neo~\cite{rfc5280}. Cấu hình trust store là quyết định vận hành của bên xác minh, không phải thuộc tính mật mã nằm trong chứng thư leaf.
+
+Có thể tin trực tiếp một khóa được ghim trước theo kênh riêng, hoặc tin CA làm bên thứ ba phát hành cho nhiều chủ thể. Mô hình CA phân cấp giúp giảm số khóa cần cài riêng ở client nhưng chuyển một phần trách nhiệm sang CA và quy trình xác minh danh tính. Chương~\ref{chap:architecture} trình bày các vai trò vận hành; Chương~\ref{chap:x509} phân tích các kiểm tra cụ thể.
+
+\section{Phân tách các chữ ký trong TLS 1.3}
+Trong một phiên TLS 1.3 dùng chứng thư, có ít nhất hai loại chữ ký với đối tượng được ký khác nhau. Thứ nhất, CA ký chứng thư máy chủ để khẳng định liên kết danh tính--khóa công khai. Thứ hai, máy chủ gửi thông điệp \emph{CertificateVerify}, ký transcript bắt tay bằng khóa bí mật tương ứng với khóa công khai trong chứng thư. Bước sau chứng minh phía đang bắt tay kiểm soát khóa ấy tại thời điểm phiên, còn việc chấp nhận danh tính vẫn cần kiểm tra chứng thư và tên dịch vụ. Hai phía tiếp đó tạo khóa phiên từ trao đổi khóa và bảo vệ dữ liệu bằng mật mã đối xứng~\cite{rfc8446}.
+
+Do vậy, demo \texttt{openssl verify} ở Chương~\ref{chap:experiment} chỉ kiểm tra chứng thư theo các tùy chọn đã bật; nó không tự chứng minh máy chủ đang sở hữu khóa bí mật trong một phiên TLS thật. Lệnh HTTPS tùy chọn trong \texttt{demo/README.md} bổ sung minh họa bắt tay, nhưng không được dùng để suy ra đã kiểm tra CRL hoặc OCSP. Trên slide nền tảng, nên đặt ba mũi tên riêng: CA ký chứng thư, máy chủ ký transcript và TLS dùng khóa phiên để bảo vệ dữ liệu. Sơ đồ này ngăn nhầm lẫn giữa xác thực, thỏa thuận khóa và mã hóa.

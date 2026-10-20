@@ -1,15 +1,44 @@
 \chapter{Giới thiệu và xác định vấn đề nghiên cứu}
-\section{Bối cảnh và bài toán}
-Cần viết: mô tả bài toán phân phối khóa công khai đáng tin cậy qua ví dụ Alice--Bob và một đối thủ thay khóa.
+\label{chap:intro}
 
-\section{Mục tiêu và câu hỏi nghiên cứu}
-Mục tiêu: phân tích kiến trúc PKI, xác thực X.509 và xây dựng một lab để kiểm chứng các điều kiện chấp nhận chứng thư.
-\begin{enumerate}
-  \item RQ1: PKI liên kết danh tính với khóa công khai bằng cách nào?
-  \item RQ2: Điều kiện nào khiến chứng thư X.509 được chấp nhận hoặc từ chối?
-  \item RQ3: CRL/OCSP giúp giảm rủi ro thu hồi như thế nào?
-  \item RQ4: PKI còn yếu ở đâu dù thuật toán mật mã vẫn an toàn?
-\end{enumerate}
+\section{Bối cảnh và bài toán phân phối khóa công khai}
+Khi truy cập một dịch vụ qua HTTPS, phía khách cần biết đang trao đổi với đúng máy chủ, đồng thời ngăn người trên đường truyền đọc hoặc sửa dữ liệu. Mật mã khóa công khai cho phép công bố một khóa để người khác kiểm tra chữ ký hoặc tham gia thiết lập khóa. Tuy nhiên, bản thân chuỗi byte của khóa công khai không trả lời câu hỏi \emph{khóa này thuộc về ai}. Nếu chỉ tải một khóa từ cùng kênh mạng chưa được xác thực, kẻ tấn công đứng giữa có thể thay bằng khóa của mình. Các phép toán mật mã sau đó vẫn chạy đúng, nhưng phía khách đang xác thực nhầm đối tượng.
 
-\section{Phạm vi và phương pháp}
-Phạm vi: PKI X.509 phân cấp và xác thực máy chủ TLS trong lab nội bộ. Nghiên cứu tài liệu chuẩn, triển khai OpenSSL, ghi lại kết quả kiểm thử và phân tích giới hạn. Cần chỉnh phần này sau khi phương pháp cuối cùng được chốt.
+Xét Alice muốn kết nối tới \texttt{server-a.test}. Máy chủ đưa ra khóa công khai $PK_S$; kẻ tấn công thay nó bằng $PK_M$. Nếu Alice không có một liên kết đáng tin cậy giữa tên dịch vụ và $PK_S$, Alice có thể thiết lập phiên với kẻ tấn công mà không phát hiện được. Vấn đề cần giải là \emph{phân phối và kiểm tra liên kết giữa danh tính, khóa công khai và quyền sử dụng khóa}. Chứng thư X.509 cung cấp một khẳng định được CA ký về liên kết đó; PKI bổ sung quá trình xác minh trước khi cấp, phân phối chứng thư, cấu hình điểm neo tin cậy và cơ chế thu hồi~\cite{rfc5280,rfc3647}.
+
+Một chứng thư có chữ ký hợp lệ chỉ chứng minh dữ liệu được ký bằng khóa bí mật tương ứng với khóa công khai của bên phát hành được xét. Quyết định chấp nhận còn phụ thuộc vào việc bên phát hành có nằm trên đường dẫn tới CA được tin cậy, chứng thư có còn hiệu lực, có đúng tên dịch vụ và mục đích sử dụng, cũng như có bị thu hồi theo chính sách kiểm tra hay không. Đây là câu hỏi trung tâm của báo cáo: \emph{chữ ký mật mã hợp lệ của một chứng thư có đủ để client chấp nhận chứng thư đó không?}
+
+\section{PKI và ranh giới bảo đảm}
+Trong báo cáo này, hạ tầng khóa công khai (Public Key Infrastructure, PKI) là tập hợp vai trò, quy trình và dữ liệu để phát hành, quản lý và sử dụng chứng thư gắn khóa công khai với chủ thể. Một CA phát hành chứng thư không đồng nghĩa mọi client đều tin CA đó: client phải có điểm neo tin cậy (trust anchor) được cấu hình từ trước. Một CA có thể ký sai tên nếu xác minh danh tính kém; một client cũng có thể bỏ qua bước kiểm tra hostname hoặc trạng thái thu hồi. Vì vậy, tính đúng đắn của thuật toán chữ ký là điều kiện cần trong nhiều quy trình xác thực, nhưng không thay thế chất lượng vận hành CA và chính sách phía client~\cite{rfc5280,rfc9525}.
+
+PKI được dùng trong nhiều ngữ cảnh như xác thực máy chủ TLS, chứng thư người dùng, ký mã hoặc tài liệu. Những ngữ cảnh này có quy tắc danh tính và mục đích sử dụng khác nhau. Báo cáo chọn \emph{xác thực máy chủ TLS bằng chứng thư X.509 trong CA phân cấp nội bộ} làm trường hợp cụ thể. Các nhận xét rút từ môi trường này không tự động áp dụng cho mọi hệ thống Web PKI hoặc mọi ứng dụng chữ ký số.
+
+\section{Mục tiêu, câu hỏi và giả thuyết}
+Mục tiêu thứ nhất là giải thích cách các cơ chế mật mã tạo ra và kiểm tra khẳng định trong chứng thư. Mục tiêu thứ hai là mô tả trách nhiệm của CA, bên yêu cầu và bên xác minh trên toàn bộ vòng đời chứng thư. Mục tiêu thứ ba là xây dựng một môi trường OpenSSL có thể lặp lại để kiểm tra điều kiện chấp nhận ở từng bước. Bốn câu hỏi định hướng được trình bày trong Bảng~\ref{tab:rq}.
+
+\begin{table}[ht]
+\centering\small
+\caption{Câu hỏi nghiên cứu và nơi trả lời}\label{tab:rq}
+\begin{tabular}{p{0.9cm}p{9.0cm}p{2.0cm}}
+\toprule
+Mã & Câu hỏi & Chương chính \\
+\midrule
+RQ1 & PKI liên kết danh tính với khóa công khai bằng cách nào, và client lấy niềm tin ban đầu từ đâu? & 2--4 \\
+RQ2 & Những điều kiện nào làm chứng thư X.509 được chấp nhận hoặc bị từ chối trong ngữ cảnh xác thực máy chủ? & 4, 6 \\
+RQ3 & CRL và OCSP cung cấp thông tin thu hồi gì, và việc sử dụng thông tin đó phụ thuộc chính sách ra sao? & 4--6 \\
+RQ4 & Những rủi ro nào còn tồn tại nếu phép kiểm tra chữ ký đúng nhưng khâu cấp phát hoặc xác minh sai? & 5--7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ba giả thuyết dùng cho thiết kế thí nghiệm là: \textbf{H1}, chứng thư có chữ ký đúng vẫn có thể bị từ chối vì thiếu đường dẫn tin cậy hoặc sai ngữ cảnh; \textbf{H2}, thay đổi thời điểm, hostname, mục đích sử dụng hoặc dữ liệu thu hồi làm thay đổi kết quả khi bật bước kiểm tra tương ứng; \textbf{H3}, các phương án quản lý trạng thái và xác minh có chi phí, độ mới và giới hạn khác nhau. Bộ ca thử trong Chương~\ref{chap:experiment} được thiết kế chủ yếu để quan sát H1--H2. H3 cần phép đo hoặc phân tích so sánh riêng; kết quả PASS/FAIL của \texttt{openssl verify} không phải số liệu chi phí.
+
+\section{Phạm vi và phương pháp nghiên cứu}
+Nghiên cứu tài liệu dựa trên hồ sơ chứng thư và CRL của RFC 5280, khung chính sách CA của RFC 3647, OCSP của RFC 6960, TLS 1.3 của RFC 8446 và quy tắc nhận dạng dịch vụ của RFC 9525~\cite{rfc5280,rfc3647,rfc6960,rfc8446,rfc9525}. Báo cáo diễn giải các quy tắc rồi đối chiếu với hành vi cụ thể của OpenSSL. Phần thực nghiệm dùng một Root CA, một Intermediate CA, các chứng thư máy chủ và một CRL. Nó kiểm tra kết quả xác minh chứng thư bằng dòng lệnh; phần này không mặc nhiên là một phiên TLS hoàn chỉnh, hành vi của trình duyệt hay một triển khai OCSP.
+
+Phương pháp đánh giá gồm bốn bước: (1) xác định điều kiện chấp nhận và nguyên nhân từ chối dự kiến; (2) sinh chứng thư, khóa và CRL trong lab; (3) chạy từng lệnh xác minh với tùy chọn được ghi rõ, lưu exit code và thông báo; (4) so sánh quan sát với kỳ vọng, giải thích sai khác nếu có. Cấu hình CA, mã lệnh và bảng kết quả được liên kết trong \texttt{demo/README.md} và Chương~\ref{chap:experiment}. Kết quả của một phiên chạy không được thay cho phát biểu về hành vi mặc định của mọi client.
+
+\section{Đóng góp và cấu trúc báo cáo}
+Đóng góp ở mức bài tiểu luận là một diễn giải thống nhất từ khóa, chữ ký và chứng thư tới chính sách xác minh; một lab CA phân cấp tái lập được; và bộ ca thử tách biệt nguyên nhân từ chối như hostname, đường dẫn tin cậy, thời gian, mục đích sử dụng và thu hồi. Đây là nghiên cứu trường hợp để hiểu cơ chế, không phải đề xuất thuật toán mật mã mới.
+
+Chương 2 trình bày cơ sở mật mã; Chương 3 mô tả thành phần và vòng đời PKI; Chương 4 đi sâu vào X.509 và quy trình chấp nhận; Chương 5 phân tích rủi ro; Chương 6 ghi nhận thực nghiệm; Chương 7 thảo luận ứng dụng và hướng phát triển. Khi thuyết trình, bài toán thay khóa và câu hỏi trung tâm là nội dung của slide mở đầu; sơ đồ CA, bảng điều kiện kiểm tra và kết quả ca thử sẽ lần lượt chuyển ý từ nền tảng sang demo.

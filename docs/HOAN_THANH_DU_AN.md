@@ -6,23 +6,17 @@ Bộ nộp tối thiểu: (1) PDF báo cáo, (2) slide 10–12 trang, (3) demo P
 
 | Giai đoạn | Việc làm | Kết quả có thể kiểm tra |
 |---|---|---|
-| 0. Chốt yêu cầu | Xác nhận mẫu báo cáo, số trang, hạn nộp, quy cách trích dẫn, danh sách thành viên | Điền thông tin bìa, lịch nhóm và format cuối |
-| 1. Nền tảng | Đọc RFC 5280; viết câu hỏi RQ1–RQ4, giả thuyết H1–H3; phác sơ đồ Root → Intermediate → Server | Đề cương và danh mục nguồn được nhóm duyệt |
+| 0. Chốt yêu cầu | Xác nhận mẫu báo cáo, số trang, hạn nộp, quy cách trích dẫn | Kiểm tra bìa và format cuối |
+| 1. Nền tảng | Đọc RFC 5280; đối chiếu RQ1–RQ4, giả thuyết H1–H3; phác sơ đồ Root → Intermediate → Server | Chương 1–4 và nguồn được đối chiếu với demo |
 | 2. Cơ chế | Viết chương 2–4: mật mã, kiến trúc, X.509, path validation, CRL/OCSP, TLS | Bản nháp kỹ thuật có trích dẫn và sơ đồ |
 | 3. Lab | Chạy `make demo-test`; đối chiếu từng TC với lệnh OpenSSL, lưu phiên bản công cụ và output | Bảng test thật, log, hình minh họa |
 | 4. Phân tích | Viết chương 5–6 từ kết quả, nêu điều kiện kiểm tra, giới hạn OpenSSL/private PKI | Kết luận cho từng giả thuyết, không suy diễn quá dữ liệu |
 | 5. Hoàn thiện | Viết chương 1, 7, tóm tắt và kết luận sau khi có kết quả; làm slide | Báo cáo thống nhất, slide tập trung vào câu hỏi và bằng chứng |
 | 6. Review | Build PDF trên ít nhất một máy khác; chạy demo từ thư mục sạch; tập thuyết trình | Hoàn tất [checklist](CHECKLIST_NOP_BAI.md) |
 
-## Chia việc gợi ý cho nhóm 3 người
+## Quy trình hoàn thiện
 
-| Vai trò | Phần chính | Bàn giao cụ thể |
-|---|---|---|
-| Thành viên 1 / điều phối | Chương 1, 4; quản lý nguồn, hợp nhất PDF | Câu hỏi nghiên cứu, flowchart kiểm tra chứng thư, kiểm tra trích dẫn |
-| Thành viên 2 | Chương 2, 3, 7; sơ đồ và slide nền tảng | Sơ đồ kiến trúc/vòng đời, bảng khái niệm, phần xu hướng có nguồn |
-| Thành viên 3 | Chương 5, 6; chạy demo và ghi log | Mô hình đe dọa, `results.tsv`, bảng phân tích TC, demo trình bày |
-
-Mọi người cùng review chương 6 vì kết luận của toàn bài phụ thuộc vào bằng chứng thực nghiệm. Có thể đổi vai trò theo sở trường; điền tên thật trong bảng công việc của nhóm khi phân công.
+Thực hiện tuần tự theo các giai đoạn ở trên; không phân chia chương hoặc demo theo thành viên. Trước khi viết chương 5–7, đối chiếu từng nhận định thực nghiệm với lệnh và kết quả trong chương 6. [Lộ trình học, demo và slide](NEN_TANG_PKI_DEMO_SLIDE.md) nêu rõ kiến thức cần nắm và bằng chứng cần chuẩn bị.
 
 ## Nội dung từng chương
 
