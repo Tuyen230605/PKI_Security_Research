@@ -1,13 +1,196 @@
 \chapter{Cơ sở mật mã khóa công khai và PKI}
 \section{Yêu cầu bảo mật và quản lý khóa}
-Cần viết: tính bí mật, toàn vẹn, xác thực, tính sẵn sàng; PKI hỗ trợ trực tiếp thuộc tính nào và thuộc tính nào cần cơ chế khác.
+\label{sec:security-reqs-key-mgmt}
+
+\subsection{Yêu cầu bảo mật trong truyền thông và vai trò của PKI}
+Trong an toàn thông tin hiện đại, việc bảo vệ luồng truyền thông và dữ liệu giao dịch xoay quanh mô hình các mục tiêu an ninh cơ bản (mô hình CIA mở rộng):
+\begin{itemize}
+    \item \textbf{Tính bí mật (Confidentiality):} Đảm bảo thông tin chỉ được truy cập và đọc hiểu bởi các đối tượng có thẩm quyền (sở hữu khóa giải mã hợp lệ), ngăn chặn hành vi nghe lén hoặc giải mã trái phép từ bên thứ ba trên kênh truyền thông công cộng.
+    \item \textbf{Tính toàn vẹn (Integrity):} Đảm bảo dữ liệu không bị sửa đổi, chèn thêm, xóa bớt hoặc tái sắp xếp trái phép trong quá trình lưu trữ và truyền tải. Mọi biến đổi dù là nhỏ nhất trên thông điệp đều phải được phát hiện kịp thời.
+    \item \textbf{Tính xác thực (Authenticity):} Đảm bảo nguồn gốc của dữ liệu và định danh thực tế của thực thể tham gia giao tiếp là chính xác và có thể kiểm chứng được, ngăn ngừa hành vi giả mạo danh tính (\textit{impersonation}) hoặc tấn công người đứng giữa (MITM).
+    \item \textbf{Tính sẵn sàng (Availability):} Đảm bảo hệ thống, tài nguyên và dịch vụ xác thực luôn sẵn sàng phục vụ các bên tin cậy khi có yêu cầu hợp lệ, không bị gián đoạn bởi sự cố kỹ thuật hoặc các cuộc tấn công từ chối dịch vụ (DoS/DDoS).
+    \item \textbf{Tính chống chối bỏ (Non-repudiation):} Đảm bảo thực thể đã thực hiện một hành động (như ký duyệt văn bản hay phát hành chứng thư) không thể phủ nhận hành vi của mình đối với bên thứ ba độc lập.
+\end{itemize}
+
+Hạ tầng khóa công khai (PKI) về bản chất là một cơ chế quản trị niềm tin và định danh số. Do đó, PKI không trực tiếp giải quyết toàn bộ các mục tiêu an ninh nói trên mà có sự phân định rõ ràng giữa thuộc tính hỗ trợ trực tiếp và thuộc tính cần phối hợp với các cơ chế bảo mật khác:
+\begin{itemize}
+    \item \textbf{Các thuộc tính PKI hỗ trợ trực tiếp:}
+    \begin{itemize}
+        \item \textit{Tính xác thực (Authenticity):} Đây là mục tiêu cốt lõi của PKI. Thông qua chứng thư số chuẩn ITU-T X.509 và chữ ký số của Tổ chức chứng thực (CA), PKI liên kết chặt chẽ danh tính thực tế của chủ thể (Subject) với khóa công khai tương ứng, loại bỏ triệt để nguy cơ phân phối khóa công khai trần không rõ nguồn gốc.
+        \item \textit{Tính toàn vẹn (Integrity) và Chống chối bỏ (Non-repudiation):} Bằng việc đóng gói dữ liệu và ký số bằng khóa bí mật của CA hoặc của chủ thể, PKI bảo đảm tính toàn vẹn của chứng thư số và thông điệp giao dịch; đồng thời ngăn chặn bên ký chối bỏ trách nhiệm về dữ liệu đã ban hành.
+    \end{itemize}
+    \item \textbf{Các thuộc tính cần kết hợp cơ chế bảo vệ khác:}
+    \begin{itemize}
+        \item \textit{Tính bí mật (Confidentiality):} Bản thân PKI và chứng thư X.509 không trực tiếp thực hiện việc mã hóa dữ liệu ứng dụng. Khóa công khai trong chứng thư chủ yếu phục vụ xác thực danh tính và thỏa thuận khóa; việc bảo vệ bí mật cho luồng dữ liệu đòi hỏi các giao thức truyền thông an toàn (như TLS 1.3~\cite{rfc8446}) sử dụng cơ chế trao đổi khóa phiên (như ECDHE) kết hợp thuật toán mã hóa đối xứng khối lượng lớn (như AES-GCM hoặc ChaCha20-Poly1305).
+        \item \textit{Tính sẵn sàng (Availability):} Dù PKI định nghĩa các dịch vụ kiểm tra trạng thái chứng thư (CRL, OCSP), tính sẵn sàng của hạ tầng phụ thuộc hoàn toàn vào kiến trúc mạng và giải pháp phân phối (như cân bằng tải, cơ chế lưu đệm OCSP Stapling, mạng phân phối nội dung CDN) nhằm tránh nghẽn cổ chai và ngăn ngừa tấn công làm tê liệt điểm kiểm tra thu hồi.
+    \end{itemize}
+\end{itemize}
+
+Bảng~\ref{tab:pki-security-goals} tóm tắt phạm vi hỗ trợ của PKI đối với các mục tiêu an ninh thông tin.
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{8.5cm}}
+\toprule
+\textbf{Mục tiêu an ninh} & \textbf{Vai trò của PKI} & \textbf{Cơ chế thực hiện / Phối hợp} \\
+\midrule
+\textbf{Xác thực (Authenticity)} & Hỗ trợ trực tiếp & Chứng thư số X.509, chữ ký số của CA trên Subject PublicKey. \\
+\textbf{Toàn vẹn (Integrity)} & Hỗ trợ trực tiếp & Hàm băm mật mã và chữ ký số trên cấu trúc chứng thư. \\
+\textbf{Chống chối bỏ (Non-repudiation)} & Hỗ trợ trực tiếp & Chữ ký số gắn liền với khóa bí mật duy nhất của thực thể. \\
+\textbf{Bí mật (Confidentiality)} & Kết hợp bên ngoài & Giao thức TLS bắt tay thỏa thuận khóa phiên (ECDHE) và mã hóa đối xứng (AES-GCM). \\
+\textbf{Sẵn sàng (Availability)} & Kết hợp bên ngoài & Hạ tầng mạng phân tán, bộ đệm chứng thực, OCSP Stapling, CDN. \\
+\bottomrule
+\end{tabular}
+\caption{Phân định phạm vi hỗ trợ của PKI đối với các mục tiêu an ninh thông tin.}
+\label{tab:pki-security-goals}
+\end{table}
+
+\subsection{Nguyên lý quản lý khóa và vòng đời khóa mật mã}
+Theo \textit{Nguyên lý Kerckhoffs}, độ an toàn của một hệ thống mật mã không phụ thuộc vào việc giữ bí mật thuật toán mà nằm hoàn toàn ở sự an toàn của khóa mật mã. Trong hệ thống khóa bất đối xứng, hai thành phần của cặp khóa có yêu cầu bảo vệ trái ngược nhau:
+\begin{itemize}
+    \item \textbf{Khóa công khai (Public Key):} Đòi hỏi tính \textit{toàn vẹn} và tính \textit{xác thực} nguồn gốc tuyệt đối (đây chính là nhiệm vụ của chứng thư số PKI), nhưng không cần giữ bí mật.
+    \item \textbf{Khóa bí mật (Private Key):} Đòi hỏi tính \textit{bí mật} và \textit{bảo vệ quyền truy cập} tuyệt đối. Nếu khóa bí mật bị lộ, toàn bộ các bảo đảm an ninh về xác thực và chống chối bỏ đều sụp đổ.
+\end{itemize}
+
+Quản lý khóa (Key Management) là tập hợp toàn bộ các chính sách và kỹ thuật nhằm kiểm soát cặp khóa xuyên suốt vòng đời (Key Lifecycle):
+\begin{enumerate}
+    \item \textbf{Khởi tạo khóa (Generation):} Phải sử dụng bộ sinh số ngẫu nhiên giả an toàn mật mã (CSPRNG) và tuân thủ độ dài khóa khuyến nghị (ví dụ RSA $\ge$ 2048-bit, ECC $\ge$ 256-bit) để chống thám mã vét cạn.
+    \item \textbf{Lưu trữ và bảo vệ khóa bí mật (Storage):} Khóa bí mật của các CA gốc và máy chủ quan trọng phải được lưu trữ trong các mô-đun phần cứng chuyên dụng (Hardware Security Module - HSM hoặc TPM) với chính sách kiểm soát truy cập nghiêm ngặt (quản trị phân quyền $k$-out-of-$n$). Khóa tuyệt đối không được xuất ra ngoài bộ nhớ dưới dạng bản rõ.
+    \item \textbf{Phân phối và chứng thực (Distribution):} Khóa công khai được đóng gói thành yêu cầu cấp chứng thư (CSR) và gửi tới CA để thẩm định, cấp phát chứng chỉ X.509.
+    \item \textbf{Thời hạn sử dụng (Cryptoperiod):} Mọi khóa mật mã đều phải có thời hạn hiệu lực hữu hạn (\texttt{notBefore} và \texttt{notAfter}) để hạn chế lượng bản mã tích lũy cho đối thủ phân tích, đồng thời bắt buộc chu kỳ thay thế khóa định kỳ.
+    \item \textbf{Thu hồi và tiêu hủy (Revocation \& Destruction):} Khi khóa bí mật nghi ngờ bị lộ, chủ sở hữu phải lập tức yêu cầu CA đưa chứng thư vào danh sách thu hồi (CRL/OCSP). Khi hết vòng đời, khóa bí mật phải bị xóa hủy an toàn (zeroize) để ngăn ngừa phục hồi dữ liệu từ phần cứng.
+\end{enumerate}
+
 
 \section{Khóa công khai, hàm băm và chữ ký số}
-Cần phân biệt khóa công khai/bí mật, chữ ký số, hàm băm và chứng thư. Biểu thức dưới đây chỉ là mô hình khái niệm; thao tác thật phụ thuộc lược đồ chữ ký:
-\[
-\sigma=\operatorname{Sign}(SK,H(m)),\qquad
-\operatorname{Verify}(PK,H(m),\sigma).
-\]
+\label{sec:crypto_primitives}
+
+Để phân tích chính xác cơ chế hoạt động của hạ tầng PKI, cần phân định rành mạch giữa các nguyên hàm mật mã cơ sở gồm cặp khóa bất đối xứng, hàm băm một chiều, chữ ký số và chứng thư số:
+
+\begin{itemize}
+    \item \textbf{Cặp khóa công khai và khóa bí mật ($PK, SK$):} Trong mật mã bất đối xứng, mỗi thực thể sở hữu một cặp khóa có quan hệ toán học chặt chẽ. Khóa công khai ($PK$) được phổ biến rộng rãi cho toàn bộ mạng lưới, trong khi khóa bí mật ($SK$) phải được lưu trữ và bảo vệ tuyệt đối bởi chủ sở hữu. Tuy nhiên, bản thân cặp khóa chỉ tồn tại dưới dạng các giá trị nhị phân trừu tượng; nó hoàn toàn không chứa thông tin định danh và không tự chứng minh được danh tính thực tế của chủ thể nắm giữ khóa.
+    
+    \item \textbf{Hàm băm mật mã ($H$):} Là hàm toán học một chiều ánh xạ một thông điệp $m$ có kích thước tùy ý thành một chuỗi bit có độ dài cố định gọi là giá trị tóm lược (digest): $h = H(m)$. Hàm băm mật mã chuẩn bắt buộc phải thỏa mãn ba tính chất: kháng tiền ảnh (pre-image resistance), kháng tiền ảnh thứ hai (second pre-image resistance) và kháng va chạm (collision resistance). Mặc dù hàm băm đảm bảo phát hiện mọi sửa đổi dữ liệu (tính toàn vẹn), nó không thể xác thực nguồn gốc thông điệp vì không chứa yếu tố bí mật.
+    
+    \item \textbf{Chữ ký số (Digital Signature):} Là sự kết hợp giữa hàm băm và mật mã khóa công khai nhằm bảo đảm tính toàn vẹn, xác thực nguồn gốc và chống chối bỏ. Về mặt mô hình khái niệm, chữ ký số được định nghĩa thông qua cặp thuật toán:
+    \begin{equation}
+        \sigma = \mathrm{Sign}(SK, H(m))
+    \end{equation}
+    \begin{equation}
+        \mathrm{Verify}(PK, H(m), \sigma) \in \{\mathrm{True}, \mathrm{False}\}
+    \end{equation}
+    
+    Cần lưu ý rằng các biểu thức trên chỉ đại diện cho mô hình khái niệm trừu tượng. Trong thực tế triển khai, thao tác tính toán phụ thuộc chặt chẽ vào cấu trúc toán học của từng lược đồ chữ ký và các cơ chế đệm (padding) chuẩn hóa:
+    \begin{itemize}
+        \item \textit{RSA (PKCS\#1 v1.5 / RSA-PSS):} Dữ liệu băm được đệm theo sơ đồ xác suất PSS để ngăn chặn tấn công đại số trước khi áp dụng phép lũy thừa modulo: $\sigma = (H_{pad}(m))^d \pmod N$.
+        \item \textit{ECDSA (Elliptic Curve Digital Signature Algorithm):} Thực hiện trên nhóm điểm của đường cong elip, yêu cầu sinh một giá trị ngẫu nhiên bí mật $k$ trên mỗi phiên ký để tạo cặp giá trị chữ ký $(r, s)$.
+        \item \textit{Ed25519 (EdDSA):} Sử dụng đường cong xoắn Edwards với cơ chế sinh tham số ngẫu nhiên mang tính tất định dẫn xuất từ khóa bí mật và thông điệp, triệt tiêu rủi ro lộ khóa do bộ sinh số ngẫu nhiên kém an toàn.
+    \end{itemize}
+
+    \item \textbf{Chứng thư số (Digital Certificate):} Chữ ký số chứng minh được một thông điệp được tạo ra bởi người sở hữu khóa $SK$, nhưng không thể trả lời câu hỏi thực thể đó là ai ngoài đời thực. Chứng thư số chuẩn ITU-T X.509 đóng vai trò đóng gói khóa công khai $PK$ cùng định danh của chủ thể (Subject) và được một bên thứ ba tin cậy (Certificate Authority - CA) xác thực bằng chữ ký số sử dụng khóa bí mật $SK_{CA}$. Bằng cách này, chứng thư số hoàn thiện mắt xích liên kết tin cậy (binding) giữa danh tính và khóa công khai.
+\end{itemize}
+
+Bản chất kỹ thuật và giới hạn của các thành phần mật mã được tổng hợp và đối chiếu tại Bảng~\ref{tab:crypto_comparison}.
+
+\clearpage
+
+\begin{table}[!htbp]
+\centering
+\caption{So sánh bản chất và vai trò của các thành phần mật mã trong PKI}
+\label{tab:crypto_comparison}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{3.2cm} >{\raggedright\arraybackslash}p{2.6cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{3.2cm}@{}}
+\toprule
+\textbf{Khái niệm} & \textbf{Bản chất kỹ thuật} & \textbf{Khóa bí mật ($SK$)} & \textbf{Giá trị an ninh cung cấp} & \textbf{Hạn chế nội tại} \\
+\midrule
+\textbf{Cặp khóa ($PK, SK$)} & 
+Hai khóa có liên hệ toán học; $PK$ công khai, $SK$ bảo mật. & 
+Chỉ duy nhất chủ sở hữu hợp pháp nắm giữ và bảo vệ. & 
+Nền tảng cho ký số, xác thực sở hữu và thỏa thuận khóa phiên. & 
+Không tự liên kết được với danh tính thực thể ngoài đời thực. \\
+
+\textbf{Hàm băm ($H$)} & 
+Ánh xạ thông điệp tùy ý thành digest có độ dài cố định. & 
+Không sử dụng khóa. & 
+Bảo đảm tính toàn vẹn, tóm lược dữ liệu, kháng va chạm. & 
+Không xác thực nguồn gốc do bất kỳ ai cũng tính toán được. \\
+
+\textbf{Chữ ký số} & 
+Cặp thuật toán Sign/Verify thao tác trên giá trị băm thông điệp. & 
+Ký bằng $SK$ của chủ thể; kiểm tra bằng $PK$ tương ứng. & 
+Xác thực nguồn gốc dữ liệu, bảo đảm tính toàn vẹn và chống chối bỏ. & 
+Chỉ xác minh tính hợp lệ của dữ liệu với $PK$, không định danh người ký. \\
+
+\textbf{Chứng thư số} & 
+Cấu trúc dữ liệu liên kết $PK$ với danh tính, được CA ký. & 
+Ký bởi $SK_{CA}$; cấu trúc chứng thư không bao giờ chứa $SK$. & 
+Thiết lập liên kết tin cậy giữa khóa công khai và danh tính chủ thể. & 
+Phụ thuộc độ tin cậy của CA, thời hạn hiệu lực và trạng thái thu hồi. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\clearpage
 
 \section{Vai trò thuật toán trong TLS}
-Cần phân biệt thuật toán ký chứng thư với thỏa thuận khóa phiên và mã hóa dữ liệu ứng dụng trong TLS 1.3~\cite{rfc8446}. Không mô tả public key trong chứng thư như công cụ mã hóa trực tiếp mọi gói dữ liệu.
+\label{sec:crypto_roles_in_tls}
+
+Một trong những sai lầm phổ biến khi tiếp cận mật mã học là quan niệm cho rằng khóa công khai trong chứng thư số X.509 được sử dụng để mã hóa trực tiếp toàn bộ dữ liệu ứng dụng trao đổi trên kênh truyền mạng. Trong các hệ thống bảo mật hiện đại như giao thức Transport Layer Security phiên bản 1.3 (TLS 1.3, chuẩn hóa tại RFC 8446~\cite{rfc8446}), các thuật toán mật mã được phân công trách nhiệm độc lập theo từng lớp chức năng riêng biệt nhằm tối ưu hóa hiệu năng tính toán và bảo đảm an toàn tối đa:
+
+\begin{itemize}
+    \item \textbf{Xác thực danh tính (Authentication Layer):}
+    \begin{itemize}
+        \item \textit{Bản chất:} Chứng thư số của máy chủ chứa khóa công khai dài hạn ($PK_{server}$) và được chứng thực thông qua chữ ký số của một CA tin cậy ($SK_{CA}$) nhằm giải quyết bài toán liên kết định danh.
+        \item \textit{Cơ chế trong TLS 1.3:} Trong giai đoạn bắt tay (Handshake), máy chủ gửi chứng thư X.509 cho client và phát hành thông điệp xác thực \texttt{CertificateVerify}. Thông điệp này được ký bằng khóa bí mật dài hạn ($SK_{server}$) lên toàn bộ bản ghi lịch sử (\textit{transcript}) của các gói tin bắt tay trước đó.
+        \item \textit{Mục tiêu:} Sử dụng các thuật toán chữ ký số hiện đại (như RSA-PSS, ECDSA với đường cong secp256r1/secp384r1, hoặc Ed25519) nhằm chứng minh máy chủ thực sự sở hữu khóa bí mật tương ứng với chứng thư (\textit{Proof of Possession}), loại bỏ hoàn toàn nguy cơ giả mạo danh tính (impersonation). Khóa công khai này tuyệt đối không dùng để mã hóa lưu lượng dữ liệu.
+    \end{itemize}
+
+    \item \textbf{Thỏa thuận khóa phiên (Key Exchange / Agreement Layer):}
+    \begin{itemize}
+        \item \textit{Bản chất:} Nhằm thiết lập một khóa bí mật chung giữa client và server qua kênh truyền không tin cậy mà không bao giờ truyền trực tiếp khóa đó trên mạng.
+        \item \textit{Cơ chế trong TLS 1.3:} Khác biệt căn bản với các phiên bản TLS cũ (vốn cho phép dùng khóa RSA của chứng thư để mã hóa và gửi khóa tiền phiên \textit{pre-master secret}), TLS 1.3 đã loại bỏ hoàn toàn cơ chế trao đổi khóa RSA tĩnh. Thay vào đó, giao thức bắt buộc sử dụng cơ chế trao đổi khóa tạm thời dựa trên Diffie-Hellman: ECDHE (\textit{Ephemeral Elliptic Curve Diffie-Hellman}, như X25519) hoặc DHE.
+        \item \textit{Đặc tính Bí mật chuyển tiếp hoàn hảo (Perfect Forward Secrecy - PFS):} Cặp khóa bất đối xứng tạm thời (\textit{ephemeral key pair}) được sinh ngẫu nhiên độc lập cho từng phiên kết nối và bị hủy ngay sau khi bắt tay. Do đó, ngay cả khi khóa bí mật dài hạn của máy chủ bị xâm phạm trong tương lai, kẻ tấn công cũng không thể giải mã hồi cứu các phiên truyền thông đã lưu vết trong quá khứ.
+    \end{itemize}
+
+    \item \textbf{Mã hóa đối xứng dữ liệu ứng dụng (Record Layer Encryption):}
+    \begin{itemize}
+        \item \textit{Bản chất:} Dữ liệu trao đổi thực tế (HTTP requests/responses, JSON, hình ảnh) có dung lượng rất lớn. Việc dùng mật mã khóa công khai để mã hóa từng gói tin sẽ làm tê liệt hạ tầng mạng do chi phí tính toán modulo và đường cong elip cực kỳ đắt đỏ.
+        \item \textit{Cơ chế trong TLS 1.3:} Giá trị bí mật chung sau ECDHE được đưa qua hàm suy dẫn khóa HKDF (\textit{HMAC-based Extract-and-Expand Key Derivation Function}) để sinh ra các khóa phiên đối xứng. Tầng Record sau đó sử dụng độc quyền các thuật toán mã hóa đối xứng có xác thực: AEAD (\textit{Authenticated Encryption with Associated Data}), tiêu biểu như AES-128-GCM, AES-256-GCM hoặc ChaCha20-Poly1305.
+        \item \textit{Mục tiêu:} Bảo đảm đồng thời tính bí mật (Confidentiality) và tính toàn vẹn (Integrity) cho từng bản ghi dữ liệu ứng dụng với tốc độ xử lý phần cứng cao (tận dụng tập lệnh AES-NI) và độ trễ thấp nhất.
+    \end{itemize}
+\end{itemize}
+
+Sự phân định vai trò và phối hợp giữa các thành phần thuật toán trong TLS 1.3 được tổng hợp tại Bảng~\ref{tab:tls_algorithms}.
+
+\begin{table}[htbp]
+\centering
+\caption{Phân định vai trò các thuật toán mật mã trong giao thức TLS 1.3}
+\label{tab:tls_algorithms}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{3.2cm} >{\raggedright\arraybackslash}p{3.4cm} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Lớp chức năng} & \textbf{Thuật toán tiêu biểu} & \textbf{Khóa mật mã sử dụng} & \textbf{Mục tiêu an ninh đáp ứng} \\
+\midrule
+\textbf{Xác thực (Authentication)} & 
+RSA-PSS, ECDSA (secp256r1), Ed25519. & 
+Khóa bất đối xứng dài hạn ($PK, SK$) trong chứng thư X.509. & 
+Xác thực nguồn gốc máy chủ, ngăn chặn tấn công mạo danh và người đứng giữa (MITM). \\
+
+\textbf{Thỏa thuận khóa (Key Exchange)} & 
+ECDHE (X25519, secp256r1), DHE. & 
+Cặp khóa bất đối xứng tạm thời (ephemeral), sinh mới mỗi phiên. & 
+Thiết lập bí mật chung an toàn; bảo đảm Bí mật chuyển tiếp hoàn hảo (PFS). \\
+
+\textbf{Mã hóa dữ liệu (Record Layer)} & 
+AEAD (AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305). & 
+Khóa đối xứng phiên (Session Key) suy dẫn qua HKDF. & 
+Bảo đảm tính bí mật và toàn vẹn dữ liệu ứng dụng với tốc độ và hiệu năng tối ưu. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Trong phạm vi của đề tài nghiên cứu này, các nội dung tiếp theo (Chương 3, Chương 4 và kết quả thực nghiệm tại Chương 6) sẽ tập trung làm rõ lớp chức năng đầu tiên: cấu trúc chứng thư X.509, quy trình thẩm định chuỗi tin cậy và cơ chế thu hồi của hạ tầng PKI.

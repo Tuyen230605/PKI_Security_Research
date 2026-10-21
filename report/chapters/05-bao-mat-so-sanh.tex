@@ -1,6 +1,8 @@
 \chapter{Phân tích bảo mật, mô hình tấn công và so sánh}
+\label{chap:threat-security}
 \section{Tài sản, đối thủ và rủi ro}
-Cần lập bảng tài sản cần bảo vệ (khóa CA, khóa máy chủ, trust store, quy trình xác minh) và các mối đe dọa: lộ khóa, CA cấp sai, MITM, chứng thư hết hạn, kiểm tra thu hồi không đầy đủ.
+\label{sec:threat-model}
+Cần lập bảng tài sản cần bảo vệ (khóa CA, khóa máy chủ, trust store, quy trình xác minh) và các mối đe dọa: lộ khóa, CA cấp sai / bị xâm nhập (rogue certificates, phân tích sâu trường hợp DigiNotar~\cite{prins2011diginotar}), MITM, chứng thư hết hạn, kiểm tra thu hồi không đầy đủ.
 
 \section{So sánh các cơ chế tin cậy và thu hồi}
 Cần so sánh CA PKI, Web of Trust, TOFU theo giả định tin cậy; sau đó so sánh CRL, OCSP và chứng thư thời hạn ngắn theo độ mới, chi phí, khả dụng. Không kết luận một mô hình luôn vượt trội trong mọi môi trường.

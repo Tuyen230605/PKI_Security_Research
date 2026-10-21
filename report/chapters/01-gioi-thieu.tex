@@ -143,7 +143,8 @@ Cuộc tấn công người đứng giữa (MITM) này thành công vì Eve đã
 \label{fig:mitm-key-exchange}
 \end{figure}
 
-\subsection{Phân tích bản chất của bài toán}
+\subsection{Phân tích bản chất bài toán và vai trò của PKI}
+\label{subsec:analysis-pki-role}
 Phân tích kịch bản tấn công của Eve làm bộc lộ những bài học cơ bản về an toàn mật mã:
 \begin{itemize}
     \item \textbf{Phân biệt tính bí mật của dữ liệu và tính xác thực của khóa công khai:} Mật mã hóa chỉ đảm bảo tính bí mật (confidentiality) của thông điệp đối với đối tượng sở hữu khóa bí mật tương ứng. Tuy nhiên, tính bí mật đó trở nên vô nghĩa nếu bản thân chiếc khóa công khai được dùng để mã hóa không bảo đảm tính xác thực (authenticity) và không có căn cứ xác thực nguồn gốc (origin authenticity).
@@ -158,12 +159,9 @@ Phân tích kịch bản tấn công của Eve làm bộc lộ những bài họ
 
 Do đó, thách thức cốt lõi đặt ra là: \textbf{Phải có một cơ chế đáng tin cậy để liên kết (bind) một khóa công khai cụ thể với danh tính thực tế của chủ sở hữu hợp pháp}.
 
-\subsection{Dẫn dắt đến vai trò của Hạ tầng khóa công khai (PKI)}
-Để thiết lập mối liên kết đáng tin cậy giữa danh tính và khóa công khai mà không đòi hỏi các bên phải gặp mặt trực tiếp hoặc thiết lập kênh bí mật trước, \textbf{Hạ tầng khóa công khai (Public Key Infrastructure - PKI)} đã được chuẩn hóa và triển khai như một giải pháp nền tảng.
-
-PKI là một hệ thống hạ tầng toàn diện bao gồm phần cứng, phần mềm, chính sách và tiêu chuẩn hỗ trợ quản lý, phân phối, lưu trữ và xác thực mối liên hệ giữa khóa công khai với danh tính của các thực thể thông qua các cấu phần và cơ chế then chốt:
+Để thiết lập mối liên kết đáng tin cậy giữa danh tính và khóa công khai mà không đòi hỏi các bên phải gặp mặt trực tiếp hoặc thiết lập kênh bí mật trước, \textbf{Hạ tầng khóa công khai (Public Key Infrastructure - PKI)} đã được chuẩn hóa và triển khai như một giải pháp nền tảng. PKI là một hệ thống hạ tầng toàn diện bao gồm phần cứng, phần mềm, chính sách và tiêu chuẩn hỗ trợ quản lý, phân phối, lưu trữ và xác thực mối liên hệ giữa khóa công khai với danh tính của các thực thể thông qua các cấu phần và cơ chế then chốt:
 \begin{itemize}
-    \item \textbf{Tổ chức chứng thực số (Certificate Authority - CA):} Là một bên thứ ba đáng tin cậy (Trusted Third Party). CA có trách nhiệm thẩm tra tính chính xác về danh tính của đối tượng yêu cầu trước khi cấp phát chứng chỉ.
+    \item \textbf{Tổ chức chứng thực số (Certificate Authority - CA):} Là bên thứ ba đáng tin cậy (Trusted Third Party). CA có trách nhiệm thẩm tra tính chính xác về danh tính của đối tượng yêu cầu trước khi cấp phát chứng chỉ.
     \item \textbf{Chứng chỉ số (Digital Certificate):} Là cấu trúc dữ liệu điện tử (thường theo chuẩn quốc tế ITU-T X.509) đóng gói khóa công khai cùng với các thông tin định danh của chủ thể (Subject) sở hữu khóa đó.
     \item \textbf{Chữ ký số (Digital Signature):} CA sử dụng khóa bí mật của chính mình để tạo chữ ký số trên toàn bộ nội dung của chứng chỉ, bảo đảm tính toàn vẹn và chống chối bỏ cho mối liên kết giữa danh tính và khóa công khai.
 \end{itemize}
@@ -176,7 +174,10 @@ Trong môi trường có sự hỗ trợ của PKI, khi Alice muốn liên lạc
     \item \textbf{Kiểm tra trạng thái thu hồi:} Alice kiểm tra xem chứng chỉ có bị thu hồi trước thời hạn (ví dụ do lộ khóa bí mật) hay không thông qua danh sách thu hồi chứng thư (CRL) hoặc giao thức trạng thái chứng thư trực tuyến (OCSP) theo các chính sách áp dụng.
 \end{enumerate}
 
-Cần khẳng định rằng, PKI không phải là một giải pháp loại bỏ hoàn toàn mọi nguy cơ an ninh. PKI là một hạ tầng quản trị niềm tin và chịu ràng buộc bởi các chính sách vận hành, sự toàn vẹn của các CA gốc (Trust Anchors), cũng như việc tuân thủ đầy đủ quy trình xác thực từ phía phần mềm máy trạm (client). Nếu CA bị tấn công, chứng chỉ bị cấp sai hoặc client bỏ qua các bước kiểm tra hợp lệ, hệ thống vẫn có thể bị xâm phạm.
+\noindent\textbf{Giới hạn của PKI và sự cố thực tế kinh điển (DigiNotar 2011):}
+Cần khẳng định rằng, PKI không phải là một giải pháp loại bỏ hoàn toàn mọi nguy cơ an ninh. PKI về thực chất là một hạ tầng quản trị niềm tin (\textit{trust management}); an ninh của hệ thống bị ràng buộc chặt chẽ bởi các chính sách vận hành và tính toàn vẹn của các CA gốc (Trust Anchors). Nếu một CA bị xâm nhập hoặc cấp sai chứng thư, toàn bộ chuỗi tin cậy sẽ bị lợi dụng để hợp thức hóa các hành vi tấn công mà trình duyệt máy trạm khó có thể tự phát hiện bằng các kiểm tra toán học thông thường.
+
+Minh chứng điển hình cho giới hạn này là \textbf{sự cố DigiNotar (2011)}~\cite{prins2011diginotar}, khi một CA công cộng của Hà Lan bị tin tặc chiếm quyền và phát hành hàng loạt chứng thư giả mạo (\textit{rogue certificates}) có chữ ký mật mã hoàn toàn hợp lệ cho tên miền \texttt{*.google.com}. Kẻ tấn công đã sử dụng các chứng thư này để triển khai tấn công người đứng giữa (MITM) đối với hàng trăm nghìn người dùng Internet mà không hề làm phát sinh cảnh báo lỗi chứng thư, buộc các hãng công nghệ lớn phải xóa bỏ hoàn toàn DigiNotar khỏi Root Trust Store. Sự cố khẳng định một nguyên lý cốt lõi: chữ ký mật mã đúng là điều kiện cần nhưng chưa đủ để bảo đảm an toàn nếu niềm tin vào CA bị vi phạm (phân tích chi tiết về vectơ tấn công và bài học kiến trúc từ sự cố này sẽ được mổ xẻ tại Mục~\ref{sec:threat-model} ở Chương~\ref{chap:threat-security}).
 
 Chính vì vậy, bài toán nghiên cứu trọng tâm được xác định là: \textbf{Làm thế nào để phân phối và xác thực khóa công khai một cách đáng tin cậy, hạn chế tối đa nguy cơ giả mạo và tấn công thay thế khóa, đồng thời đánh giá được các điều kiện chấp nhận và giới hạn an ninh của hệ thống trong thực tế triển khai?} Đây là động lực thúc đẩy các mục tiêu và câu hỏi nghiên cứu cụ thể trong đề tài này.
 
