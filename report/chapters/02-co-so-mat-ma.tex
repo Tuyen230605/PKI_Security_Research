@@ -38,9 +38,13 @@ Bảng~\ref{tab:pki-security-goals} tóm tắt phạm vi hỗ trợ của PKI đ
 \textbf{Mục tiêu an ninh} & \textbf{Vai trò của PKI} & \textbf{Cơ chế thực hiện / Phối hợp} \\
 \midrule
 \textbf{Xác thực (Authenticity)} & Hỗ trợ trực tiếp & Chứng thư số X.509, chữ ký số của CA trên Subject PublicKey. \\
+\midrule
 \textbf{Toàn vẹn (Integrity)} & Hỗ trợ trực tiếp & Hàm băm mật mã và chữ ký số trên cấu trúc chứng thư. \\
+\midrule
 \textbf{Chống chối bỏ (Non-repudiation)} & Hỗ trợ trực tiếp & Chữ ký số gắn liền với khóa bí mật duy nhất của thực thể. \\
+\midrule
 \textbf{Bí mật (Confidentiality)} & Kết hợp bên ngoài & Giao thức TLS bắt tay thỏa thuận khóa phiên (ECDHE) và mã hóa đối xứng (AES-GCM). \\
+\midrule
 \textbf{Sẵn sàng (Availability)} & Kết hợp bên ngoài & Hạ tầng mạng phân tán, bộ đệm chứng thực, OCSP Stapling, CDN. \\
 \bottomrule
 \end{tabular}
@@ -113,19 +117,19 @@ Hai khóa có liên hệ toán học; $PK$ công khai, $SK$ bảo mật. &
 Chỉ duy nhất chủ sở hữu hợp pháp nắm giữ và bảo vệ. & 
 Nền tảng cho ký số, xác thực sở hữu và thỏa thuận khóa phiên. & 
 Không tự liên kết được với danh tính thực thể ngoài đời thực. \\
-
+\midrule
 \textbf{Hàm băm ($H$)} & 
 Ánh xạ thông điệp tùy ý thành digest có độ dài cố định. & 
 Không sử dụng khóa. & 
 Bảo đảm tính toàn vẹn, tóm lược dữ liệu, kháng va chạm. & 
 Không xác thực nguồn gốc do bất kỳ ai cũng tính toán được. \\
-
+\midrule
 \textbf{Chữ ký số} & 
 Cặp thuật toán Sign/Verify thao tác trên giá trị băm thông điệp. & 
 Ký bằng $SK$ của chủ thể; kiểm tra bằng $PK$ tương ứng. & 
 Xác thực nguồn gốc dữ liệu, bảo đảm tính toàn vẹn và chống chối bỏ. & 
 Chỉ xác minh tính hợp lệ của dữ liệu với $PK$, không định danh người ký. \\
-
+\midrule
 \textbf{Chứng thư số} & 
 Cấu trúc dữ liệu liên kết $PK$ với danh tính, được CA ký. & 
 Ký bởi $SK_{CA}$; cấu trúc chứng thư không bao giờ chứa $SK$. & 
@@ -181,12 +185,12 @@ Sự phân định vai trò và phối hợp giữa các thành phần thuật t
 RSA-PSS, ECDSA (secp256r1), Ed25519. & 
 Khóa bất đối xứng dài hạn ($PK, SK$) trong chứng thư X.509. & 
 Xác thực nguồn gốc máy chủ, ngăn chặn tấn công mạo danh và người đứng giữa (MITM). \\
-
+\midrule
 \textbf{Thỏa thuận khóa (Key Exchange)} & 
 ECDHE (X25519, secp256r1), DHE. & 
 Cặp khóa bất đối xứng tạm thời (ephemeral), sinh mới mỗi phiên. & 
 Thiết lập bí mật chung an toàn; bảo đảm Bí mật chuyển tiếp hoàn hảo (PFS). \\
-
+\midrule
 \textbf{Mã hóa dữ liệu (Record Layer)} & 
 AEAD (AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305). & 
 Khóa đối xứng phiên (Session Key) suy dẫn qua HKDF. & 

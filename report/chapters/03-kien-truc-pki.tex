@@ -37,11 +37,17 @@ Bảng~\ref{tab:pki-components-summary} tổng hợp vai trò, loại khóa qu�
 \textbf{Thành phần} & \textbf{Khóa quản lý} & \textbf{Trạng thái vận hành} & \textbf{Chức năng chính} \\
 \midrule
 \textbf{Trust Anchor} & Khóa công khai Root CA & Tích hợp sẵn trong OS/Browser & Điểm mốc tin cậy tuyệt đối để neo chuỗi xác minh. \\
+\midrule
 \textbf{Root CA} & $SK_{\mathrm{Root}}$, $PK_{\mathrm{Root}}$ & Ngoại tuyến (Offline, HSM) & Ký phát hành chứng thư tự ký và ủy quyền cho Sub-CA. \\
+\midrule
 \textbf{Intermediate CA} & $SK_{\mathrm{Sub}}$, $PK_{\mathrm{Sub}}$ & Trực tuyến (Online) & Ký phát hành chứng thư cho End-entity, ký danh sách CRL. \\
+\midrule
 \textbf{RA} & Khóa xác thực danh tính & Trực tuyến & Thẩm tra định danh, duyệt yêu cầu trước khi gửi sang CA. \\
+\midrule
 \textbf{Chủ thể (Subject)} & $SK_{\mathrm{Entity}}$, $PK_{\mathrm{Entity}}$ & Trực tuyến (Web/Client) & Nắm giữ khóa bí mật, dùng chứng thư để chứng minh danh tính. \\
+\midrule
 \textbf{Bên tin cậy (RP)} & Sở hữu Trust Store & Trực tuyến (Client) & Thẩm định đường dẫn chứng thư, kiểm tra trạng thái thu hồi. \\
+\midrule
 \textbf{Kho lưu trữ (Repo)} & Không giữ khóa ký & Trực tuyến (HTTP, LDAP) & Lưu trữ, xuất bản chứng thư CA, CRL và dịch vụ OCSP. \\
 \bottomrule
 \end{tabularx}
@@ -90,6 +96,7 @@ Vòng đời chứng thư X.509 gồm 10 giai đoạn có các nhánh rẽ và v
 \label{fig:certificate-lifecycle}
 \end{figure}
 
+\vspace{0.6cm}
 \subsubsection*{Pha 1: Khởi tạo và đăng ký (Bước 1--3)}
 \begin{enumerate}
     \item \textbf{Sinh cặp khóa (Key Generation):} Chủ thể (Subject) tự sinh cặp khóa mật mã bất đối xứng ($PK, SK$) trên thiết bị cục bộ bằng bộ sinh số ngẫu nhiên giả an toàn mật mã (CSPRNG). Khóa bí mật ($SK$) phải được bảo vệ nghiêm ngặt, tuyệt đối không gửi qua mạng cho CA hay bất kỳ bên thứ ba nào.
@@ -182,4 +189,91 @@ Vòng đời chứng thư X.509 gồm 10 giai đoạn có các nhánh rẽ và v
 
 \section{Chính sách vận hành}
 \label{sec:operating-policy}
-Cần nêu vai trò CP/CPS, bảo vệ khóa CA, phân quyền và kiểm toán theo khung RFC 3647~\cite{rfc3647}; chính sách thực tế của CA không được suy ra chỉ từ ví dụ lab.
+
+Một hạ tầng khóa công khai (PKI) không chỉ bao gồm các thuật toán mật mã và giao thức kỹ thuật, mà còn phụ thuộc cốt lõi vào hệ thống chính sách và quy trình vận hành bảo đảm mức độ tin cậy. Về mặt cấu trúc tài liệu, RFC~3647~\cite{rfc3647} cung cấp một khung dàn bài chuẩn hóa gồm 9 phần lớn, liệt kê danh mục các chủ đề kỹ thuật, an ninh và quản trị mà một CA cần đặc tả. Cần lưu ý rằng các ký hiệu số mục được dẫn chiếu trong Mục~\ref{sec:operating-policy} này (như mục 3, 5.2, 5.4, 6.2.2, 8, 9) là số mục trong dàn bài chuẩn của tài liệu CP/CPS theo RFC~3647, không phải số mục điều khoản của chính bản thân văn bản RFC~3647. Bản thân RFC~3647 chỉ đóng vai trò phân loại và định hướng cấu trúc nội dung; các tiêu chí kỹ thuật cụ thể hay mức độ ràng buộc thực tế sẽ do CA tự xác định hoặc phải tuân thủ theo tiêu chuẩn của các bên quản lý kho khóa gốc (Root Store Policies) và các tổ chức quản lý ngành như CA/Browser Forum~\cite{cabforum_br}.
+
+\subsection{Phân định vai trò giữa CP và CPS}
+\label{subsec:cp-vs-cps}
+
+Khung dàn bài RFC~3647 phân chia hai tầng tài liệu chính sách:
+\begin{itemize}
+    \item \textbf{Chính sách Chứng thư (Certificate Policy -- CP):} Xác định các quy tắc về khả năng áp dụng của một nhóm chứng thư cho một cộng đồng người dùng cụ thể hoặc lớp ứng dụng có chung yêu cầu an ninh. CP mang tính định hướng cấp cao, làm rõ mục đích sử dụng và mức độ bảo đảm mà CA cam kết hướng tới bên tin cậy (Relying Party). Bản thân CP không tự là hợp đồng pháp lý hoàn chỉnh; hiệu lực ràng buộc thực tế thường được thiết lập qua thỏa thuận thuê bao (Subscriber Agreement) hoặc thỏa thuận bên tin cậy (Relying Party Agreement) có dẫn chiếu đến CP đó.
+    
+    \item \textbf{Tuyên bố Thực hành Chứng thực (Certification Practice Statement -- CPS):} Đặc tả chi tiết các biện pháp kỹ thuật, quy trình thủ tục và cơ chế kiểm soát cụ thể mà một CA áp dụng để hiện thực hóa các yêu cầu được nêu trong một hoặc nhiều CP tương ứng.
+\end{itemize}
+
+\textbf{Mối liên kết kỹ thuật và thực tiễn triển khai:} Về mặt kỹ thuật theo chuẩn RFC~5280~\cite{rfc5280}, CP được định danh trên chứng thư số thông qua một mã định danh đối tượng (OID) đặt trong phần mở rộng \texttt{certificatePolicies}, có thể đi kèm một đường dẫn liên kết tĩnh (CPS URI) trỏ trực tiếp đến tài liệu thực hành của CA. Trên thực tế, theo quy định trong Baseline Requirements của CA/Browser Forum~\cite{cabforum_br} (Mục 2.2), nhiều CA công cộng hiện nay lựa chọn cấu trúc gộp chung cả hai vai trò này vào một tài liệu duy nhất mang tên Certificate Policy and Certification Practice Statement (CP/CPS), được xây dựng bám sát 9 mục của dàn bài RFC~3647.
+
+\textbf{Lưu ý tránh nhầm lẫn trong thực nghiệm:} Trong tệp cấu hình của công cụ OpenSSL (\texttt{openssl.cnf}), chỉ thị \texttt{policy = policy\_strict} (hoặc \texttt{policy\_loose}) chỉ đơn thuần là quy tắc kỹ thuật cấp thấp nhằm đối chiếu sự trùng khớp của các trường tên phân biệt (Distinguished Name -- DN) giữa yêu cầu cấp phát (CSR) và chứng thư CA. Chỉ thị này hoàn toàn không phải là một Certificate Policy (CP) theo định nghĩa của chuẩn RFC~3647.
+
+\subsection{Quản lý và bảo vệ khóa bí mật của CA (Mục 6 của dàn bài RFC 3647)}
+\label{subsec:ca-key-protection}
+
+Mục 6 (Technical Security Controls) trong dàn bài RFC~3647 liệt kê các chủ đề kỹ thuật mà CPS cần làm rõ, bao gồm việc tạo sinh cặp khóa, bảo vệ khóa bí mật của CA và quản lý vòng đời khóa:
+\begin{itemize}
+    \item \textbf{Bảo vệ khóa bằng phần cứng:} Trong thực hành của các CA công cộng theo chuẩn Baseline Requirements~\cite{cabforum_br} (Mục 6.2.7), khóa bí mật của Root CA và Intermediate CA ký phát thường được quy định phải tạo sinh và lưu trữ trong các thiết bị mật mã phần cứng chuyên dụng (Hardware Security Module -- HSM) đạt các chứng nhận an toàn như FIPS 140-2/140-3 (thông thường từ Level 2 hoặc Level 3) nhằm hạn chế nguy cơ trích xuất khóa bí mật dưới dạng bản rõ.
+    
+    \item \textbf{Kiểm soát nhiều người (Multiperson Control -- Mục con 6.2.2 của dàn bài RFC 3647):} Nhằm ngăn chặn hành vi lạm quyền của một cá nhân đơn lẻ, các CA thường áp dụng cơ chế phân mảnh bí mật với ngưỡng $m$-trên-$n$ (như thuật toán Shamir's Secret Sharing, ví dụ yêu cầu kích hoạt đồng thời của 3 trên 5 thẻ khóa vật lý) đối với các thao tác nhạy cảm như kích hoạt khóa CA, ký phát chứng thư trung gian hoặc khôi phục sao lưu.
+    
+    \item \textbf{Nghi thức tạo khóa (Key Generation Ceremony):} Khóa bí mật của CA cấp cao thường được khởi tạo theo một nghi thức chính thức diễn ra trong môi trường an toàn vật lý được cách ly mạng, có nhân sự giám sát độc lập và được lập biên bản ghi nhận đầy đủ nhằm phục vụ công tác kiểm toán.
+\end{itemize}
+
+\subsection{Phân quyền và các biện pháp kiểm soát thủ tục (Mục 5.2 của dàn bài RFC 3647)}
+\label{subsec:procedural-controls}
+
+Mục 5.2 trong dàn bài RFC~3647 có tiêu đề là Procedural Controls (các biện pháp kiểm soát thủ tục), liệt kê các yêu cầu mà CPS cần đặc tả về vai trò tin cậy (Trusted Roles), số lượng nhân sự cho mỗi tác vụ và nguyên tắc tách biệt nhiệm vụ:
+\begin{itemize}
+    \item \textbf{Các vai trò tin cậy phổ biến:} Khung RFC~3647 không ấn định sẵn tên gọi chức danh, nhưng thực tiễn công nghiệp thường phân tách thành các vai trò độc lập điển hình như:
+    \begin{itemize}
+        \item \textit{Quản trị viên (Administrator):} Cài đặt, bảo trì hạ tầng mạng, máy chủ và phần mềm nền tảng.
+        \item \textit{Nhân viên vận hành CA (CA Operator):} Tiếp nhận hồ sơ xác minh, thực hiện các thao tác cấp phát và thu hồi chứng thư số.
+        \item \textit{Cán bộ kiểm toán (Audit Officer):} Độc lập hoàn toàn với nhóm kỹ thuật/vận hành, chịu trách nhiệm lưu trữ và giám sát nhật ký an ninh.
+        \item \textit{Cán bộ an ninh (Security Officer):} Quản lý kiểm soát an ninh vật lý và cấp phát quyền truy cập thiết bị HSM.
+    \end{itemize}
+    
+    \item \textbf{Tách biệt nhiệm vụ và kiểm soát kép:} CPS cần làm rõ nguyên tắc một nhân sự không được phép kiêm nhiệm các vai trò mâu thuẫn lợi ích (đặc biệt là giữa người vận hành hệ thống và người giám sát nhật ký). Những thao tác trọng yếu thường yêu cầu cơ chế kiểm soát kép (Dual Control), đòi hỏi sự hiện diện và đồng thuận của tối thiểu hai cá nhân có thẩm quyền.
+\end{itemize}
+
+\subsection{Ghi nhận nhật ký và đánh giá tuân thủ (Mục 5.4 và Mục 8 của dàn bài RFC 3647)}
+\label{subsec:audit-log-compliance}
+
+\begin{itemize}
+    \item \textbf{Nhật ký kiểm toán (Mục 5.4 của dàn bài RFC 3647):} CPS cần xác định danh mục các sự kiện phải ghi log (khởi động/dừng dịch vụ, truy cập quản trị, tạo khóa, phát hành chứng thư, tạo CRL) kèm nhãn thời gian tin cậy. Dữ liệu nhật ký được khuyến nghị sao lưu định kỳ vào các phân vùng lưu trữ khó sửa đổi hoặc hệ thống thu thập log tập trung được phân quyền độc lập.
+    
+    \item \textbf{Đánh giá tuân thủ (Mục 8 của dàn bài RFC 3647):} RFC~3647 liệt kê các chủ đề về tần suất đánh giá, phạm vi kiểm toán và tư cách của tổ chức đánh giá. Theo chính sách quản lý Root Store và quy định của CA/Browser Forum~\cite{cabforum_br}, các CA công cộng thực tế phải trải qua các đợt kiểm toán định kỳ hằng năm bởi các tổ chức kiểm toán độc lập đủ điều kiện theo các chuẩn mực như WebTrust for CA hoặc ETSI EN 319 411.
+    
+    \item \textbf{Bài học từ sự cố DigiNotar (Fox-IT, 2011)~\cite{prins2011diginotar}:} Báo cáo điều tra pháp y của Fox-IT về vụ xâm nhập nhà cấp phát chứng thư số DigiNotar cho thấy đơn vị này đã vượt qua các kỳ kiểm toán định kỳ trước đó, nhưng trên thực tế hệ thống mạng vẫn tồn tại lỗ hổng nghiêm trọng: hạ tầng CA không được phân tách mạng đúng chuẩn, không áp dụng HSM chặt chẽ, mật khẩu quản trị yếu và kẻ tấn công có thể can thiệp xóa nhật ký kiểm toán mà không bị phát hiện. Sự cố này chứng minh rằng văn bản chính sách CP/CPS và chứng chỉ kiểm toán chỉ là điều kiện cần chứ không phải điều kiện đủ; an toàn của hệ thống PKI phụ thuộc trực tiếp vào việc thực thi giám sát kỹ thuật liên tục và phòng thủ theo chiều sâu.
+\end{itemize}
+
+\subsection{Đối chiếu chính sách CA thực tế và môi trường thực nghiệm của nhóm}
+\label{subsec:real-vs-lab-ca}
+
+Chính sách vận hành hoàn chỉnh của một CA trong môi trường sản xuất không thể được suy diễn hay đại diện chỉ thông qua các kịch bản thực nghiệm trong phòng lab. Bảng~\ref{tab:rfc3647-vs-lab} tổng hợp sự khác biệt cơ bản giữa yêu cầu của một CA thực tế theo khung RFC~3647 và môi trường thử nghiệm đã được triển khai:
+
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Chủ đề theo dàn bài RFC~3647} & \textbf{Yêu cầu đặc tả trong CPS của CA thực tế} & \textbf{Triển khai trong bài lab thực nghiệm của nhóm} \\
+\midrule
+\textbf{Xác minh danh tính (Mục~3)} & Quy trình thẩm định hồ sơ pháp lý chặt chẽ theo phân hạng chứng thư (DV, OV, EV), đối chiếu cơ sở dữ liệu doanh nghiệp và xác minh tên miền thực tế. & Bỏ qua hoàn toàn quy trình xác minh thực tế; thông tin chủ thể (Subject DN) được tự gán trực tiếp qua tệp cấu hình hoặc lệnh OpenSSL. \\
+\midrule
+\textbf{Kiểm soát thủ tục \& vai trò tin cậy (Mục~5.2)} & Phân tách chặt chẽ tối thiểu 4 vai trò độc lập; không cho phép kiêm nhiệm; áp dụng cơ chế kiểm soát kép (Dual Control) cho các tác vụ nhạy cảm. & Toàn bộ thao tác (sinh khóa, tạo CSR, ký chứng thư, thu hồi) do một cá nhân duy nhất thực hiện trên cùng một tài khoản hệ điều hành. \\
+\midrule
+\textbf{Nhật ký kiểm toán (Mục~5.4)} & Ghi vết tự động, toàn diện các sự kiện an ninh với nhãn thời gian tin cậy; chuyển log về máy chủ tập trung hoặc lưu trữ bất biến. & Chỉ dựa vào tệp văn bản thô \texttt{index.txt} và \texttt{serial} của OpenSSL; không có cơ chế lưu vết truy cập quản trị hay chống chỉnh sửa log. \\
+\midrule
+\textbf{Bảo vệ khóa bí mật của CA (Mục~6.2, 6.2.2)} & Lưu trữ trong thiết bị mật mã phần cứng chuyên dụng (HSM); kích hoạt bằng cơ chế chia sẻ bí mật ngưỡng nhiều người ($m$-trên-$n$). & Khóa bí mật của Root CA và Intermediate CA lưu trực tiếp dưới dạng tệp tin phần mềm (\texttt{.key}) trên ổ đĩa máy tính, chỉ bảo vệ bằng mật khẩu phần mềm. \\
+\midrule
+\textbf{Đánh giá tuân thủ (Mục~8)} & Định kỳ kiểm toán độc lập hằng năm theo các chuẩn mực quốc tế (WebTrust, ETSI) để duy trì chứng thư trên Root Store. & Không có quy trình đánh giá tuân thủ; là hệ thống tự tạo và tự tin cậy cục bộ phục vụ học thuật. \\
+\midrule
+\textbf{Pháp lý và trách nhiệm (Mục~9)} & Quy định rõ về quỹ bảo hiểm, trách nhiệm tài chính với bên tin cậy và cơ chế giải quyết tranh chấp. & Hoàn toàn không phát sinh cam kết pháp lý hay ràng buộc tài chính. \\
+\bottomrule
+\end{tabularx}
+\caption[So sánh đối chiếu giữa khung RFC 3647, CA thực tế và bài lab]{So sánh đối chiếu giữa khung dàn bài RFC~3647, triển khai CA thực tế và bài lab của nhóm.}
+\label{tab:rfc3647-vs-lab}
+\end{table}
+
+Sự đối chiếu trên làm rõ rằng các ca kiểm thử từ TC01 đến TC10 được thực hiện trong báo cáo chỉ nhằm mục đích chứng minh tính đúng đắn của logic kỹ thuật, định dạng X.509 và giải thuật xác thực chuỗi chứng thư (Path Validation) theo chuẩn RFC~5280~\cite{rfc5280}. Các kết quả này hoàn toàn không phản ánh mức độ an toàn vận hành, năng lực phòng vệ hay tính tuân thủ quy trình an ninh mạng mà một CA thực tế thường phải thiết lập.
+
