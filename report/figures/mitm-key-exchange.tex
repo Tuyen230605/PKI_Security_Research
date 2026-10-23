@@ -1,0 +1,111 @@
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[
+    scale=0.94,
+    sectiontitle/.style={anchor=west, font=\bfseries\normalsize, text=blue!85!black},
+    actor/.style={draw=blue!75!black, fill=blue!8, thick, rounded corners=5pt, minimum width=3.2cm, minimum height=1.1cm, align=center, font=\small},
+    eve/.style={draw=red!80!black, fill=red!10, thick, rounded corners=5pt, minimum width=4.0cm, minimum height=1.1cm, align=center, font=\small},
+    note/.style={draw=blue!50!black, fill=blue!4, font=\scriptsize, align=center, inner sep=5pt, rounded corners=3pt},
+    evenote/.style={draw=red!65!black, fill=red!6, font=\scriptsize, align=center, inner sep=5pt, rounded corners=3pt, text=red!85!black},
+    warnnote/.style={draw=red!75!black, fill=red!8, thick, font=\scriptsize, align=center, inner sep=5pt, rounded corners=4pt, text=red!90!black},
+    msg/.style={-{Stealth[scale=1.15]}, thick, blue!75!black},
+    evemsg/.style={-{Stealth[scale=1.15]}, thick, red!85!black},
+    lifeline/.style={thick, dashed, gray!50},
+    evelifeline/.style={thick, dashed, red!45}
+]
+
+    % ==============================================================
+    % (a) KỊCH BẢN BÌNH THƯỜNG (LÝ TƯỞNG)
+    % ==============================================================
+    \node[sectiontitle] at (0, 13.0) {(a) Trao đổi bình thường qua kênh truyền không bảo vệ (Kịch bản lý tưởng)};
+
+    % Diễn viên
+    \node[actor] (bobA) at (2.2, 11.6) {\textbf{Bob}\\[2pt]{\scriptsize Cặp khóa: $(PU_B, PR_B)$}};
+    \node[actor] (aliceA) at (12.3, 11.6) {\textbf{Alice}\\[2pt]{\scriptsize Nhận đúng khóa $PU_B$}};
+
+    % Đường thời gian (Lifelines)
+    \draw[lifeline] (2.2, 11.0) -- (2.2, 7.9);
+    \draw[lifeline] (12.3, 11.0) -- (12.3, 7.9);
+
+    % Bước 1: Bob gửi PU_B
+    \draw[msg] (2.2, 9.9) -- (12.3, 9.9)
+        node[midway, above=3pt, font=\footnotesize] {1. Bob gửi khóa công khai $PU_B$};
+
+    % Bước 2: Alice gửi bản mã C
+    \draw[msg] (12.3, 8.6) -- (2.2, 8.6)
+        node[midway, above=3pt, font=\footnotesize] {2. Alice gửi bản mã $C = E(PU_B, M)$};
+
+    % Ghi chú giải mã & xác thực
+    \node[note, text width=4.0cm] at (2.2, 7.3) {
+        \textbf{Bob giải mã bằng $PR_B$:}\\
+        $M = D(PR_B, C)$
+    };
+    \node[note, text width=4.0cm] at (12.3, 7.3) {
+        \textbf{Alice an tâm:}\\
+        Chỉ người có $PR_B$ mới giải mã được
+    };
+
+    % Đường phân cách hai kịch bản
+    \draw[dash pattern=on 5pt off 4pt, gray!45, thick] (0, 6.1) -- (14.5, 6.1);
+
+    % ==============================================================
+    % (b) KỊCH BẢN TẤN CÔNG MAN-IN-THE-MIDDLE (EVE TRÁO ĐỔI KHÓA)
+    % ==============================================================
+    \node[sectiontitle, text=red!85!black] at (0, 5.3) {(b) Kịch bản tấn công Man-In-The-Middle (Eve can thiệp và tráo đổi khóa)};
+
+    % Diễn viên
+    \node[actor] (bobB) at (1.8, 3.9) {\textbf{Bob}\\[2pt]{\scriptsize Cặp khóa: $(PU_B, PR_B)$}};
+    \node[eve]   (eveB) at (7.25, 3.9) {\textbf{Eve (Kẻ tấn công MITM)}\\[2pt]{\scriptsize Cặp khóa giả mạo: $(PU_E, PR_E)$}};
+    \node[actor] (aliceB) at (12.7, 3.9) {\textbf{Alice}\\[2pt]{\scriptsize Nhầm $PU_E$ là khóa của Bob}};
+
+    % Đường thời gian (Lifelines)
+    \draw[lifeline] (1.8, 3.3) -- (1.8, -4.5);
+    \draw[evelifeline] (7.25, 3.3) -- (7.25, 2.85);
+    \draw[evelifeline] (7.25, 2.15) -- (7.25, -0.95);
+    \draw[lifeline] (12.7, 3.3) -- (12.7, -4.5);
+
+    % Bước 1: Bob gửi PU_B -> Eve chặn
+    \node[evenote, text width=2.6cm] (chaneve) at (7.25, 2.5) {\textbf{Eve chặn bắt $PU_B$}};
+    \draw[msg] (1.8, 2.5) -- (chaneve.west)
+        node[midway, above=3pt, font=\footnotesize] {1. Bob gửi khóa $PU_B$};
+
+    % Bước 2: Eve thay bằng PU_E gửi Alice
+    \draw[evemsg] (7.25, 1.1) -- (12.7, 1.1)
+        node[midway, above=3pt, font=\footnotesize, text=red!85!black] {2. Gửi $PU_E$ (mạo danh Bob)};
+
+    % Bước 3: Alice gửi C1 về cho Eve (nhầm là Bob)
+    \draw[msg] (12.7, -0.3) -- (7.25, -0.3)
+        node[midway, above=3pt, font=\footnotesize] {3. Alice gửi bản mã $C_1 = E(PU_E, M)$};
+
+    % Hộp Eve giải mã, đọc trộm và mã hóa lại
+    \node[evenote, text width=6.6cm] (evedecrypt) at (7.25, -1.8) {
+        \textbf{Eve giải mã bằng $PR_E$ \& đọc trộm:}\\
+        $M = D(PR_E, C_1)$ \textit{(Thu được thông điệp gốc $M$)}\\[3pt]
+        \textbf{Eve mã hóa lại bằng $PU_B$ thật của Bob:}\\
+        $C_2 = E(PU_B, M)$
+    };
+
+    % Bước 4: Eve gửi C2 cho Bob
+    \draw[evemsg] (7.25, -3.5) -- (1.8, -3.5)
+        node[midway, above=3pt, font=\footnotesize, text=red!85!black] {4. Chuyển tiếp bản mã $C_2 = E(PU_B, M)$};
+
+    % Hàng kết quả cuối cùng: 3 khối cân xứng
+    \node[note, text width=3.2cm] at (1.8, -5.3) {
+        \textbf{Bob giải mã ($PR_B$):}\\
+        $M = D(PR_B, C_2)$\\
+        {\scriptsize (Nhận đúng $M$, không nghi ngờ)}
+    };
+
+    \node[warnnote, text width=6.2cm] at (7.25, -5.3) {
+        \textbf{Hậu quả an ninh nghiêm trọng:}\\
+        Eve đọc/sửa trộm $M$ mà hai bên hoàn toàn không biết\\
+        do thiếu cơ chế xác thực danh tính khóa công khai!
+    };
+
+    \node[note, text width=3.2cm] at (12.7, -5.3) {
+        \textbf{Alice tin tưởng:}\\
+        Tin Bob nhận được $C_1$\\
+        {\scriptsize (Không biết bị tráo khóa $PU_E$)}
+    };
+
+\end{tikzpicture}%
+}

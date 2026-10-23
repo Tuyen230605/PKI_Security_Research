@@ -1,0 +1,119 @@
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[
+    scale=0.92,
+    pbox/.style={draw=blue!80!black, fill=blue!6, thick, rounded corners=6pt, text width=9.6cm, align=left, inner sep=7pt, font=\small},
+    renewbox/.style={draw=teal!85!black, fill=teal!8, thick, rounded corners=6pt, text width=5.0cm, align=left, inner sep=7pt, font=\small},
+    normbox/.style={draw=gray!75!black, fill=gray!8, thick, rounded corners=6pt, text width=5.2cm, align=left, inner sep=7pt, font=\small},
+    revbox/.style={draw=red!80!black, fill=red!8, thick, rounded corners=6pt, text width=5.2cm, align=left, inner sep=7pt, font=\small},
+    destbox/.style={draw=purple!85!black, fill=purple!8, thick, rounded corners=6pt, text width=12.0cm, align=left, inner sep=7pt, font=\small},
+    arr/.style={-{Stealth[scale=1.15]}, very thick, blue!80!black},
+    looparr/.style={-{Stealth[scale=1.15]}, thick, teal!85!black, dashed},
+    revarr/.style={-{Stealth[scale=1.15]}, very thick, red!85!black},
+    normarr/.style={-{Stealth[scale=1.15]}, very thick, gray!80!black}
+]
+
+    % ==============================================================
+    % PHA 1: KHỞI TẠO & ĐĂNG KÝ
+    % ==============================================================
+    \node[pbox] (p1) at (5.2, 15.6) {
+        \centering\textbf{\color{blue!90!black}Pha 1: Khởi tạo \& Đăng ký (Bước 1--3)}\par\vspace{3pt}
+        {\footnotesize
+        $\bullet$ \textbf{1. Sinh cặp khóa:} Tạo $(PK, SK)$ cục bộ qua CSPRNG ($SK$ tuyệt đối bí mật).\par
+        $\bullet$ \textbf{2. Tạo CSR:} Đóng gói PKCS\#10, tự ký bởi $SK$ để chứng minh sở hữu (PoP).\par
+        $\bullet$ \textbf{3. Thẩm định danh tính:} RA thẩm tra hồ sơ theo CA/B Forum (DV / OV / EV).}
+    };
+
+    % ==============================================================
+    % PHA 2: CẤP PHÁT & TRIỂN KHAI
+    % ==============================================================
+    \node[pbox] (p2) at (5.2, 11.4) {
+        \centering\textbf{\color{blue!90!black}Pha 2: Cấp phát \& Triển khai (Bước 4--5)}\par\vspace{3pt}
+        {\footnotesize
+        $\bullet$ \textbf{4. Cấp phát chứng thư:} CA ký \texttt{TBSCertificate} ($SK_{\text{CA}}$); nộp nhật ký CT Log.\par
+        $\bullet$ \textbf{5. Triển khai cấu hình:} Cài đặt chứng thư kèm Intermediate CA Bundle lên Server.}
+    };
+
+    % ==============================================================
+    % PHA 3: VẬN HÀNH & SỬ DỤNG
+    % ==============================================================
+    \node[pbox] (p3) at (5.2, 7.2) {
+        \centering\textbf{\color{blue!90!black}Pha 3: Vận hành \& Sử dụng (Bước 6--7)}\par\vspace{3pt}
+        {\footnotesize
+        $\bullet$ \textbf{6. Xác minh đường dẫn:} Relying Party thẩm định chuỗi tin cậy, SAN, hạn dùng.\par
+        $\bullet$ \textbf{7. Giám sát trạng thái:} Định kỳ đối chiếu hiệu lực \& kiểm tra thu hồi (CRL/OCSP).}
+    };
+
+    % ==============================================================
+    % KHỐI GIA HẠN / RE-KEYING (Bên phải Pha 3)
+    % ==============================================================
+    \node[renewbox] (renew) at (15.0, 7.2) {
+        \centering\textbf{\color{teal!90!black}Gia hạn / Re-keying (7b)}\par
+        {\scriptsize\textit{\color{teal!80!black}(Thực hiện trước khi hết hạn)}}\par\vspace{3pt}
+        {\scriptsize
+        $\bullet$ \textbf{Renewal:} Giữ khóa cũ, gia hạn ngày.\par
+        $\bullet$ \textbf{Re-keying:} Sinh cặp khóa mới hoàn toàn.\par
+        $\bullet$ \textbf{Tự động hóa:} Triển khai RFC 8555 (ACME).}
+    };
+
+    % ==============================================================
+    % PHA 4: KẾT THÚC VÒNG ĐỜI (HẾT HẠN HOẶC THU HỒI)
+    % ==============================================================
+    \node[normbox] (expire) at (1.8, 1.8) {
+        \centering\textbf{\color{gray!90!black}8. Hết hạn (Expiration)}\par
+        {\scriptsize\textit{\color{gray!80!black}(Nhánh kết thúc bình thường)}}\par\vspace{3pt}
+        {\scriptsize
+        $\bullet$ Vượt khoảng \texttt{[notBefore, notAfter]}.\par
+        $\bullet$ Chữ ký số CA vẫn đúng toán học.\par
+        $\bullet$ Bị từ chối theo chính sách xác minh.\par
+        \textit{\color{blue!70!black}(Kiểm chứng thực nghiệm TC03)}}
+    };
+
+    \node[revbox] (revoke) at (8.6, 1.8) {
+        \centering\textbf{\color{red!90!black}9. Thu hồi (Revocation)}\par
+        {\scriptsize\textit{\color{red!75!black}(Nhánh kết thúc sự cố / khẩn cấp)}}\par\vspace{3pt}
+        {\scriptsize
+        $\bullet$ Khóa lộ (\texttt{keyCompromise}), đổi pháp nhân.\par
+        $\bullet$ Đưa vào danh sách thu hồi CRL / OCSP.\par
+        $\bullet$ Tồn tại độ trễ đồng bộ (Propagation Delay).\par
+        \textit{\color{blue!70!black}(Kiểm chứng thực nghiệm TC07)}}
+    };
+
+    % ==============================================================
+    % PHA 4B: TIÊU HỦY & LƯU TRỮ KHÓA
+    % ==============================================================
+    \node[destbox] (destruct) at (5.2, -2.0) {
+        \centering\textbf{\color{purple!90!black}10. Tiêu hủy \& Lưu trữ khóa (Destruction \& Key Archival)}\par\vspace{3pt}
+        {\scriptsize
+        $\bullet$ \textbf{Khóa ký số (Digital Signature):} Tiêu hủy an toàn vĩnh viễn (Crypto-erase trên SSD/HSM) để ngăn mạo danh hồi tố.\par
+        $\bullet$ \textbf{Khóa mã hóa bảo mật (Confidentiality):} Lưu trữ an toàn dài hạn (Key Archival) phục vụ giải mã tài liệu kiểm toán.}
+    };
+
+    % ==============================================================
+    % CÁC ĐƯỜNG LIÊN KẾT VÀ MŨI TÊN
+    % ==============================================================
+    % Pha 1 -> Pha 2 -> Pha 3
+    \draw[arr] (p1.south) -- (p2.north);
+    \draw[arr] (p2.south) -- (p3.north);
+
+    % Nhánh Gia hạn
+    \draw[arr, teal!85!black] (p3.east) -- (renew.west);
+    
+    % Vòng lặp từ Gia hạn về Pha 1 & Pha 2
+    \draw[looparr] (renew.east) -- ++(0.6, 0) |- (p1.east)
+        node[pos=0.75, above=2pt, font=\scriptsize\bfseries, text=teal!85!black] {Re-keying (về Pha 1)};
+    \draw[looparr] (renew.north) |- (p2.east)
+        node[pos=0.7, above=2pt, font=\scriptsize\bfseries, text=teal!85!black] {Renewal (về Pha 2)};
+
+    % Nhánh rẽ sang Pha 4 (Hết hạn vs Thu hồi)
+    \draw[normarr] ($(p3.south)+(-2.2, 0)$) -- (expire.north)
+        node[pos=0.45, left=4pt, font=\scriptsize\bfseries, text=gray!80!black] {Nhánh bình thường};
+    
+    \draw[revarr] ($(p3.south)+(2.2, 0)$) -- (revoke.north)
+        node[pos=0.45, right=4pt, font=\scriptsize\bfseries, text=red!85!black] {Nhánh sự cố bảo mật};
+
+    % Xuống Tiêu hủy
+    \draw[normarr] (expire.south) -- ($(destruct.north)+(-3.4, 0)$);
+    \draw[revarr] (revoke.south) -- ($(destruct.north)+(3.4, 0)$);
+
+\end{tikzpicture}%
+}

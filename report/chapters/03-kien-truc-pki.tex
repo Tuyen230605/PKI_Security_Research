@@ -1,9 +1,185 @@
 \chapter{Kiến trúc PKI và vòng đời chứng thư}
+\label{chap:kien-truc-pki}
 \section{Thành phần và mô hình tin cậy}
-Cần trình bày Root CA, Intermediate CA, RA, chủ thể, nơi công bố chứng thư, relying party và trust anchor. Thêm sơ đồ nhóm tự vẽ vào \texttt{report/figures/}.
+\label{sec:pki-components-trust-model}
+
+Hạ tầng khóa công khai (Public Key Infrastructure -- PKI) là một hệ thống tích hợp toàn diện bao gồm phần cứng, phần mềm, quy trình, nhân sự và các chính sách quản lý nhằm tạo lập, lưu trữ, phân phối và thu hồi chứng thư số theo chuẩn ITU-T X.509. Về bản chất, PKI giải quyết bài toán niềm tin phân tán trên môi trường mạng mở bằng cách chuyển dịch việc tin cậy lẫn nhau giữa các đối tượng ngang hàng (vốn đòi hỏi $O(n^2)$ mối quan hệ bảo mật trực tiếp) sang việc cùng đặt niềm tin vào một bên thứ ba có thẩm quyền và uy tín (Trusted Third Party).
+
+\subsection{Các thành phần cốt lõi trong PKI}
+\label{subsec:pki-core-components}
+
+Một hệ thống PKI hoàn chỉnh bao gồm các cấu phần chức năng phối hợp chặt chẽ với nhau trong việc quản lý và duy trì chuỗi tin cậy:
+
+\begin{itemize}
+    \item \textbf{Gốc tin cậy (Trust Anchor):} Là điểm khởi đầu tuyệt đối của niềm tin mà bên tin cậy (Relying Party) chấp nhận trước một cách vô điều kiện mà không cần bất kỳ chữ ký của bên thứ ba nào xác nhận thêm. Trong thực tế triển khai, Trust Anchor thường là khóa công khai của một Root CA được lưu trữ trực tiếp, an toàn trong kho chứng thư tin cậy (Trust Store) của hệ điều hành (như Windows, Linux, macOS) hoặc trình duyệt web độc lập (như Mozilla Firefox).
+    
+    \item \textbf{Tổ chức chứng thực gốc (Root CA -- Root Certificate Authority):} Là thực thể đứng ở đỉnh cao nhất của mô hình PKI phân cấp. Root CA sở hữu cặp khóa mã hóa tối cao và tự phát hành một chứng thư tự ký (Self-signed Certificate), trong đó trường định danh người phát hành (Issuer) trùng khớp hoàn toàn với trường định danh chủ thể (Subject). Khóa bí mật của Root CA ($SK_{\mathrm{Root}}$) là tài sản tối mật, luôn được lưu giữ ở trạng thái ngoại tuyến (offline) tuyệt đối trong các mô-đun phần cứng an toàn chuyên dụng (Hardware Security Module -- HSM) nhằm triệt tiêu nguy cơ bị xâm nhập qua mạng. Root CA chỉ được đưa vào vận hành theo quy trình kiểm toán nghiêm ngặt khi cần ký cấp phát hoặc thu hồi chứng thư cho các Intermediate CA.
+    
+    \item \textbf{Tổ chức chứng thực trung gian (Intermediate CA / Sub-CA):} Là các CA được Root CA (hoặc một Intermediate CA cấp cao hơn) ủy quyền và cấp chứng thư để thực hiện việc vận hành hàng ngày. Intermediate CA chịu trách nhiệm trực tiếp ký phát hành chứng thư cho các thực thể cuối (End-entity) và phát hành danh sách thu hồi (CRL). Việc thiết lập mô hình phân tầng qua Intermediate CA tạo ra một lớp bảo vệ và cô lập rủi ro (isolation layer): nếu một Intermediate CA bị thỏa hiệp hoặc lộ khóa, hệ thống chỉ cần thu hồi chứng thư của riêng Sub-CA đó mà không làm sụp đổ toàn bộ cây tin cậy của Root CA.
+    
+    \item \textbf{Cơ quan đăng ký (Registration Authority -- RA):} Đóng vai trò là giao diện trung gian kết nối giữa người dùng/chủ thể và CA. RA có nhiệm vụ tiếp nhận yêu cầu cấp chứng thư (CSR), thực hiện quy trình thẩm tra tính xác thực về mặt định danh, tư cách pháp nhân hoặc quyền sở hữu tên miền của đối tượng yêu cầu trước khi chuyển yêu cầu đã được phê duyệt sang cho CA ký phát hành. Bản thân RA không trực tiếp ký chứng thư và không được phép nắm giữ khóa bí mật của CA.
+    
+    \item \textbf{Chủ thể (Subject / End-entity):} Là các cá nhân, tổ chức, máy chủ dịch vụ (Web Server, Mail Server) hoặc thiết bị IoT sở hữu cặp khóa mật mã và được định danh trên chứng thư số. Chủ thể có trách nhiệm lưu trữ và bảo vệ khóa bí mật tương ứng với khóa công khai ghi trên chứng thư. Chủ thể ở tầng này không có quyền cấp phát chứng thư cho các thực thể khác (thuộc tính mở rộng \texttt{basicConstraints} bắt buộc phải thiết lập \texttt{cA:FALSE}).
+    
+    \item \textbf{Bên tin cậy (Relying Party):} Là bất kỳ thực thể hoặc ứng dụng nào (như trình duyệt web máy trạm, ứng dụng xác thực) nhận chứng thư số từ Subject và cần thẩm định xem chứng thư đó có đáng tin cậy hay không. Relying party đối chiếu với danh mục Trust Anchor cấu hình sẵn trong Trust Store nội bộ để tiến hành xây dựng và xác minh đường dẫn chứng thư (Certification Path Validation Algorithm).
+    
+    \item \textbf{Kho lưu trữ và công bố chứng thư (Repository / Directory Service):} Là hệ thống máy chủ dịch vụ công cộng (thường chạy qua giao thức HTTP hoặc LDAP) chịu trách nhiệm lưu trữ và xuất bản các chứng thư CA, danh sách thu hồi chứng thư (CRL) hoặc cung cấp dịch vụ phản hồi trạng thái thu hồi trực tuyến (OCSP Responder) để relying party có thể truy vấn và tải về kiểm tra bất kỳ lúc nào.
+\end{itemize}
+
+Bảng~\ref{tab:pki-components-summary} tổng hợp vai trò, loại khóa quản lý và trạng thái hoạt động của các thành phần trong hệ thống PKI.
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Thành phần} & \textbf{Khóa quản lý} & \textbf{Trạng thái vận hành} & \textbf{Chức năng chính} \\
+\midrule
+\textbf{Trust Anchor} & Khóa công khai Root CA & Tích hợp sẵn trong OS/Browser & Điểm mốc tin cậy tuyệt đối để neo chuỗi xác minh. \\
+\textbf{Root CA} & $SK_{\mathrm{Root}}$, $PK_{\mathrm{Root}}$ & Ngoại tuyến (Offline, HSM) & Ký phát hành chứng thư tự ký và ủy quyền cho Sub-CA. \\
+\textbf{Intermediate CA} & $SK_{\mathrm{Sub}}$, $PK_{\mathrm{Sub}}$ & Trực tuyến (Online) & Ký phát hành chứng thư cho End-entity, ký danh sách CRL. \\
+\textbf{RA} & Khóa xác thực danh tính & Trực tuyến & Thẩm tra định danh, duyệt yêu cầu trước khi gửi sang CA. \\
+\textbf{Chủ thể (Subject)} & $SK_{\mathrm{Entity}}$, $PK_{\mathrm{Entity}}$ & Trực tuyến (Web/Client) & Nắm giữ khóa bí mật, dùng chứng thư để chứng minh danh tính. \\
+\textbf{Bên tin cậy (RP)} & Sở hữu Trust Store & Trực tuyến (Client) & Thẩm định đường dẫn chứng thư, kiểm tra trạng thái thu hồi. \\
+\textbf{Kho lưu trữ (Repo)} & Không giữ khóa ký & Trực tuyến (HTTP, LDAP) & Lưu trữ, xuất bản chứng thư CA, CRL và dịch vụ OCSP. \\
+\bottomrule
+\end{tabularx}
+\caption{Tổng hợp vai trò và đặc điểm vận hành của các thành phần trong PKI.}
+\label{tab:pki-components-summary}
+\end{table}
+
+\subsection{Mô hình tin cậy phân cấp (Hierarchical Trust Model)}
+\label{subsec:hierarchical-trust-model}
+
+Trong hệ thống PKI chuẩn ITU-T X.509, mô hình tin cậy phổ biến và chuẩn mực nhất là \textbf{Mô hình cây phân cấp (Hierarchical Tree)}:
+
+\begin{itemize}
+    \item \textbf{Cơ chế ủy quyền niềm tin (Trust Delegation):} Niềm tin được kế thừa theo hướng một chiều từ gốc xuống ngọn ($\mathrm{Root} \rightarrow \mathrm{Intermediate} \rightarrow \mathrm{Leaf}$). Relying party chỉ cần đặt niềm tin tiên nghiệm vào Root CA nằm trong Trust Store của mình. Mọi chứng thư do Intermediate CA hợp lệ phát hành đều tự động được thừa hưởng độ tin cậy đó thông qua chuỗi chữ ký số liên tục và có thể kiểm chứng toán học.
+    
+    \item \textbf{Phân định phạm vi trách nhiệm (Segregation of Duties):} Mô hình cây cho phép phân nhánh quyền hạn linh hoạt theo mục đích sử dụng. Ví dụ: một Intermediate CA chuyên trách ký cấp chứng thư cho Server TLS, một nhánh khác chuyên ký cấp mã nguồn (Code Signing), và một nhánh độc lập phục vụ danh tính cá nhân hoặc xác thực người dùng (Client Authentication).
+    
+    \item \textbf{Cơ chế cô lập rủi ro (Risk Isolation):} Bảo vệ Root CA ở trạng thái ngoại tuyến dài hạn; các hoạt động cấp phát tần suất cao và dễ phát sinh rủi ro trên mạng đều do Intermediate CA đảm nhiệm. Khi có sự cố lộ khóa hoặc thỏa hiệp an ninh tại một nhánh, quản trị viên chỉ cần thu hồi chứng thư của Intermediate CA tương ứng mà không làm ảnh hưởng đến các nhánh dịch vụ khác và không buộc người dùng toàn cầu phải cập nhật lại Root Trust Store.
+\end{itemize}
+
+Hình~\ref{fig:pki-architecture-components} minh họa tổng thể mối quan hệ tương tác, luồng dữ liệu cấp phát và quy trình xác thực giữa các thành phần trong mô hình PKI phân cấp.
+
+\clearpage
+
+\begin{figure}[!htbp]
+\centering
+\input{report/figures/pki-architecture-components}
+\caption{Kiến trúc các thành phần và luồng dữ liệu cấp phát, xác thực trong mô hình PKI phân cấp.}
+\label{fig:pki-architecture-components}
+\end{figure}
 
 \section{Vòng đời chứng thư}
-Cần phân tích sinh khóa, xác minh danh tính, CSR, cấp phát, cài đặt, xác minh, gia hạn, thu hồi, hết hạn và tiêu hủy. Phân biệt CSR với chứng thư được phát hành.
+\label{sec:certificate-lifecycle}
+Trong khi Mục~\ref{subsec:key-lifecycle} đã trình bày về vòng đời của khóa mật mã (tập trung vào sự an toàn vật lý và toán học của khóa), Mục~\ref{sec:certificate-lifecycle} tập trung vào vòng đời của chứng thư số (quản lý trạng thái pháp lý, cấu trúc dữ liệu và chuỗi tin cậy). Hai khái niệm này có mối liên hệ mật thiết nhưng tách biệt nhau: một chứng thư có thể hết hạn hoặc bị thu hồi trước khi cặp khóa tương ứng bị tiêu hủy, và một cặp khóa có thể tiếp tục được sử dụng qua nhiều thế hệ chứng thư nếu áp dụng hình thức gia hạn giữ khóa (renewal). Đồng thời, các tổ chức CA cũng có vòng đời riêng với quy trình khởi tạo khóa gốc nghiêm ngặt (Key Generation Ceremony) và lộ trình luân chuyển khóa định kỳ (chi tiết xem tại Mục~\ref{sec:operating-policy}).
+
+\subsection{Các giai đoạn và nhánh rẽ trong vòng đời chứng thư}
+\label{subsec:lifecycle-stages}
+Vòng đời chứng thư X.509 gồm 10 giai đoạn có các nhánh rẽ và vòng lặp thay thế nhau, được quy hoạch thành 4 pha chính như minh họa trong Hình~\ref{fig:certificate-lifecycle}.
+
+\clearpage
+
+\begin{figure}[!htbp]
+\centering
+\input{report/figures/certificate-lifecycle}
+\caption[Các giai đoạn và nhánh rẽ trong vòng đời chứng thư X.509]{Mô hình các giai đoạn, nhánh rẽ và vòng lặp trong vòng đời chứng thư X.509.}
+\label{fig:certificate-lifecycle}
+\end{figure}
+
+\subsubsection*{Pha 1: Khởi tạo và đăng ký (Bước 1--3)}
+\begin{enumerate}
+    \item \textbf{Sinh cặp khóa (Key Generation):} Chủ thể (Subject) tự sinh cặp khóa mật mã bất đối xứng ($PK, SK$) trên thiết bị cục bộ bằng bộ sinh số ngẫu nhiên giả an toàn mật mã (CSPRNG). Khóa bí mật ($SK$) phải được bảo vệ nghiêm ngặt, tuyệt đối không gửi qua mạng cho CA hay bất kỳ bên thứ ba nào.
+    \item \textbf{Tạo yêu cầu ký chứng thư (CSR Generation):} Chủ thể đóng gói khóa công khai ($PK$) cùng thông tin định danh đề nghị (tên miền/FQDN, tổ chức) thành tệp CSR theo chuẩn RFC~2986 (PKCS\#10)~\cite{rfc2986}. Chủ thể dùng chính khóa bí mật của mình ký lên CSR để cung cấp bằng chứng sở hữu khóa (Proof of Possession -- PoP). Cần nhấn mạnh: chữ ký trên CSR chỉ chứng minh thực thể gửi yêu cầu có nắm giữ khóa bí mật tương ứng với khóa công khai, hoàn toàn không chứng minh được danh tính thực tế của người gửi.
+    \item \textbf{Xác minh danh tính (Identity Verification):} Cơ quan đăng ký (RA) tiếp nhận CSR và thẩm tra thông tin định danh theo các quy định trong Tiêu chuẩn Baseline Requirements của CA/Browser Forum~\cite{cabforum_br} và chính sách CP/CPS của CA. Tùy theo loại chứng thư, quy trình thẩm định có thể là:
+    \begin{itemize}
+        \item \textit{Domain Validation (DV):} Xác minh quyền kiểm soát đối với tên miền thông qua bản ghi DNS hoặc phản hồi HTTP.
+        \item \textit{Organization Validation (OV):} Thẩm tra sự tồn tại pháp lý của tổ chức đăng ký qua cổng thông tin đăng ký doanh nghiệp chính thức.
+        \item \textit{Extended Validation (EV):} Quy trình thẩm định nghiêm ngặt bổ sung nhiều thủ tục đối chiếu giấy phép kinh doanh, quyền hạn đại diện pháp luật và xác minh độc lập bằng điện thoại theo hướng dẫn của CA/Browser Forum.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection*{Pha 2: Cấp phát và triển khai (Bước 4--5)}
+\begin{enumerate}
+    \setcounter{enumi}{3}
+    \item \textbf{Cấp phát chứng thư (Issuance):} CA không ký lên toàn bộ tập tin chứng thư hoàn chỉnh mà chỉ ký lên cấu trúc dữ liệu tóm lược \texttt{TBSCertificate} (To-Be-Signed Certificate) theo RFC~5280~\cite{rfc5280}.
+    \begin{itemize}
+        \item CA trích xuất khóa công khai và thông tin danh tính đã duyệt, ấn định số sê-ri duy nhất và khoảng thời gian hiệu lực \texttt{[notBefore, notAfter]}.
+        \item \textit{Cơ chế sao chép Extension:} CA không bắt buộc phải sao chép toàn bộ các trường hoặc extensions có trong CSR. Các phần mở rộng thiết yếu như Subject Alternative Name (SAN), Basic Constraints, Key Usage đều do cấu hình và chính sách vận hành của CA áp đặt. Trong môi trường OpenSSL, hành vi này phụ thuộc trực tiếp vào tham số \texttt{copy\_extensions} trong tệp cấu hình CA (\texttt{openssl.cnf}) --- nếu không bật hoặc cấu hình thiếu cẩn trọng, chứng thư phát hành sẽ bị thiếu các extension bắt buộc (như SAN), dẫn đến lỗi xác minh ở môi trường thực nghiệm (liên hệ trực tiếp tới ca kiểm thử TC04 và TC08 tại Mục~6.3).
+        \item Sau khi ký bằng khóa bí mật của CA ($SK_{\text{CA}}$), chứng thư được công bố vào kho lưu trữ (Repository) và bắt buộc phải được gửi vào các máy chủ nhật ký Certificate Transparency (CT Log) công khai theo chính sách Web PKI (chi tiết xem tại Mục~7.1).
+    \end{itemize}
+    \item \textbf{Cài đặt và triển khai (Installation / Deployment):} Chủ thể cấu hình chứng thư số cùng với tệp chuỗi chứng thư trung gian (Intermediate CA certificates / Certificate Bundle) lên máy chủ dịch vụ. Nếu thiếu chứng thư trung gian trên máy chủ, client không thể hoàn thành việc xây dựng chuỗi tin cậy dẫn tới Trust Anchor (liên hệ tới ca kiểm thử TC06 tại Chương~6).
+\end{enumerate}
+
+\subsubsection*{Pha 3: Vận hành (Bước 6--7)}
+\begin{enumerate}
+    \setcounter{enumi}{5}
+    \item \textbf{Xác minh và sử dụng (Validation \& Usage):} Khi máy chủ gửi chứng thư cho Relying Party (ví dụ trong pha bắt tay TLS~1.3~\cite{rfc8446}), bên tin cậy sẽ kích hoạt thuật toán xác minh đường dẫn đầy đủ. Quy trình bao gồm: xây dựng chuỗi dẫn tới Trust Anchor đã cấu hình, kiểm tra chữ ký từng mắt xích, thẩm định tính hợp lệ của Basic Constraints và độ sâu chuỗi (\texttt{pathLenConstraint}), đối chiếu mục đích sử dụng khóa (Key Usage/Extended Key Usage), khớp tên máy chủ (SAN), và kiểm tra thời hạn cùng trạng thái thu hồi. Chi tiết toàn bộ thuật toán được phân tích chuyên sâu tại Mục~4.2.
+    \item \textbf{Gia hạn (Renewal / Re-keying):} Trước khi chứng thư mãn hạn, chủ thể thực hiện gia hạn để duy trì kết nối liên tục:
+    \begin{itemize}
+        \item Nếu thực hiện \textit{Renewal}, chủ thể tái sử dụng cặp khóa cũ và chỉ xin cấp chứng thư mới với thời hạn sử dụng mới.
+        \item Nếu thực hiện \textit{Re-keying}, chủ thể quay trở lại Bước~1 để tạo cặp khóa hoàn toàn mới.
+    \end{itemize}
+    Trong thực tế Web PKI, CA/Browser Forum liên tục thắt chặt và rút ngắn thời hạn hiệu lực tối đa của chứng thư TLS máy chủ công cộng (nhằm giảm thiểu thời gian tổn thương khi lộ khóa), kéo theo sự bắt buộc phải ứng dụng các giao thức tự động hóa như ACME (RFC~8555)~\cite{rfc8555} (phân tích chi tiết tại Mục~7.2).
+\end{enumerate}
+
+\subsubsection*{Pha 4: Kết thúc vòng đời (Bước 8--10: Nhánh rẽ thay thế và Tiêu hủy)}
+\begin{enumerate}
+    \setcounter{enumi}{7}
+    \item \textbf{Hết hạn (Expiration):} Chứng thư không còn vượt qua bước kiểm tra thời hạn hiệu lực nếu thời điểm xác minh nằm ngoài khoảng \texttt{[notBefore, notAfter]} quy định trong cấu trúc chứng thư.
+    Cần lưu ý rằng: chữ ký số của CA trên một chứng thư đã hết hạn vẫn hoàn toàn đúng về mặt toán học. Việc từ chối chứng thư phụ thuộc chặt chẽ vào chính sách xác minh và tính chính xác của đồng hồ hệ thống phía relying party; một client bị sai lệch đồng hồ hoặc cấu hình lỏng lẻo bỏ qua cờ kiểm tra thời gian vẫn có thể chấp nhận chứng thư này. Luận điểm này minh chứng thực nghiệm cho giả thuyết H1 và được kiểm chứng qua ca kiểm thử TC03 (Mục~6.3).
+    \item \textbf{Thu hồi chứng thư (Revocation):} Là nhánh rẽ kết thúc khẩn cấp thay thế cho việc hết hạn tự nhiên. Khi phát sinh sự cố, CA sẽ đưa số sê-ri của chứng thư vào danh sách thu hồi kèm theo mã lý do quy chuẩn theo RFC~5280~\cite{rfc5280}, tiêu biểu như:
+    \begin{itemize}
+        \item \texttt{keyCompromise} (khóa bí mật bị lộ/thỏa hiệp),
+        \item \texttt{cACompromise} (khóa của CA bị xâm nhập),
+        \item \texttt{affiliationChanged} (chủ thể thay đổi quan hệ công tác/pháp nhân),
+        \item \texttt{superseded} (chứng thư đã được thay thế bằng chứng thư mới),
+        \item \texttt{cessationOfOperation} (dịch vụ ngừng hoạt động hoàn toàn).
+    \end{itemize}
+    \textit{Độ trễ thu hồi (Propagation Delay):} Việc thu hồi không có hiệu lực tức thời đối với mọi client. Relying party chỉ biết chứng thư bị thu hồi khi danh sách CRL mới được định kỳ phát hành và tải về thành công (phụ thuộc vào các trường \texttt{thisUpdate} và \texttt{nextUpdate}), hoặc thông qua truy vấn OCSP trực tiếp (phân tích sâu tại Mục~4.3 và kiểm chứng qua ca kiểm thử TC07).
+    \item \textbf{Tiêu hủy và lưu trữ khóa (Destruction \& Key Archival):}
+    \begin{itemize}
+        \item \textit{Khóa ký số:} Khi chứng thư hết hạn hoặc bị thu hồi và không còn giá trị sử dụng, khóa bí mật dùng cho chữ ký số phải bị tiêu hủy vĩnh viễn. Trên các ổ cứng thể rắn (SSD) hay bộ nhớ flash hiện đại, các lệnh xóa file thông thường của hệ điều hành không đảm bảo dữ liệu vật lý bị triệt tiêu do cơ chế Wear Leveling; vì vậy cần áp dụng các cơ chế xóa an toàn bằng mật mã (Crypto-erase) hoặc phá hủy trên các phân vùng bảo mật của phần cứng chuyên dụng (HSM/TPM).
+        \item \textit{Khóa mã hóa dữ liệu:} Ngược lại với khóa ký số, nếu một cặp khóa từng được sử dụng để mã hóa lưu trữ tài liệu dữ liệu lâu dài (Confidentiality key), khóa bí mật giải mã có thể phải được đưa vào quy trình lưu trữ an toàn dài hạn (Key Archival) dưới sự bảo vệ của chính sách sao lưu nghiêm ngặt, nhằm phục vụ công tác giải mã kiểm toán trong tương lai ngay cả khi chứng thư liên kết đã hết hiệu lực.
+    \end{itemize}
+\end{enumerate}
+
+\clearpage
+
+\subsection{Phân biệt Yêu cầu ký chứng thư (CSR) và Chứng thư số đã phát hành}
+\label{subsec:csr-vs-cert}
+Để tránh nhầm lẫn giữa định dạng yêu cầu đăng ký và đối tượng chứng thực, Bảng~\ref{tab:csr-vs-x509} đối chiếu bản chất kỹ thuật giữa tệp CSR (RFC~2986~\cite{rfc2986}) và chứng thư số X.509 v3 (RFC~5280~\cite{rfc5280}):
+
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Tiêu chí phân định} & \textbf{Yêu cầu ký chứng thư (CSR -- PKCS\#10)} & \textbf{Chứng thư số X.509 v3} \\
+\midrule
+\textbf{Bản chất kỹ thuật} & Cấu trúc dữ liệu chứa thông tin đề nghị và khóa công khai do chủ thể tự tạo ra. & Cấu trúc dữ liệu có chữ ký số của CA, liên kết định danh với khóa công khai theo quy trình CP/CPS. \\
+\midrule
+\textbf{Thực thể thực hiện ký} & Ký bởi chính khóa bí mật của chủ thể ($SK_{\text{subject}}$). & Ký bởi khóa bí mật của tổ chức cấp phát ($SK_{\text{CA}}$). \\
+\midrule
+\textbf{Dữ liệu được ký} & Thông tin danh tính yêu cầu và trường khóa công khai (\texttt{SubjectPublicKeyInfo}). & Cấu trúc dữ liệu chuẩn hóa \texttt{TBSCertificate} (To-Be-Signed Certificate) của CA. \\
+\midrule
+\textbf{Ý nghĩa của chữ ký} & Chỉ chứng minh thực thể gửi yêu cầu có nắm giữ khóa bí mật tương ứng (Proof of Possession -- PoP); không chứng minh danh tính. & Xác nhận CA đã thẩm định thông tin theo chính sách vận hành và liên kết danh tính với khóa công khai. \\
+\midrule
+\textbf{Quyết định về Extensions} & Chỉ mang tính chất đề xuất từ phía client. & Do CA toàn quyền ấn định hoặc chọn lọc (qua cờ cấu hình như \texttt{copy\_extensions} trong OpenSSL). \\
+\midrule
+\textbf{Phạm vi sử dụng} & Chỉ dùng để nộp cho CA/RA trong pha đăng ký cấp phát. & Dùng trong giao thức truyền thông (TLS) để relying party xác thực chuỗi tin cậy. \\
+\bottomrule
+\end{tabularx}
+\caption[Phân biệt bản chất kỹ thuật giữa CSR và chứng thư số X.509]{Phân biệt bản chất kỹ thuật giữa Yêu cầu ký chứng thư (CSR -- RFC~2986) và Chứng thư số X.509 v3 (RFC~5280).}
+\label{tab:csr-vs-x509}
+\end{table}
+
+\clearpage
 
 \section{Chính sách vận hành}
+\label{sec:operating-policy}
 Cần nêu vai trò CP/CPS, bảo vệ khóa CA, phân quyền và kiểm toán theo khung RFC 3647~\cite{rfc3647}; chính sách thực tế của CA không được suy ra chỉ từ ví dụ lab.

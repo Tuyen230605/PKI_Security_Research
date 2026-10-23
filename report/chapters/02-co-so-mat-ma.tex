@@ -1,4 +1,5 @@
 \chapter{Cơ sở mật mã khóa công khai và PKI}
+\label{chap:co-so-mat-ma}
 \section{Yêu cầu bảo mật và quản lý khóa}
 \label{sec:security-reqs-key-mgmt}
 
@@ -43,11 +44,12 @@ Bảng~\ref{tab:pki-security-goals} tóm tắt phạm vi hỗ trợ của PKI đ
 \textbf{Sẵn sàng (Availability)} & Kết hợp bên ngoài & Hạ tầng mạng phân tán, bộ đệm chứng thực, OCSP Stapling, CDN. \\
 \bottomrule
 \end{tabular}
-\caption{Phân định phạm vi hỗ trợ của PKI đối với các mục tiêu an ninh thông tin.}
+\caption[Phân định phạm vi hỗ trợ của PKI đối với mục tiêu an ninh thông tin]{Phân định phạm vi hỗ trợ của PKI đối với các mục tiêu an ninh thông tin.}
 \label{tab:pki-security-goals}
 \end{table}
 
 \subsection{Nguyên lý quản lý khóa và vòng đời khóa mật mã}
+\label{subsec:key-lifecycle}
 Theo \textit{Nguyên lý Kerckhoffs}, độ an toàn của một hệ thống mật mã không phụ thuộc vào việc giữ bí mật thuật toán mà nằm hoàn toàn ở sự an toàn của khóa mật mã. Trong hệ thống khóa bất đối xứng, hai thành phần của cặp khóa có yêu cầu bảo vệ trái ngược nhau:
 \begin{itemize}
     \item \textbf{Khóa công khai (Public Key):} Đòi hỏi tính \textit{toàn vẹn} và tính \textit{xác thực} nguồn gốc tuyệt đối (đây chính là nhiệm vụ của chứng thư số PKI), nhưng không cần giữ bí mật.
@@ -58,7 +60,7 @@ Quản lý khóa (Key Management) là tập hợp toàn bộ các chính sách v
 \begin{enumerate}
     \item \textbf{Khởi tạo khóa (Generation):} Phải sử dụng bộ sinh số ngẫu nhiên giả an toàn mật mã (CSPRNG) và tuân thủ độ dài khóa khuyến nghị (ví dụ RSA $\ge$ 2048-bit, ECC $\ge$ 256-bit) để chống thám mã vét cạn.
     \item \textbf{Lưu trữ và bảo vệ khóa bí mật (Storage):} Khóa bí mật của các CA gốc và máy chủ quan trọng phải được lưu trữ trong các mô-đun phần cứng chuyên dụng (Hardware Security Module - HSM hoặc TPM) với chính sách kiểm soát truy cập nghiêm ngặt (quản trị phân quyền $k$-out-of-$n$). Khóa tuyệt đối không được xuất ra ngoài bộ nhớ dưới dạng bản rõ.
-    \item \textbf{Phân phối và chứng thực (Distribution):} Khóa công khai được đóng gói thành yêu cầu cấp chứng thư (CSR) và gửi tới CA để thẩm định, cấp phát chứng chỉ X.509.
+    \item \textbf{Phân phối và chứng thực (Distribution):} Khóa công khai được đóng gói thành yêu cầu cấp chứng thư (CSR) và gửi tới CA để thẩm định, cấp phát chứng thư X.509.
     \item \textbf{Thời hạn sử dụng (Cryptoperiod):} Mọi khóa mật mã đều phải có thời hạn hiệu lực hữu hạn (\texttt{notBefore} và \texttt{notAfter}) để hạn chế lượng bản mã tích lũy cho đối thủ phân tích, đồng thời bắt buộc chu kỳ thay thế khóa định kỳ.
     \item \textbf{Thu hồi và tiêu hủy (Revocation \& Destruction):} Khi khóa bí mật nghi ngờ bị lộ, chủ sở hữu phải lập tức yêu cầu CA đưa chứng thư vào danh sách thu hồi (CRL/OCSP). Khi hết vòng đời, khóa bí mật phải bị xóa hủy an toàn (zeroize) để ngăn ngừa phục hồi dữ liệu từ phần cứng.
 \end{enumerate}

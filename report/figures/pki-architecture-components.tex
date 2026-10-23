@@ -1,0 +1,91 @@
+\resizebox{0.86\textwidth}{!}{%
+\begin{tikzpicture}[
+    % Định dạng hộp với text width cố định
+    rootbox/.style={draw=red!80!black, fill=red!8, thick, rounded corners=6pt, text width=6.6cm, align=center, inner sep=6pt, font=\small},
+    cabox/.style={draw=orange!85!black, fill=orange!10, thick, rounded corners=6pt, text width=5.8cm, align=center, inner sep=6pt, font=\small},
+    rabox/.style={draw=purple!80!black, fill=purple!8, thick, rounded corners=6pt, text width=3.4cm, align=center, inner sep=6pt, font=\small},
+    repobox/.style={draw=teal!80!black, fill=teal!8, thick, rounded corners=6pt, text width=3.6cm, align=center, inner sep=6pt, font=\small},
+    leafbox/.style={draw=blue!80!black, fill=blue!8, thick, rounded corners=6pt, text width=6.0cm, align=center, inner sep=6pt, font=\small},
+    rpbox/.style={draw=green!60!black, fill=green!8, thick, rounded corners=6pt, text width=6.8cm, align=center, inner sep=6pt, font=\small},
+    % Kiểu mũi tên
+    arrow/.style={-{Stealth[scale=1.1]}, thick},
+    dashedarrow/.style={-{Stealth[scale=1.05]}, thick, dashed},
+    trustarrow/.style={-{Stealth[scale=1.1]}, very thick, blue!85!black, dashed}
+]
+    % --- TẦNG 1: Root CA (Đỉnh trên cùng) ---
+    \node[rootbox] (root) at (9.0, 15.0) {
+        \textbf{Tổ chức chứng thực gốc (Root CA)}\\[2pt]
+        {\scriptsize Khóa $SK_{\mathrm{Root}}$ giữ Ngoại tuyến\\(Offline tuyệt đối trong thiết bị HSM)}
+    };
+
+    % --- TẦNG 2: Intermediate CA (Sub-CA) ---
+    \node[cabox] (subca) at (9.0, 11.2) {
+        \textbf{Intermediate CA (Sub-CA)}\\[2pt]
+        {\scriptsize Khóa $(SK_{\mathrm{Sub}}, PK_{\mathrm{Sub}})$ Trực tuyến (Online),\\ký phát hành chứng thư máy chủ TLS}
+    };
+
+    % --- TẦNG 3: RA (Trái) và Kho lưu trữ / OCSP (Phải) ---
+    \node[rabox] (ra) at (1.8, 7.0) {
+        \textbf{Cơ quan đăng ký (RA)}\\[2pt]
+        {\scriptsize Thẩm tra định danh,\\tiếp nhận \& duyệt CSR}
+    };
+    
+    \node[repobox] (repo) at (16.2, 7.0) {
+        \textbf{Kho lưu trữ \& OCSP}\\[2pt]
+        {\scriptsize Phân phối danh sách CRL,\\phản hồi OCSP trực tuyến}
+    };
+
+    % --- TẦNG 4: Chủ thể - Web Server ---
+    \node[leafbox] (leaf) at (9.0, 3.2) {
+        \textbf{Chủ thể -- Web Server (Subject)}\\[2pt]
+        {\scriptsize Sở hữu cặp khóa $(SK_{\mathrm{Server}}, PK_{\mathrm{Server}})$\\Thực thể cuối: End-Entity ($cA = \text{FALSE}$)}
+    };
+
+    % --- TẦNG 5: Bên tin cậy - Trình duyệt / Client ---
+    \node[rpbox] (rp) at (9.0, -0.6) {
+        \textbf{Bên tin cậy -- Client / Trình duyệt (Relying Party)}\\[2pt]
+        {\scriptsize Sở hữu kho Root Trust Store nội bộ,\\thẩm định chuỗi chứng thư và kiểm tra trạng thái thu hồi}
+    };
+
+    % ==============================================================
+    % CÁC LUỒNG TƯƠNG TÁC (Tọa độ tuyệt đối độc lập, triệt tiêu đè chữ)
+    % ==============================================================
+
+    % 1. Root CA ký cấp ủy quyền cho Sub-CA
+    \draw[arrow, red!80!black] (root.south) -- (subca.north)
+        node[midway, right=8pt, font=\small\bfseries] {1. Ký ủy quyền Sub-CA};
+
+    % 2. Chủ thể nộp CSR cho RA (Tâm X=3.9 cân bằng chính xác giữa trục đứng X=1.8 và hộp Chủ thể X=6.0)
+    \draw[dashedarrow, purple!80!black] (leaf.west) -| (ra.south);
+    \node[purple!80!black, font=\small\bfseries, above=4pt] at (3.9, 3.2) {2. Gửi yêu cầu CSR};
+
+    % 3. RA duyệt CSR chuyển sang Sub-CA (Tâm X=3.95 cân bằng chính xác giữa trục đứng X=1.8 và Sub-CA X=6.1)
+    \draw[dashedarrow, purple!80!black] (ra.north) |- (subca.west);
+    \node[purple!80!black, font=\small\bfseries, above=4pt] at (3.95, 11.2) {3. Phê duyệt CSR};
+
+    % 4. Sub-CA ký phát hành chứng thư cho Chủ thể (Hành lang trung tâm rộng rãi)
+    \draw[arrow, orange!85!black] (subca.south) -- (leaf.north)
+        node[midway, right=8pt, font=\small\bfseries, align=left] {4. Ký cấp chứng thư\\TLS cho Chủ thể};
+
+    % Xuất bản CRL: Từ Sub-CA sang đỉnh Kho lưu trữ (Căn giữa khoảng thoáng X=12.0 đến X=16.2)
+    \draw[arrow, teal!80!black] (subca.east) -| (repo.north);
+    \node[teal!80!black, font=\small\bfseries, above=4pt] at (14.0, 11.2) {Xuất bản CRL};
+
+    % 5. Chủ thể trình chứng thư số trong bắt tay TLS cho Client
+    \draw[arrow, blue!80!black] (leaf.south) -- (rp.north)
+        node[midway, right=8pt, font=\small\bfseries] {5. Trình chứng thư (TLS Handshake)};
+
+    % 6. Client truy vấn kiểm tra thu hồi (Cách đường đứng 10pt, hoàn toàn không chạm đường)
+    \draw[dashedarrow, teal!80!black] (rp.east) -| (repo.south);
+    \node[teal!80!black, font=\small\bfseries, align=right, left=10pt] at (16.2, 2.5) {6. Truy vấn\\OCSP / CRL};
+
+    % 7. Chuỗi tin cậy: Relying Party neo niềm tin vào Root CA qua Trust Store (bọc ngoài lề trái x=-1.2)
+    \draw[trustarrow, rounded corners=12pt] (rp.west) -- (-1.2, -0.6) -- (-1.2, 15.0) -- (root.west);
+    \node[blue!85!black, font=\scriptsize, align=left, right=8pt] at (-1.2, 12.8) {
+        \textbf{Gốc tin cậy (Trust Anchor):}\\
+        Client lưu sẵn khóa Root CA\\
+        trong Root Trust Store nội bộ
+    };
+
+\end{tikzpicture}%
+}

@@ -6,7 +6,15 @@
 \usepackage{booktabs,longtable,array,tabularx}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{etoolbox}
+\makeatletter
+% Loại bỏ khoảng cách 10pt tự động giữa các chương trong Danh sách bảng và Danh sách hình vẽ
+\patchcmd{\@chapter}{\addtocontents{lot}{\protect\addvspace{10\p@}}}{}{}{}
+\patchcmd{\@chapter}{\addtocontents{lof}{\protect\addvspace{10\p@}}}{}{}{}
+\makeatother
+
 \usepackage{hyperref}
 \hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
 \setlength{\parindent}{1.2em}
 \setlength{\parskip}{0.3em}
+
