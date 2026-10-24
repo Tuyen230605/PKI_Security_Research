@@ -1,18 +1,18 @@
 \resizebox{0.86\textwidth}{!}{%
 \begin{tikzpicture}[
-    % Định dạng hộp với text width cố định
-    rootbox/.style={draw=red!80!black, fill=red!8, thick, rounded corners=6pt, text width=6.6cm, align=center, inner sep=6pt, font=\small},
-    cabox/.style={draw=orange!85!black, fill=orange!10, thick, rounded corners=6pt, text width=5.8cm, align=center, inner sep=6pt, font=\small},
-    rabox/.style={draw=purple!80!black, fill=purple!8, thick, rounded corners=6pt, text width=3.4cm, align=center, inner sep=6pt, font=\small},
-    repobox/.style={draw=teal!80!black, fill=teal!8, thick, rounded corners=6pt, text width=3.6cm, align=center, inner sep=6pt, font=\small},
-    leafbox/.style={draw=blue!80!black, fill=blue!8, thick, rounded corners=6pt, text width=6.0cm, align=center, inner sep=6pt, font=\small},
-    rpbox/.style={draw=green!60!black, fill=green!8, thick, rounded corners=6pt, text width=6.8cm, align=center, inner sep=6pt, font=\small},
-    % Kiểu mũi tên
-    arrow/.style={-{Stealth[scale=1.1]}, thick},
-    dashedarrow/.style={-{Stealth[scale=1.05]}, thick, dashed},
-    trustarrow/.style={-{Stealth[scale=1.1]}, very thick, blue!85!black, dashed}
+    % Định dạng hộp đen trắng với các cấp độ sắc xám học thuật
+    rootbox/.style={draw=black, very thick, double, fill=gray!18, rounded corners=6pt, text width=6.6cm, align=center, inner sep=6pt, font=\small, text=black},
+    cabox/.style={draw=black, thick, fill=gray!10, rounded corners=6pt, text width=5.8cm, align=center, inner sep=6pt, font=\small, text=black},
+    rabox/.style={draw=black, thick, fill=gray!5, rounded corners=6pt, text width=3.4cm, align=center, inner sep=6pt, font=\small, text=black},
+    repobox/.style={draw=black, thick, fill=gray!5, rounded corners=6pt, text width=3.6cm, align=center, inner sep=6pt, font=\small, text=black},
+    leafbox/.style={draw=black, thick, fill=white, rounded corners=6pt, text width=6.0cm, align=center, inner sep=6pt, font=\small, text=black},
+    rpbox/.style={draw=black, thick, fill=gray!12, rounded corners=6pt, text width=6.8cm, align=center, inner sep=6pt, font=\small, text=black},
+    % Kiểu mũi tên phân biệt bằng nét liền, nét đứt và nét kép
+    arrow/.style={-{Stealth[scale=1.1]}, thick, black},
+    dashedarrow/.style={-{Stealth[scale=1.05]}, thick, dashed, black},
+    trustarrow/.style={-{Stealth[scale=1.15]}, very thick, dash pattern=on 6pt off 3pt, black}
 ]
-    % --- TẦNG 1: Root CA (Đỉnh trên cùng) ---
+    % --- TẦNG 1: Root CA (Đỉnh trên cùng - Viền kép Gốc tin cậy) ---
     \node[rootbox] (root) at (9.0, 15.0) {
         \textbf{Tổ chức chứng thực gốc (Root CA)}\\[2pt]
         {\scriptsize Khóa $SK_{\mathrm{Root}}$ giữ Ngoại tuyến\\(Offline tuyệt đối trong thiết bị HSM)}
@@ -48,40 +48,40 @@
     };
 
     % ==============================================================
-    % CÁC LUỒNG TƯƠNG TÁC (Tọa độ tuyệt đối độc lập, triệt tiêu đè chữ)
+    % CÁC LUỒNG TƯƠNG TÁC (Đen trắng phân định bằng kiểu nét vẽ)
     % ==============================================================
 
     % 1. Root CA ký cấp ủy quyền cho Sub-CA
-    \draw[arrow, red!80!black] (root.south) -- (subca.north)
-        node[midway, right=8pt, font=\small\bfseries] {1. Ký ủy quyền Sub-CA};
+    \draw[arrow] (root.south) -- (subca.north)
+        node[midway, right=8pt, font=\small\bfseries, text=black] {1. Ký ủy quyền Sub-CA};
 
-    % 2. Chủ thể nộp CSR cho RA (Tâm X=3.9 cân bằng chính xác giữa trục đứng X=1.8 và hộp Chủ thể X=6.0)
-    \draw[dashedarrow, purple!80!black] (leaf.west) -| (ra.south);
-    \node[purple!80!black, font=\small\bfseries, above=4pt] at (3.9, 3.2) {2. Gửi yêu cầu CSR};
+    % 2. Chủ thể nộp CSR cho RA
+    \draw[dashedarrow] (leaf.west) -| (ra.south);
+    \node[text=black, font=\small\bfseries, above=4pt] at (3.9, 3.2) {2. Gửi yêu cầu CSR};
 
-    % 3. RA duyệt CSR chuyển sang Sub-CA (Tâm X=3.95 cân bằng chính xác giữa trục đứng X=1.8 và Sub-CA X=6.1)
-    \draw[dashedarrow, purple!80!black] (ra.north) |- (subca.west);
-    \node[purple!80!black, font=\small\bfseries, above=4pt] at (3.95, 11.2) {3. Phê duyệt CSR};
+    % 3. RA duyệt CSR chuyển sang Sub-CA
+    \draw[dashedarrow] (ra.north) |- (subca.west);
+    \node[text=black, font=\small\bfseries, above=4pt] at (3.95, 11.2) {3. Phê duyệt CSR};
 
-    % 4. Sub-CA ký phát hành chứng thư cho Chủ thể (Hành lang trung tâm rộng rãi)
-    \draw[arrow, orange!85!black] (subca.south) -- (leaf.north)
-        node[midway, right=8pt, font=\small\bfseries, align=left] {4. Ký cấp chứng thư\\TLS cho Chủ thể};
+    % 4. Sub-CA ký phát hành chứng thư cho Chủ thể
+    \draw[arrow] (subca.south) -- (leaf.north)
+        node[midway, right=8pt, font=\small\bfseries, align=left, text=black] {4. Ký cấp chứng thư\\TLS cho Chủ thể};
 
-    % Xuất bản CRL: Từ Sub-CA sang đỉnh Kho lưu trữ (Căn giữa khoảng thoáng X=12.0 đến X=16.2)
-    \draw[arrow, teal!80!black] (subca.east) -| (repo.north);
-    \node[teal!80!black, font=\small\bfseries, above=4pt] at (14.0, 11.2) {Xuất bản CRL};
+    % Xuất bản CRL: Từ Sub-CA sang đỉnh Kho lưu trữ
+    \draw[arrow, dash pattern=on 4pt off 2pt] (subca.east) -| (repo.north);
+    \node[text=black, font=\small\bfseries, above=4pt] at (14.0, 11.2) {Xuất bản CRL};
 
     % 5. Chủ thể trình chứng thư số trong bắt tay TLS cho Client
-    \draw[arrow, blue!80!black] (leaf.south) -- (rp.north)
-        node[midway, right=8pt, font=\small\bfseries] {5. Trình chứng thư (TLS Handshake)};
+    \draw[arrow] (leaf.south) -- (rp.north)
+        node[midway, right=8pt, font=\small\bfseries, text=black] {5. Trình chứng thư (TLS Handshake)};
 
-    % 6. Client truy vấn kiểm tra thu hồi (Cách đường đứng 10pt, hoàn toàn không chạm đường)
-    \draw[dashedarrow, teal!80!black] (rp.east) -| (repo.south);
-    \node[teal!80!black, font=\small\bfseries, align=right, left=10pt] at (16.2, 2.5) {6. Truy vấn\\OCSP / CRL};
+    % 6. Client truy vấn kiểm tra thu hồi
+    \draw[dashedarrow] (rp.east) -| (repo.south);
+    \node[text=black, font=\small\bfseries, align=right, left=10pt] at (16.2, 2.5) {6. Truy vấn\\OCSP / CRL};
 
-    % 7. Chuỗi tin cậy: Relying Party neo niềm tin vào Root CA qua Trust Store (bọc ngoài lề trái x=-1.2)
+    % 7. Chuỗi tin cậy: Relying Party neo niềm tin vào Root CA qua Trust Store (nét đứt đậm)
     \draw[trustarrow, rounded corners=12pt] (rp.west) -- (-1.2, -0.6) -- (-1.2, 15.0) -- (root.west);
-    \node[blue!85!black, font=\scriptsize, align=left, right=8pt] at (-1.2, 12.8) {
+    \node[text=black, font=\scriptsize, align=left, right=8pt] at (-1.2, 12.8) {
         \textbf{Gốc tin cậy (Trust Anchor):}\\
         Client lưu sẵn khóa Root CA\\
         trong Root Trust Store nội bộ

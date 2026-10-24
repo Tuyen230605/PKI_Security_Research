@@ -1,16 +1,16 @@
 \resizebox{0.96\textwidth}{!}{%
 \begin{tikzpicture}[
     scale=0.94,
-    sectiontitle/.style={anchor=west, font=\bfseries\normalsize, text=blue!85!black},
-    actor/.style={draw=blue!75!black, fill=blue!8, thick, rounded corners=5pt, minimum width=3.2cm, minimum height=1.1cm, align=center, font=\small},
-    eve/.style={draw=red!80!black, fill=red!10, thick, rounded corners=5pt, minimum width=4.0cm, minimum height=1.1cm, align=center, font=\small},
-    note/.style={draw=blue!50!black, fill=blue!4, font=\scriptsize, align=center, inner sep=5pt, rounded corners=3pt},
-    evenote/.style={draw=red!65!black, fill=red!6, font=\scriptsize, align=center, inner sep=5pt, rounded corners=3pt, text=red!85!black},
-    warnnote/.style={draw=red!75!black, fill=red!8, thick, font=\scriptsize, align=center, inner sep=5pt, rounded corners=4pt, text=red!90!black},
-    msg/.style={-{Stealth[scale=1.15]}, thick, blue!75!black},
-    evemsg/.style={-{Stealth[scale=1.15]}, thick, red!85!black},
-    lifeline/.style={thick, dashed, gray!50},
-    evelifeline/.style={thick, dashed, red!45}
+    sectiontitle/.style={anchor=west, font=\bfseries\normalsize, text=black},
+    actor/.style={draw=black, fill=gray!8, thick, rounded corners=5pt, minimum width=3.2cm, minimum height=1.1cm, align=center, font=\small, text=black},
+    eve/.style={draw=black, fill=gray!22, very thick, double, rounded corners=5pt, minimum width=4.0cm, minimum height=1.1cm, align=center, font=\small, text=black},
+    note/.style={draw=black!75, fill=white, font=\scriptsize, align=center, inner sep=5pt, rounded corners=3pt, text=black},
+    evenote/.style={draw=black, fill=gray!12, dashed, font=\scriptsize, align=center, inner sep=5pt, rounded corners=3pt, text=black},
+    warnnote/.style={draw=black, fill=gray!18, thick, font=\scriptsize, align=center, inner sep=5pt, rounded corners=4pt, text=black},
+    msg/.style={-{Stealth[scale=1.15]}, thick, black},
+    evemsg/.style={-{Stealth[scale=1.15]}, very thick, dashed, black},
+    lifeline/.style={thick, dotted, black!50},
+    evelifeline/.style={thick, dashed, black!65}
 ]
 
     % ==============================================================
@@ -45,12 +45,12 @@
     };
 
     % Đường phân cách hai kịch bản
-    \draw[dash pattern=on 5pt off 4pt, gray!45, thick] (0, 6.1) -- (14.5, 6.1);
+    \draw[dash pattern=on 5pt off 4pt, black!50, thick] (0, 6.1) -- (14.5, 6.1);
 
     % ==============================================================
     % (b) KỊCH BẢN TẤN CÔNG MAN-IN-THE-MIDDLE (EVE TRÁO ĐỔI KHÓA)
     % ==============================================================
-    \node[sectiontitle, text=red!85!black] at (0, 5.3) {(b) Kịch bản tấn công Man-In-The-Middle (Eve can thiệp và tráo đổi khóa)};
+    \node[sectiontitle] at (0, 5.3) {(b) Kịch bản tấn công Man-In-The-Middle (Eve can thiệp và tráo đổi khóa)};
 
     % Diễn viên
     \node[actor] (bobB) at (1.8, 3.9) {\textbf{Bob}\\[2pt]{\scriptsize Cặp khóa: $(PU_B, PR_B)$}};
@@ -70,7 +70,7 @@
 
     % Bước 2: Eve thay bằng PU_E gửi Alice
     \draw[evemsg] (7.25, 1.1) -- (12.7, 1.1)
-        node[midway, above=3pt, font=\footnotesize, text=red!85!black] {2. Gửi $PU_E$ (mạo danh Bob)};
+        node[midway, above=3pt, font=\footnotesize] {2. Gửi $PU_E$ (mạo danh Bob)};
 
     % Bước 3: Alice gửi C1 về cho Eve (nhầm là Bob)
     \draw[msg] (12.7, -0.3) -- (7.25, -0.3)
@@ -86,7 +86,7 @@
 
     % Bước 4: Eve gửi C2 cho Bob
     \draw[evemsg] (7.25, -3.5) -- (1.8, -3.5)
-        node[midway, above=3pt, font=\footnotesize, text=red!85!black] {4. Chuyển tiếp bản mã $C_2 = E(PU_B, M)$};
+        node[midway, above=3pt, font=\footnotesize] {4. Chuyển tiếp bản mã $C_2 = E(PU_B, M)$};
 
     % Hàng kết quả cuối cùng: 3 khối cân xứng
     \node[note, text width=3.2cm] at (1.8, -5.3) {
