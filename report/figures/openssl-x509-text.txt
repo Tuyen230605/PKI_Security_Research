@@ -1,0 +1,63 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 4096 (0x1000)
+        Signature Algorithm: sha256WithRSAEncryption
+        Issuer: CN=Lab Intermediate CA
+        Validity
+            Not Before: Oct 24 19:27:08 2026 GMT
+            Not After : Nov 23 19:27:08 2026 GMT
+        Subject: CN=server-a.test
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (2048 bit)
+                Modulus:
+                    00:b4:b9:28:83:e7:37:77:4d:73:3c:98:d7:49:eb:
+                    5c:7e:0f:dc:fe:45:19:35:78:5d:37:ce:f5:e8:b2:
+                    a3:30:43:1f:e7:13:e8:83:74:6d:da:76:f4:e2:3f:
+                    5d:ef:67:dc:f5:d6:ac:75:23:60:d6:9a:3c:95:fc:
+                    e7:f2:cc:b0:0f:ff:79:44:1e:9d:a1:99:ee:dc:97:
+                    45:d2:b8:3f:83:c2:7f:4a:c7:59:48:83:56:88:6a:
+                    32:81:5d:ab:18:92:63:bc:f4:6b:b2:d7:1f:34:18:
+                    7a:04:67:94:b5:74:5f:b8:47:c4:c8:eb:f4:36:31:
+                    ee:e3:37:07:d2:b2:92:25:aa:87:0e:90:fd:0a:66:
+                    ef:e8:85:da:09:01:7d:f7:b3:40:14:67:81:7e:08:
+                    48:19:90:a6:aa:c3:69:1f:49:52:b4:03:bd:94:fc:
+                    ad:e2:ac:d6:49:9e:02:91:5f:15:2f:61:26:75:39:
+                    c9:a2:33:51:18:0a:e3:bb:24:a4:ef:db:b3:a8:8f:
+                    89:76:d5:8b:48:3a:dc:8c:33:e0:1c:2a:f6:3f:16:
+                    f3:2f:34:1f:87:3c:4b:bc:fa:9e:93:2f:6d:da:b9:
+                    47:d1:70:db:df:e8:07:04:f4:75:eb:4e:0d:c7:9c:
+                    74:5e:9c:fe:dc:a7:c8:e1:1b:38:ce:f3:ab:61:c8:
+                    72:57
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Key Usage: critical
+                Digital Signature, Key Encipherment
+            X509v3 Extended Key Usage: 
+                TLS Web Server Authentication
+            X509v3 Subject Alternative Name: 
+                DNS:server-a.test
+            X509v3 Subject Key Identifier: 
+                DD:C3:40:DB:5A:93:4D:7D:12:BF:C5:BF:0F:94:87:A1:A0:D0:B0:45
+            X509v3 Authority Key Identifier: 
+                AD:79:3E:C8:B4:B2:24:07:EC:2B:FF:D5:42:3D:2F:D0:E2:A6:33:39
+    Signature Algorithm: sha256WithRSAEncryption
+    Signature Value:
+        1f:30:2f:a6:8e:aa:23:b6:58:90:9f:7d:24:c2:44:fa:b9:cc:
+        7e:60:dd:22:c8:95:29:87:0b:ba:ae:08:79:83:ae:84:34:cf:
+        79:7c:c6:9d:4d:26:95:44:97:e8:49:dd:b5:da:90:88:8d:6a:
+        75:63:0a:ad:a9:46:bc:a7:eb:08:8c:fa:ab:cc:49:0b:85:a7:
+        ae:5b:e6:af:8d:ce:8f:ca:95:f8:1b:c6:6a:e5:c3:b9:01:f3:
+        4e:9b:26:10:97:fb:39:62:52:79:b0:a3:6d:d1:e2:8d:e6:a7:
+        eb:04:0e:7c:05:69:59:2e:32:c2:70:6b:49:67:e5:93:6f:ce:
+        e2:a4:3e:0e:68:7a:a2:17:68:c7:97:ec:9f:3b:77:32:ea:d3:
+        4c:80:5c:f2:9f:15:93:e7:ef:14:39:29:ae:1f:57:92:6e:c9:
+        bd:c0:74:aa:c2:e3:38:db:f7:5e:f6:da:91:38:e6:02:ca:0e:
+        32:13:56:e2:6e:f3:ae:4b:c9:af:52:1b:ab:0d:38:9f:77:e9:
+        f8:78:87:6b:f9:b3:93:0a:49:51:5e:b4:ef:b2:42:a6:34:0b:
+        6e:c1:35:12:07:8f:e9:93:66:8c:81:3f:80:34:0a:e2:5a:1b:
+        0d:6c:1f:bc:f6:a6:c1:27:90:14:9d:15:84:3e:17:51:34:f9:
+        38:1e:88:94
