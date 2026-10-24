@@ -3,6 +3,8 @@
 report:
 	mkdir -p build
 	latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error -outdir=build report/main.tex
+	cp -f build/main.pdf report/main.pdf 2>/dev/null || true
+	cp -f build/main.pdf main.pdf 2>/dev/null || true
 
 clean:
 	latexmk -C -outdir=build report/main.tex
