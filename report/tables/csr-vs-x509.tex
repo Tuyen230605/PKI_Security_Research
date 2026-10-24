@@ -1,0 +1,24 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Tiêu chí phân định} & \textbf{Yêu cầu ký chứng thư (CSR -- PKCS\#10)} & \textbf{Chứng thư số X.509 v3} \\
+\midrule
+\textbf{Bản chất kỹ thuật} & Cấu trúc dữ liệu chứa thông tin đề nghị và khóa công khai do chủ thể tự tạo ra. & Cấu trúc dữ liệu có chữ ký số của CA, liên kết định danh với khóa công khai theo quy trình CP/CPS. \\
+\midrule
+\textbf{Thực thể thực hiện ký} & Ký bởi chính khóa bí mật của chủ thể ($SK_{\text{subject}}$). & Ký bởi khóa bí mật của tổ chức cấp phát ($SK_{\text{CA}}$). \\
+\midrule
+\textbf{Dữ liệu được ký} & Thông tin danh tính yêu cầu và trường khóa công khai (\texttt{SubjectPublicKeyInfo}). & Cấu trúc dữ liệu chuẩn hóa \texttt{TBSCertificate} (To-Be-Signed Certificate) của CA. \\
+\midrule
+\textbf{Ý nghĩa của chữ ký} & Chỉ chứng minh thực thể gửi yêu cầu có nắm giữ khóa bí mật tương ứng (Proof of Possession -- PoP); không chứng minh danh tính. & Xác nhận CA đã thẩm định thông tin theo chính sách vận hành và liên kết danh tính với khóa công khai. \\
+\midrule
+\textbf{Quyết định về Extensions} & Chỉ mang tính chất đề xuất từ phía client. & Do CA toàn quyền ấn định hoặc chọn lọc (qua cờ cấu hình như \texttt{copy\_extensions} trong OpenSSL). \\
+\midrule
+\textbf{Phạm vi sử dụng} & Chỉ dùng để nộp cho CA/RA trong pha đăng ký cấp phát. & Dùng trong giao thức truyền thông (TLS) để relying party xác thực chuỗi tin cậy. \\
+\bottomrule
+\end{tabularx}
+\caption[Phân biệt bản chất kỹ thuật giữa CSR và chứng thư số X.509]{Phân biệt bản chất kỹ thuật giữa Yêu cầu ký chứng thư (CSR -- RFC~2986) và Chứng thư số X.509 v3 (RFC~5280).}
+\label{tab:csr-vs-x509}
+\end{table}

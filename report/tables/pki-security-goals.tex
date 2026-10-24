@@ -1,0 +1,22 @@
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{8.5cm}}
+\toprule
+\textbf{Mục tiêu an ninh} & \textbf{Vai trò của PKI} & \textbf{Cơ chế thực hiện / Phối hợp} \\
+\midrule
+\textbf{Xác thực (Authenticity)} & Hỗ trợ trực tiếp & Chứng thư số X.509, chữ ký số của CA trên Subject PublicKey. \\
+\midrule
+\textbf{Toàn vẹn (Integrity)} & Hỗ trợ trực tiếp & Hàm băm mật mã và chữ ký số trên cấu trúc chứng thư. \\
+\midrule
+\textbf{Chống chối bỏ (Non-repudiation)} & Hỗ trợ trực tiếp & Chữ ký số gắn liền với khóa bí mật duy nhất của thực thể. \\
+\midrule
+\textbf{Bí mật (Confidentiality)} & Kết hợp bên ngoài & Giao thức TLS bắt tay thỏa thuận khóa phiên (ECDHE) và mã hóa đối xứng (AES-GCM). \\
+\midrule
+\textbf{Sẵn sàng (Availability)} & Kết hợp bên ngoài & Hạ tầng mạng phân tán, bộ đệm chứng thực, OCSP Stapling, CDN. \\
+\bottomrule
+\end{tabular}
+\caption[Phân định phạm vi hỗ trợ của PKI đối với mục tiêu an ninh thông tin]{Phân định phạm vi hỗ trợ của PKI đối với các mục tiêu an ninh thông tin.}
+\label{tab:pki-security-goals}
+\end{table}

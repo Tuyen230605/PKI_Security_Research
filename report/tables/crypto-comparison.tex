@@ -1,0 +1,36 @@
+\begin{table}[!htbp]
+\centering
+\caption{So sánh bản chất và vai trò của các thành phần mật mã trong PKI}
+\label{tab:crypto_comparison}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{3.2cm} >{\raggedright\arraybackslash}p{2.6cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{3.2cm}@{}}
+\toprule
+\textbf{Khái niệm} & \textbf{Bản chất kỹ thuật} & \textbf{Khóa bí mật ($SK$)} & \textbf{Giá trị an ninh cung cấp} & \textbf{Hạn chế nội tại} \\
+\midrule
+\textbf{Cặp khóa ($PK, SK$)} & 
+Hai khóa có liên hệ toán học; $PK$ công khai, $SK$ bảo mật. & 
+Chỉ duy nhất chủ sở hữu hợp pháp nắm giữ và bảo vệ. & 
+Nền tảng cho ký số, xác thực sở hữu và thỏa thuận khóa phiên. & 
+Không tự liên kết được với danh tính thực thể ngoài đời thực. \\
+\midrule
+\textbf{Hàm băm ($H$)} & 
+Ánh xạ thông điệp tùy ý thành digest có độ dài cố định. & 
+Không sử dụng khóa. & 
+Bảo đảm tính toàn vẹn, tóm lược dữ liệu, kháng va chạm. & 
+Không xác thực nguồn gốc do bất kỳ ai cũng tính toán được. \\
+\midrule
+\textbf{Chữ ký số} & 
+Cặp thuật toán Sign/Verify thao tác trên giá trị băm thông điệp. & 
+Ký bằng $SK$ của chủ thể; kiểm tra bằng $PK$ tương ứng. & 
+Xác thực nguồn gốc dữ liệu, bảo đảm tính toàn vẹn và chống chối bỏ. & 
+Chỉ xác minh tính hợp lệ của dữ liệu với $PK$, không định danh người ký. \\
+\midrule
+\textbf{Chứng thư số} & 
+Cấu trúc dữ liệu liên kết $PK$ với danh tính, được CA ký. & 
+Ký bởi $SK_{CA}$; cấu trúc chứng thư không bao giờ chứa $SK$. & 
+Thiết lập liên kết tin cậy giữa khóa công khai và danh tính chủ thể. & 
+Phụ thuộc độ tin cậy của CA, thời hạn hiệu lực và trạng thái thu hồi. \\
+\bottomrule
+\end{tabularx}
+\end{table}

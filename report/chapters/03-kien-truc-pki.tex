@@ -3,7 +3,7 @@
 \section{Thành phần và mô hình tin cậy}
 \label{sec:pki-components-trust-model}
 
-Hạ tầng khóa công khai (Public Key Infrastructure -- PKI) là một hệ thống tích hợp toàn diện bao gồm phần cứng, phần mềm, quy trình, nhân sự và các chính sách quản lý nhằm tạo lập, lưu trữ, phân phối và thu hồi chứng thư số theo chuẩn ITU-T X.509. Về bản chất, PKI giải quyết bài toán niềm tin phân tán trên môi trường mạng mở bằng cách chuyển dịch việc tin cậy lẫn nhau giữa các đối tượng ngang hàng (vốn đòi hỏi $O(n^2)$ mối quan hệ bảo mật trực tiếp) sang việc cùng đặt niềm tin vào một bên thứ ba có thẩm quyền và uy tín (Trusted Third Party).
+Hạ tầng khóa công khai (Public Key Infrastructure -- PKI) là một hệ thống tích hợp toàn diện bao gồm phần cứng, phần mềm, quy trình, nhân sự và các chính sách quản lý nhằm tạo lập, lưu trữ, phân phối và thu hồi chứng thư số theo chuẩn ITU-T X.509 (chuẩn hóa chi tiết tại RFC~5280~\cite{rfc5280} và khung chính sách RFC~3647~\cite{rfc3647}). Về bản chất, PKI giải quyết bài toán niềm tin phân tán trên môi trường mạng mở bằng cách chuyển dịch việc tin cậy lẫn nhau giữa các đối tượng ngang hàng (vốn đòi hỏi $O(n^2)$ mối quan hệ bảo mật trực tiếp) sang việc cùng đặt niềm tin vào một bên thứ ba có thẩm quyền và uy tín (Trusted Third Party).
 
 \subsection{Các thành phần cốt lõi trong PKI}
 \label{subsec:pki-core-components}
@@ -13,13 +13,13 @@ Một hệ thống PKI hoàn chỉnh bao gồm các cấu phần chức năng ph
 \begin{itemize}
     \item \textbf{Gốc tin cậy (Trust Anchor):} Là điểm khởi đầu tuyệt đối của niềm tin mà bên tin cậy (Relying Party) chấp nhận trước một cách vô điều kiện mà không cần bất kỳ chữ ký của bên thứ ba nào xác nhận thêm. Trong thực tế triển khai, Trust Anchor thường là khóa công khai của một Root CA được lưu trữ trực tiếp, an toàn trong kho chứng thư tin cậy (Trust Store) của hệ điều hành (như Windows, Linux, macOS) hoặc trình duyệt web độc lập (như Mozilla Firefox).
     
-    \item \textbf{Tổ chức chứng thực gốc (Root CA -- Root Certificate Authority):} Là thực thể đứng ở đỉnh cao nhất của mô hình PKI phân cấp. Root CA sở hữu cặp khóa mã hóa tối cao và tự phát hành một chứng thư tự ký (Self-signed Certificate), trong đó trường định danh người phát hành (Issuer) trùng khớp hoàn toàn với trường định danh chủ thể (Subject). Khóa bí mật của Root CA ($SK_{\mathrm{Root}}$) là tài sản tối mật, luôn được lưu giữ ở trạng thái ngoại tuyến (offline) tuyệt đối trong các mô-đun phần cứng an toàn chuyên dụng (Hardware Security Module -- HSM) nhằm triệt tiêu nguy cơ bị xâm nhập qua mạng. Root CA chỉ được đưa vào vận hành theo quy trình kiểm toán nghiêm ngặt khi cần ký cấp phát hoặc thu hồi chứng thư cho các Intermediate CA.
+    \item \textbf{Tổ chức chứng thực gốc (Root CA -- Root Certificate Authority):} Là thực thể đứng ở đỉnh cao nhất của mô hình PKI phân cấp. Root CA sở hữu cặp khóa ký (signing key pair) tối cao và tự phát hành một chứng thư tự ký (Self-signed Certificate), trong đó trường định danh người phát hành (Issuer) trùng khớp hoàn toàn với trường định danh chủ thể (Subject). Khóa bí mật của Root CA ($SK_{\mathrm{Root}}$) là tài sản tối mật, thường được duy trì ở trạng thái ngoại tuyến (offline) trong các mô-đun phần cứng an toàn chuyên dụng (Hardware Security Module -- HSM) nhằm triệt tiêu nguy cơ bị xâm nhập qua mạng. Root CA chỉ được đưa vào vận hành theo quy trình kiểm toán nghiêm ngặt khi cần ký cấp phát hoặc thu hồi chứng thư cho các Intermediate CA.
     
     \item \textbf{Tổ chức chứng thực trung gian (Intermediate CA / Sub-CA):} Là các CA được Root CA (hoặc một Intermediate CA cấp cao hơn) ủy quyền và cấp chứng thư để thực hiện việc vận hành hàng ngày. Intermediate CA chịu trách nhiệm trực tiếp ký phát hành chứng thư cho các thực thể cuối (End-entity) và phát hành danh sách thu hồi (CRL). Việc thiết lập mô hình phân tầng qua Intermediate CA tạo ra một lớp bảo vệ và cô lập rủi ro (isolation layer): nếu một Intermediate CA bị thỏa hiệp hoặc lộ khóa, hệ thống chỉ cần thu hồi chứng thư của riêng Sub-CA đó mà không làm sụp đổ toàn bộ cây tin cậy của Root CA.
     
     \item \textbf{Cơ quan đăng ký (Registration Authority -- RA):} Đóng vai trò là giao diện trung gian kết nối giữa người dùng/chủ thể và CA. RA có nhiệm vụ tiếp nhận yêu cầu cấp chứng thư (CSR), thực hiện quy trình thẩm tra tính xác thực về mặt định danh, tư cách pháp nhân hoặc quyền sở hữu tên miền của đối tượng yêu cầu trước khi chuyển yêu cầu đã được phê duyệt sang cho CA ký phát hành. Bản thân RA không trực tiếp ký chứng thư và không được phép nắm giữ khóa bí mật của CA.
     
-    \item \textbf{Chủ thể (Subject / End-entity):} Là các cá nhân, tổ chức, máy chủ dịch vụ (Web Server, Mail Server) hoặc thiết bị IoT sở hữu cặp khóa mật mã và được định danh trên chứng thư số. Chủ thể có trách nhiệm lưu trữ và bảo vệ khóa bí mật tương ứng với khóa công khai ghi trên chứng thư. Chủ thể ở tầng này không có quyền cấp phát chứng thư cho các thực thể khác (thuộc tính mở rộng \texttt{basicConstraints} bắt buộc phải thiết lập \texttt{cA:FALSE}).
+    \item \textbf{Thực thể cuối (End-entity) và Chủ thể (Subject):} Cần phân biệt rõ: \textit{Subject} là trường định danh chủ thể được đóng gói trong cấu trúc chứng thư số X.509; còn \textit{End-entity} là vai trò của thực thể ở tầng lá trong kiến trúc phân cấp PKI (như máy chủ Web TLS, thiết bị hoặc người dùng cuối). Thực thể cuối sở hữu cặp khóa mật mã và không có quyền cấp phát chứng thư cho các thực thể khác. Theo chuẩn RFC~5280~\cite{rfc5280}, phần mở rộng \texttt{basicConstraints} của chứng thư thực thể cuối có thể vắng mặt (omitted) hoặc nếu hiện diện thì cờ \texttt{cA} bắt buộc phải mang giá trị \texttt{FALSE} (\texttt{cA:FALSE}).
     
     \item \textbf{Bên tin cậy (Relying Party):} Là bất kỳ thực thể hoặc ứng dụng nào (như trình duyệt web máy trạm, ứng dụng xác thực) nhận chứng thư số từ Subject và cần thẩm định xem chứng thư đó có đáng tin cậy hay không. Relying party đối chiếu với danh mục Trust Anchor cấu hình sẵn trong Trust Store nội bộ để tiến hành xây dựng và xác minh đường dẫn chứng thư (Certification Path Validation Algorithm).
     
@@ -28,32 +28,8 @@ Một hệ thống PKI hoàn chỉnh bao gồm các cấu phần chức năng ph
 
 Bảng~\ref{tab:pki-components-summary} tổng hợp vai trò, loại khóa quản lý và trạng thái hoạt động của các thành phần trong hệ thống PKI.
 
-\begin{table}[htbp]
-\centering
-\small
-\renewcommand{\arraystretch}{1.25}
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}X}
-\toprule
-\textbf{Thành phần} & \textbf{Khóa quản lý} & \textbf{Trạng thái vận hành} & \textbf{Chức năng chính} \\
-\midrule
-\textbf{Trust Anchor} & Khóa công khai Root CA & Tích hợp sẵn trong OS/Browser & Điểm mốc tin cậy tuyệt đối để neo chuỗi xác minh. \\
-\midrule
-\textbf{Root CA} & $SK_{\mathrm{Root}}$, $PK_{\mathrm{Root}}$ & Ngoại tuyến (Offline, HSM) & Ký phát hành chứng thư tự ký và ủy quyền cho Sub-CA. \\
-\midrule
-\textbf{Intermediate CA} & $SK_{\mathrm{Sub}}$, $PK_{\mathrm{Sub}}$ & Trực tuyến (Online) & Ký phát hành chứng thư cho End-entity, ký danh sách CRL. \\
-\midrule
-\textbf{RA} & Khóa xác thực danh tính & Trực tuyến & Thẩm tra định danh, duyệt yêu cầu trước khi gửi sang CA. \\
-\midrule
-\textbf{Chủ thể (Subject)} & $SK_{\mathrm{Entity}}$, $PK_{\mathrm{Entity}}$ & Trực tuyến (Web/Client) & Nắm giữ khóa bí mật, dùng chứng thư để chứng minh danh tính. \\
-\midrule
-\textbf{Bên tin cậy (RP)} & Sở hữu Trust Store & Trực tuyến (Client) & Thẩm định đường dẫn chứng thư, kiểm tra trạng thái thu hồi. \\
-\midrule
-\textbf{Kho lưu trữ (Repo)} & Không giữ khóa ký & Trực tuyến (HTTP, LDAP) & Lưu trữ, xuất bản chứng thư CA, CRL và dịch vụ OCSP. \\
-\bottomrule
-\end{tabularx}
-\caption{Tổng hợp vai trò và đặc điểm vận hành của các thành phần trong PKI.}
-\label{tab:pki-components-summary}
-\end{table}
+\input{report/tables/pki-components-summary}
+
 
 \subsection{Mô hình tin cậy phân cấp (Hierarchical Trust Model)}
 \label{subsec:hierarchical-trust-model}
@@ -61,12 +37,14 @@ Bảng~\ref{tab:pki-components-summary} tổng hợp vai trò, loại khóa qu�
 Trong hệ thống PKI chuẩn ITU-T X.509, mô hình tin cậy phổ biến và chuẩn mực nhất là \textbf{Mô hình cây phân cấp (Hierarchical Tree)}:
 
 \begin{itemize}
-    \item \textbf{Cơ chế ủy quyền niềm tin (Trust Delegation):} Niềm tin được kế thừa theo hướng một chiều từ gốc xuống ngọn ($\mathrm{Root} \rightarrow \mathrm{Intermediate} \rightarrow \mathrm{Leaf}$). Relying party chỉ cần đặt niềm tin tiên nghiệm vào Root CA nằm trong Trust Store của mình. Mọi chứng thư do Intermediate CA hợp lệ phát hành đều tự động được thừa hưởng độ tin cậy đó thông qua chuỗi chữ ký số liên tục và có thể kiểm chứng toán học.
+    \item \textbf{Cơ chế ủy quyền niềm tin (Trust Delegation):} Niềm tin được kế thừa theo hướng một chiều từ gốc xuống ngọn ($\mathrm{Root} \rightarrow \mathrm{Intermediate} \rightarrow \mathrm{Leaf}$). Relying party chỉ cần đặt niềm tin tiên nghiệm vào Root CA nằm trong Trust Store của mình. Mọi chứng thư do Intermediate CA hợp lệ phát hành đều được tin cậy nếu toàn bộ đường dẫn chứng thư thỏa mãn các điều kiện kiểm tra xác thực ở Mục~\ref{sec:path-validation} (Chương~\ref{chap:x509-xac-thuc}).
     
-    \item \textbf{Phân định phạm vi trách nhiệm (Segregation of Duties):} Mô hình cây cho phép phân nhánh quyền hạn linh hoạt theo mục đích sử dụng. Ví dụ: một Intermediate CA chuyên trách ký cấp chứng thư cho Server TLS, một nhánh khác chuyên ký cấp mã nguồn (Code Signing), và một nhánh độc lập phục vụ danh tính cá nhân hoặc xác thực người dùng (Client Authentication).
+    \item \textbf{Phân nhánh CA theo mục đích sử dụng (Purpose-based CA Segmentation):} Mô hình cây cho phép phân nhánh quyền hạn linh hoạt theo từng mục đích kỹ thuật chuyên biệt (ví dụ: một Intermediate CA chuyên cấp chứng thư TLS Web Server, một nhánh cấp chứng thư ký mã nguồn Code Signing, và một nhánh độc lập cấp chứng thư xác thực định danh cá nhân). Cần lưu ý phân biệt khái niệm này với nguyên tắc \textit{Segregation of Duties} trong quản trị an ninh thông tin, vốn đề cập đến việc phân tách nhiệm vụ giữa các nhân sự vận hành hệ thống nhằm ngăn ngừa xung đột lợi ích và lạm quyền.
     
     \item \textbf{Cơ chế cô lập rủi ro (Risk Isolation):} Bảo vệ Root CA ở trạng thái ngoại tuyến dài hạn; các hoạt động cấp phát tần suất cao và dễ phát sinh rủi ro trên mạng đều do Intermediate CA đảm nhiệm. Khi có sự cố lộ khóa hoặc thỏa hiệp an ninh tại một nhánh, quản trị viên chỉ cần thu hồi chứng thư của Intermediate CA tương ứng mà không làm ảnh hưởng đến các nhánh dịch vụ khác và không buộc người dùng toàn cầu phải cập nhật lại Root Trust Store.
 \end{itemize}
+
+Trong mô hình lab thực nghiệm của nhóm (Chương~\ref{chap:experiment}), các thành phần cốt lõi được triển khai gồm: Root CA, Intermediate CA (Sub-CA), End-entity (Web Server) và Relying Party (OpenSSL verification client). Các cấu phần như RA hoặc kho dịch vụ công bố trực tuyến (OCSP/LDAP) được tinh giản để tập trung nghiên cứu bản chất giải thuật xác minh chuỗi tin cậy. Đồng thời, ngoài mô hình cây phân cấp đơn gốc này, các biến thể kiến trúc khác như Chứng nhận chéo (Cross-certification), Cầu nối tin cậy (Bridge CA) và Mạng lưới tin cậy ngang hàng (Web of Trust) sẽ được phân tích đối chiếu chuyên sâu tại Mục~\ref{sec:trust-models-comparison} (Chương~\ref{chap:threat-security}).
 
 Hình~\ref{fig:pki-architecture-components} minh họa tổng thể mối quan hệ tương tác, luồng dữ liệu cấp phát và quy trình xác thực giữa các thành phần trong mô hình PKI phân cấp.
 
@@ -81,7 +59,9 @@ Hình~\ref{fig:pki-architecture-components} minh họa tổng thể mối quan h
 
 \section{Vòng đời chứng thư}
 \label{sec:certificate-lifecycle}
-Trong khi Mục~\ref{subsec:key-lifecycle} đã trình bày về vòng đời của khóa mật mã (tập trung vào sự an toàn vật lý và toán học của khóa), Mục~\ref{sec:certificate-lifecycle} tập trung vào vòng đời của chứng thư số (quản lý trạng thái pháp lý, cấu trúc dữ liệu và chuỗi tin cậy). Hai khái niệm này có mối liên hệ mật thiết nhưng tách biệt nhau: một chứng thư có thể hết hạn hoặc bị thu hồi trước khi cặp khóa tương ứng bị tiêu hủy, và một cặp khóa có thể tiếp tục được sử dụng qua nhiều thế hệ chứng thư nếu áp dụng hình thức gia hạn giữ khóa (renewal). Đồng thời, các tổ chức CA cũng có vòng đời riêng với quy trình khởi tạo khóa gốc nghiêm ngặt (Key Generation Ceremony) và lộ trình luân chuyển khóa định kỳ (chi tiết xem tại Mục~\ref{sec:operating-policy}).
+Trong khi Mục~\ref{subsec:key-lifecycle} đã trình bày về vòng đời của khóa mật mã (tập trung vào sự an toàn vật lý và toán học của khóa), Mục~\ref{sec:certificate-lifecycle} tập trung vào vòng đời của chứng thư số (quản lý trạng thái pháp lý, cấu trúc dữ liệu và chuỗi tin cậy). Hai khái niệm này có mối liên hệ mật thiết nhưng tách biệt nhau: một chứng thư có thể hết hạn hoặc bị thu hồi trước khi cặp khóa tương ứng bị tiêu hủy, và một cặp khóa có thể tiếp tục được sử dụng qua nhiều thế hệ chứng thư nếu áp dụng hình thức gia hạn giữ khóa (renewal). 
+
+Đồng thời, bản thân các tổ chức CA cũng có vòng đời riêng: quy trình thay thế và đổi mới khóa CA (CA Key Rollover/Rekey theo mục 5.6 của dàn bài RFC~3647~\cite{rfc3647}) đòi hỏi phải tạo cặp khóa mới, phát hành chứng thư chéo hoặc phân phối lại Root Trust Store mà không làm gián đoạn các chứng thư thuê bao đang lưu hành; và quy trình ngừng hoạt động CA (CA Termination theo mục 5.8 của dàn bài RFC~3647) quy định việc thu hồi toàn bộ chứng thư đã cấp, hủy khóa CA an toàn và chuyển giao nhật ký kiểm toán cho cơ quan lưu trữ pháp lý (chi tiết xem tại Mục~\ref{sec:operating-policy}).
 
 \subsection{Các giai đoạn và nhánh rẽ trong vòng đời chứng thư}
 \label{subsec:lifecycle-stages}
@@ -105,39 +85,46 @@ Vòng đời chứng thư X.509 gồm 10 giai đoạn có các nhánh rẽ và v
     \begin{itemize}
         \item \textit{Domain Validation (DV):} Xác minh quyền kiểm soát đối với tên miền thông qua bản ghi DNS hoặc phản hồi HTTP.
         \item \textit{Organization Validation (OV):} Thẩm tra sự tồn tại pháp lý của tổ chức đăng ký qua cổng thông tin đăng ký doanh nghiệp chính thức.
-        \item \textit{Extended Validation (EV):} Quy trình thẩm định nghiêm ngặt bổ sung nhiều thủ tục đối chiếu giấy phép kinh doanh, quyền hạn đại diện pháp luật và xác minh độc lập bằng điện thoại theo hướng dẫn của CA/Browser Forum.
+        \item \textit{Extended Validation (EV):} Quy trình thẩm định nghiêm ngặt bổ sung nhiều thủ tục đối chiếu giấy phép kinh doanh, quyền hạn đại diện pháp luật và xác minh độc lập bằng điện thoại theo hướng dẫn riêng EV Guidelines của CA/Browser Forum~\cite{cabforum_ev} (được chuẩn hóa tách biệt khỏi bộ tiêu chuẩn Baseline Requirements cơ bản).
     \end{itemize}
 \end{enumerate}
 
 \subsubsection*{Pha 2: Cấp phát và triển khai (Bước 4--5)}
 \begin{enumerate}
     \setcounter{enumi}{3}
-    \item \textbf{Cấp phát chứng thư (Issuance):} CA không ký lên toàn bộ tập tin chứng thư hoàn chỉnh mà chỉ ký lên cấu trúc dữ liệu tóm lược \texttt{TBSCertificate} (To-Be-Signed Certificate) theo RFC~5280~\cite{rfc5280}.
+    \item \textbf{Cấp phát chứng thư và cơ chế minh bạch chứng thư (CT):} 
+    CA không ký lên toàn bộ tập tin chứng thư hoàn chỉnh mà chỉ ký lên cấu trúc dữ liệu tóm lược \texttt{TBSCertificate} (To-Be-Signed Certificate) theo chuẩn RFC~5280~\cite{rfc5280}.
     \begin{itemize}
         \item CA trích xuất khóa công khai và thông tin danh tính đã duyệt, ấn định số sê-ri duy nhất và khoảng thời gian hiệu lực \texttt{[notBefore, notAfter]}.
-        \item \textit{Cơ chế sao chép Extension:} CA không bắt buộc phải sao chép toàn bộ các trường hoặc extensions có trong CSR. Các phần mở rộng thiết yếu như Subject Alternative Name (SAN), Basic Constraints, Key Usage đều do cấu hình và chính sách vận hành của CA áp đặt. Trong môi trường OpenSSL, hành vi này phụ thuộc trực tiếp vào tham số \texttt{copy\_extensions} trong tệp cấu hình CA (\texttt{openssl.cnf}) --- nếu không bật hoặc cấu hình thiếu cẩn trọng, chứng thư phát hành sẽ bị thiếu các extension bắt buộc (như SAN), dẫn đến lỗi xác minh ở môi trường thực nghiệm (liên hệ trực tiếp tới ca kiểm thử TC04 và TC08 tại Mục~6.3).
-        \item Sau khi ký bằng khóa bí mật của CA ($SK_{\text{CA}}$), chứng thư được công bố vào kho lưu trữ (Repository) và bắt buộc phải được gửi vào các máy chủ nhật ký Certificate Transparency (CT Log) công khai theo chính sách Web PKI (chi tiết xem tại Mục~7.1).
+        \item \textit{Bẫy cấu hình sao chép Extension (OpenSSL copy\_extensions):} CA không tự động sao chép toàn bộ các extension có trong CSR của người dùng. Trong môi trường OpenSSL, hành vi này phụ thuộc vào chỉ thị \texttt{copy\_extensions} trong tệp cấu hình CA (\texttt{openssl.cnf}). Đây là một bẫy kỹ thuật kinh điển khi thiết lập lab: nếu CA cấu hình thiếu cẩn trọng hoặc không bật \texttt{copy\_extensions = copy}, chứng thư phát hành sẽ bị thiếu mất phần mở rộng bắt buộc như Subject Alternative Name (SAN), khiến các trình duyệt hiện đại từ chối chứng thư ngay lập tức (kinh nghiệm này được đúc kết trực tiếp khi thiết kế lab và chuẩn bị các ca kiểm thử TC01, TC04, TC08 tại Chương~\ref{chap:experiment}; trong đó TC01 được cấu hình đầy đủ SAN để làm mốc đối chứng chuẩn).
+        \item \textit{Quy trình nhúng SCT qua Certificate Transparency (CT):} Đối với Web PKI công cộng, theo chính sách bắt buộc của các trình duyệt web hiện đại (Google Chrome, Apple Safari) nhằm ngăn ngừa CA cấp lén lút chứng thư giả mạo: trước khi cấp chứng thư chính thức, CA phải tạo một chứng thư tiền phát hành (Precertificate) gửi lên các máy chủ nhật ký CT Log công khai (RFC~9162~\cite{rfc9162}). CT Log phản hồi bằng bằng chứng ghi nhận thời gian SCT (Signed Certificate Timestamp). CA nhúng các SCT này vào phần mở rộng của chứng thư chính thức rồi mới ký phát hành ($SK_{\text{CA}}$). Cần lưu ý rằng việc bắt buộc nộp CT Log là quy định trong chính sách Root Store của trình duyệt, không nằm trong chuẩn gốc RFC 5280 (chi tiết xem tại Mục~\ref{sec:certificate-transparency}).
     \end{itemize}
-    \item \textbf{Cài đặt và triển khai (Installation / Deployment):} Chủ thể cấu hình chứng thư số cùng với tệp chuỗi chứng thư trung gian (Intermediate CA certificates / Certificate Bundle) lên máy chủ dịch vụ. Nếu thiếu chứng thư trung gian trên máy chủ, client không thể hoàn thành việc xây dựng chuỗi tin cậy dẫn tới Trust Anchor (liên hệ tới ca kiểm thử TC06 tại Chương~6).
+    \item \textbf{Cài đặt và triển khai (Installation / Deployment):} Chủ thể cấu hình chứng thư số cùng với tệp chuỗi chứng thư trung gian (Intermediate CA certificates / Certificate Bundle) lên máy chủ dịch vụ. Nếu thiếu chứng thư trung gian trên máy chủ, client không thể hoàn thành việc xây dựng chuỗi tin cậy dẫn tới Trust Anchor (liên hệ tới ca kiểm thử TC06 tại Chương~\ref{chap:experiment}).
 \end{enumerate}
 
 \subsubsection*{Pha 3: Vận hành (Bước 6--7)}
 \begin{enumerate}
     \setcounter{enumi}{5}
-    \item \textbf{Xác minh và sử dụng (Validation \& Usage):} Khi máy chủ gửi chứng thư cho Relying Party (ví dụ trong pha bắt tay TLS~1.3~\cite{rfc8446}), bên tin cậy sẽ kích hoạt thuật toán xác minh đường dẫn đầy đủ. Quy trình bao gồm: xây dựng chuỗi dẫn tới Trust Anchor đã cấu hình, kiểm tra chữ ký từng mắt xích, thẩm định tính hợp lệ của Basic Constraints và độ sâu chuỗi (\texttt{pathLenConstraint}), đối chiếu mục đích sử dụng khóa (Key Usage/Extended Key Usage), khớp tên máy chủ (SAN), và kiểm tra thời hạn cùng trạng thái thu hồi. Chi tiết toàn bộ thuật toán được phân tích chuyên sâu tại Mục~4.2.
+    \item \textbf{Xác minh và sử dụng (Validation \& Usage):} Khi máy chủ gửi chứng thư cho Relying Party (ví dụ trong pha bắt tay TLS~1.3~\cite{rfc8446}), bên tin cậy sẽ kích hoạt thuật toán xác minh đường dẫn đầy đủ. Quy trình bao gồm: xây dựng chuỗi dẫn tới Trust Anchor đã cấu hình, kiểm tra chữ ký từng mắt xích, thẩm định tính hợp lệ của Basic Constraints và độ sâu chuỗi (\texttt{pathLenConstraint}), đối chiếu mục đích sử dụng khóa (Key Usage/Extended Key Usage), khớp tên máy chủ (SAN), và kiểm tra thời hạn cùng trạng thái thu hồi. Chi tiết toàn bộ thuật toán được phân tích chuyên sâu tại Mục~\ref{sec:path-validation} (Chương~\ref{chap:x509-xac-thuc}).
     \item \textbf{Gia hạn (Renewal / Re-keying):} Trước khi chứng thư mãn hạn, chủ thể thực hiện gia hạn để duy trì kết nối liên tục:
     \begin{itemize}
         \item Nếu thực hiện \textit{Renewal}, chủ thể tái sử dụng cặp khóa cũ và chỉ xin cấp chứng thư mới với thời hạn sử dụng mới.
         \item Nếu thực hiện \textit{Re-keying}, chủ thể quay trở lại Bước~1 để tạo cặp khóa hoàn toàn mới.
     \end{itemize}
-    Trong thực tế Web PKI, CA/Browser Forum liên tục thắt chặt và rút ngắn thời hạn hiệu lực tối đa của chứng thư TLS máy chủ công cộng (nhằm giảm thiểu thời gian tổn thương khi lộ khóa), kéo theo sự bắt buộc phải ứng dụng các giao thức tự động hóa như ACME (RFC~8555)~\cite{rfc8555} (phân tích chi tiết tại Mục~7.2).
+    \textit{Lộ trình rút ngắn thời hạn chứng thư của CA/Browser Forum:} Theo phiên bản mới nhất của Tiêu chuẩn Baseline Requirements (v2.3.1)~\cite{cabforum_br}, CA/Browser Forum đã thiết lập lộ trình liên tục rút ngắn thời hạn hiệu lực tối đa đối với chứng thư số TLS máy chủ công cộng:
+    \begin{itemize}
+        \item Tối đa \textbf{200 ngày}: áp dụng từ ngày 15/03/2026.
+        \item Tối đa \textbf{100 ngày}: áp dụng từ ngày 15/03/2027.
+        \item Tối đa \textbf{47 ngày}: áp dụng từ ngày 15/03/2029.
+    \end{itemize}
+    Xu hướng rút ngắn mạnh mẽ này nhằm hạn chế thời gian tổn thương khi khóa bị lộ, nhưng đồng thời kéo theo sự bắt buộc phải ứng dụng các giao thức tự động hóa quản lý vòng đời chứng thư như ACME (RFC~8555)~\cite{rfc8555} (phân tích chi tiết tại Mục~\ref{sec:acme-automation}).
 \end{enumerate}
 
 \subsubsection*{Pha 4: Kết thúc vòng đời (Bước 8--10: Nhánh rẽ thay thế và Tiêu hủy)}
 \begin{enumerate}
     \setcounter{enumi}{7}
     \item \textbf{Hết hạn (Expiration):} Chứng thư không còn vượt qua bước kiểm tra thời hạn hiệu lực nếu thời điểm xác minh nằm ngoài khoảng \texttt{[notBefore, notAfter]} quy định trong cấu trúc chứng thư.
-    Cần lưu ý rằng: chữ ký số của CA trên một chứng thư đã hết hạn vẫn hoàn toàn đúng về mặt toán học. Việc từ chối chứng thư phụ thuộc chặt chẽ vào chính sách xác minh và tính chính xác của đồng hồ hệ thống phía relying party; một client bị sai lệch đồng hồ hoặc cấu hình lỏng lẻo bỏ qua cờ kiểm tra thời gian vẫn có thể chấp nhận chứng thư này. Luận điểm này minh chứng thực nghiệm cho giả thuyết H1 và được kiểm chứng qua ca kiểm thử TC03 (Mục~6.3).
+    Cần lưu ý rằng: chữ ký số của CA trên một chứng thư đã hết hạn vẫn hoàn toàn đúng về mặt toán học. Việc từ chối chứng thư phụ thuộc chặt chẽ vào chính sách xác minh và tính chính xác của đồng hồ hệ thống phía relying party; một client bị sai lệch đồng hồ hoặc cấu hình lỏng lẻo bỏ qua cờ kiểm tra thời gian vẫn có thể chấp nhận chứng thư này. Luận điểm này minh chứng thực nghiệm cho giả thuyết H1 và được kiểm chứng qua ca kiểm thử TC03 (Mục~\ref{sec:exp-results}).
     \item \textbf{Thu hồi chứng thư (Revocation):} Là nhánh rẽ kết thúc khẩn cấp thay thế cho việc hết hạn tự nhiên. Khi phát sinh sự cố, CA sẽ đưa số sê-ri của chứng thư vào danh sách thu hồi kèm theo mã lý do quy chuẩn theo RFC~5280~\cite{rfc5280}, tiêu biểu như:
     \begin{itemize}
         \item \texttt{keyCompromise} (khóa bí mật bị lộ/thỏa hiệp),
@@ -146,7 +133,7 @@ Vòng đời chứng thư X.509 gồm 10 giai đoạn có các nhánh rẽ và v
         \item \texttt{superseded} (chứng thư đã được thay thế bằng chứng thư mới),
         \item \texttt{cessationOfOperation} (dịch vụ ngừng hoạt động hoàn toàn).
     \end{itemize}
-    \textit{Độ trễ thu hồi (Propagation Delay):} Việc thu hồi không có hiệu lực tức thời đối với mọi client. Relying party chỉ biết chứng thư bị thu hồi khi danh sách CRL mới được định kỳ phát hành và tải về thành công (phụ thuộc vào các trường \texttt{thisUpdate} và \texttt{nextUpdate}), hoặc thông qua truy vấn OCSP trực tiếp (phân tích sâu tại Mục~4.3 và kiểm chứng qua ca kiểm thử TC07).
+    \textit{Độ trễ thu hồi (Propagation Delay):} Việc thu hồi không có hiệu lực tức thời đối với mọi client. Relying party chỉ biết chứng thư bị thu hồi khi danh sách CRL mới được định kỳ phát hành và tải về thành công (phụ thuộc vào các trường \texttt{thisUpdate} và \texttt{nextUpdate}), hoặc thông qua truy vấn OCSP trực tiếp (phân tích sâu tại Mục~\ref{sec:revocation-mechanisms} và kiểm chứng qua ca kiểm thử TC07).
     \item \textbf{Tiêu hủy và lưu trữ khóa (Destruction \& Key Archival):}
     \begin{itemize}
         \item \textit{Khóa ký số:} Khi chứng thư hết hạn hoặc bị thu hồi và không còn giá trị sử dụng, khóa bí mật dùng cho chữ ký số phải bị tiêu hủy vĩnh viễn. Trên các ổ cứng thể rắn (SSD) hay bộ nhớ flash hiện đại, các lệnh xóa file thông thường của hệ điều hành không đảm bảo dữ liệu vật lý bị triệt tiêu do cơ chế Wear Leveling; vì vậy cần áp dụng các cơ chế xóa an toàn bằng mật mã (Crypto-erase) hoặc phá hủy trên các phân vùng bảo mật của phần cứng chuyên dụng (HSM/TPM).
@@ -154,36 +141,20 @@ Vòng đời chứng thư X.509 gồm 10 giai đoạn có các nhánh rẽ và v
     \end{itemize}
 \end{enumerate}
 
+\subsection{Ánh xạ giai đoạn vòng đời chứng thư với công cụ OpenSSL và kịch bản thực nghiệm}
+Nhằm cung cấp cái nhìn xuyên suốt từ quy trình chuẩn hóa đến hoạt động kỹ thuật cụ thể trong phòng lab, Bảng~\ref{tab:lifecycle-openssl-tc} tổng hợp mối liên kết giữa các giai đoạn trong vòng đời chứng thư X.509, các câu lệnh OpenSSL tương ứng và các ca kiểm thử thực nghiệm (TC01--TC10) được triển khai tại Chương~\ref{chap:experiment}.
+
+\input{report/tables/lifecycle-openssl-tc}
+
+
 \clearpage
 
 \subsection{Phân biệt Yêu cầu ký chứng thư (CSR) và Chứng thư số đã phát hành}
 \label{subsec:csr-vs-cert}
 Để tránh nhầm lẫn giữa định dạng yêu cầu đăng ký và đối tượng chứng thực, Bảng~\ref{tab:csr-vs-x509} đối chiếu bản chất kỹ thuật giữa tệp CSR (RFC~2986~\cite{rfc2986}) và chứng thư số X.509 v3 (RFC~5280~\cite{rfc5280}):
 
-\begin{table}[!htbp]
-\centering
-\small
-\renewcommand{\arraystretch}{1.25}
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
-\toprule
-\textbf{Tiêu chí phân định} & \textbf{Yêu cầu ký chứng thư (CSR -- PKCS\#10)} & \textbf{Chứng thư số X.509 v3} \\
-\midrule
-\textbf{Bản chất kỹ thuật} & Cấu trúc dữ liệu chứa thông tin đề nghị và khóa công khai do chủ thể tự tạo ra. & Cấu trúc dữ liệu có chữ ký số của CA, liên kết định danh với khóa công khai theo quy trình CP/CPS. \\
-\midrule
-\textbf{Thực thể thực hiện ký} & Ký bởi chính khóa bí mật của chủ thể ($SK_{\text{subject}}$). & Ký bởi khóa bí mật của tổ chức cấp phát ($SK_{\text{CA}}$). \\
-\midrule
-\textbf{Dữ liệu được ký} & Thông tin danh tính yêu cầu và trường khóa công khai (\texttt{SubjectPublicKeyInfo}). & Cấu trúc dữ liệu chuẩn hóa \texttt{TBSCertificate} (To-Be-Signed Certificate) của CA. \\
-\midrule
-\textbf{Ý nghĩa của chữ ký} & Chỉ chứng minh thực thể gửi yêu cầu có nắm giữ khóa bí mật tương ứng (Proof of Possession -- PoP); không chứng minh danh tính. & Xác nhận CA đã thẩm định thông tin theo chính sách vận hành và liên kết danh tính với khóa công khai. \\
-\midrule
-\textbf{Quyết định về Extensions} & Chỉ mang tính chất đề xuất từ phía client. & Do CA toàn quyền ấn định hoặc chọn lọc (qua cờ cấu hình như \texttt{copy\_extensions} trong OpenSSL). \\
-\midrule
-\textbf{Phạm vi sử dụng} & Chỉ dùng để nộp cho CA/RA trong pha đăng ký cấp phát. & Dùng trong giao thức truyền thông (TLS) để relying party xác thực chuỗi tin cậy. \\
-\bottomrule
-\end{tabularx}
-\caption[Phân biệt bản chất kỹ thuật giữa CSR và chứng thư số X.509]{Phân biệt bản chất kỹ thuật giữa Yêu cầu ký chứng thư (CSR -- RFC~2986) và Chứng thư số X.509 v3 (RFC~5280).}
-\label{tab:csr-vs-x509}
-\end{table}
+\input{report/tables/csr-vs-x509}
+
 
 \clearpage
 
@@ -202,7 +173,7 @@ Khung dàn bài RFC~3647 phân chia hai tầng tài liệu chính sách:
     \item \textbf{Tuyên bố Thực hành Chứng thực (Certification Practice Statement -- CPS):} Đặc tả chi tiết các biện pháp kỹ thuật, quy trình thủ tục và cơ chế kiểm soát cụ thể mà một CA áp dụng để hiện thực hóa các yêu cầu được nêu trong một hoặc nhiều CP tương ứng.
 \end{itemize}
 
-\textbf{Mối liên kết kỹ thuật và thực tiễn triển khai:} Về mặt kỹ thuật theo chuẩn RFC~5280~\cite{rfc5280}, CP được định danh trên chứng thư số thông qua một mã định danh đối tượng (OID) đặt trong phần mở rộng \texttt{certificatePolicies}, có thể đi kèm một đường dẫn liên kết tĩnh (CPS URI) trỏ trực tiếp đến tài liệu thực hành của CA. Trên thực tế, theo quy định trong Baseline Requirements của CA/Browser Forum~\cite{cabforum_br} (Mục 2.2), nhiều CA công cộng hiện nay lựa chọn cấu trúc gộp chung cả hai vai trò này vào một tài liệu duy nhất mang tên Certificate Policy and Certification Practice Statement (CP/CPS), được xây dựng bám sát 9 mục của dàn bài RFC~3647.
+\textbf{Mối liên kết kỹ thuật và thực tiễn triển khai:} Về mặt kỹ thuật theo chuẩn RFC~5280~\cite{rfc5280}, CP được định danh trên chứng thư số thông qua một mã định danh đối tượng (OID) đặt trong phần mở rộng \texttt{certificatePolicies}, có thể đi kèm một đường dẫn liên kết tĩnh (CPS URI) trỏ trực tiếp đến tài liệu thực hành của CA. Trên thực tế, Mục 2.2 của Tiêu chuẩn Baseline Requirements (CA/Browser Forum)~\cite{cabforum_br} yêu cầu rằng tài liệu CP và/hoặc CPS của CA công cộng phải được cấu trúc bám sát dàn bài chuẩn của RFC~3647 và chứa đầy đủ nội dung theo quy định. Bản thân Mục 2.2 không bắt buộc phải gộp CP và CPS thành một văn bản; việc xây dựng tài liệu gộp chung mang tên Certificate Policy and Certification Practice Statement (Combined CP/CPS) là giải pháp thực tế phổ biến được nhiều CA thương mại lựa chọn nhằm tinh giản quản trị và bảo đảm tính đồng bộ.
 
 \textbf{Lưu ý tránh nhầm lẫn trong thực nghiệm:} Trong tệp cấu hình của công cụ OpenSSL (\texttt{openssl.cnf}), chỉ thị \texttt{policy = policy\_strict} (hoặc \texttt{policy\_loose}) chỉ đơn thuần là quy tắc kỹ thuật cấp thấp nhằm đối chiếu sự trùng khớp của các trường tên phân biệt (Distinguished Name -- DN) giữa yêu cầu cấp phát (CSR) và chứng thư CA. Chỉ thị này hoàn toàn không phải là một Certificate Policy (CP) theo định nghĩa của chuẩn RFC~3647.
 
@@ -211,9 +182,9 @@ Khung dàn bài RFC~3647 phân chia hai tầng tài liệu chính sách:
 
 Mục 6 (Technical Security Controls) trong dàn bài RFC~3647 liệt kê các chủ đề kỹ thuật mà CPS cần làm rõ, bao gồm việc tạo sinh cặp khóa, bảo vệ khóa bí mật của CA và quản lý vòng đời khóa:
 \begin{itemize}
-    \item \textbf{Bảo vệ khóa bằng phần cứng:} Trong thực hành của các CA công cộng theo chuẩn Baseline Requirements~\cite{cabforum_br} (Mục 6.2.7), khóa bí mật của Root CA và Intermediate CA ký phát thường được quy định phải tạo sinh và lưu trữ trong các thiết bị mật mã phần cứng chuyên dụng (Hardware Security Module -- HSM) đạt các chứng nhận an toàn như FIPS 140-2/140-3 (thông thường từ Level 2 hoặc Level 3) nhằm hạn chế nguy cơ trích xuất khóa bí mật dưới dạng bản rõ.
+    \item \textbf{Bảo vệ khóa bằng phần cứng:} Trong thực hành của các CA công cộng theo Mục 6.2.7 của chuẩn Baseline Requirements~\cite{cabforum_br}, khóa bí mật của Root CA và Intermediate CA bắt buộc phải được tạo sinh và lưu trữ trong các mô-đun phần cứng an toàn chuyên dụng (Hardware Security Module -- HSM) đạt tiêu chuẩn tối thiểu \textbf{FIPS 140-2 Level 3} hoặc \textbf{FIPS 140-3 Level 3}~\cite{fips140_3}, hoặc đạt chứng chỉ \textbf{Common Criteria EAL 4+} trở lên. Tiêu chuẩn FIPS 140 Level 2 chỉ được chấp nhận đối với khóa của thuê bao (subscriber) ký mã nguồn (code signing), hoàn toàn không đủ điều kiện cho khóa của các tổ chức CA phát hành chứng thư công cộng.
     
-    \item \textbf{Kiểm soát nhiều người (Multiperson Control -- Mục con 6.2.2 của dàn bài RFC 3647):} Nhằm ngăn chặn hành vi lạm quyền của một cá nhân đơn lẻ, các CA thường áp dụng cơ chế phân mảnh bí mật với ngưỡng $m$-trên-$n$ (như thuật toán Shamir's Secret Sharing, ví dụ yêu cầu kích hoạt đồng thời của 3 trên 5 thẻ khóa vật lý) đối với các thao tác nhạy cảm như kích hoạt khóa CA, ký phát chứng thư trung gian hoặc khôi phục sao lưu.
+    \item \textbf{Kiểm soát nhiều người (Multiperson Control -- Mục con 6.2.2 của dàn bài RFC 3647):} Nhằm ngăn chặn hành vi lạm quyền của một cá nhân đơn lẻ, các CA thường áp dụng cơ chế phân mảnh bí mật với ngưỡng $m$-trên-$n$ (như thuật toán Shamir's Secret Sharing~\cite{shamir1979}, ví dụ yêu cầu kích hoạt đồng thời của 3 trên 5 thẻ khóa vật lý) đối với các thao tác nhạy cảm như kích hoạt khóa CA, ký phát chứng thư trung gian hoặc khôi phục sao lưu.
     
     \item \textbf{Nghi thức tạo khóa (Key Generation Ceremony):} Khóa bí mật của CA cấp cao thường được khởi tạo theo một nghi thức chính thức diễn ra trong môi trường an toàn vật lý được cách ly mạng, có nhân sự giám sát độc lập và được lập biên bản ghi nhận đầy đủ nhằm phục vụ công tác kiểm toán.
 \end{itemize}
@@ -240,40 +211,19 @@ Mục 5.2 trong dàn bài RFC~3647 có tiêu đề là Procedural Controls (các
 \begin{itemize}
     \item \textbf{Nhật ký kiểm toán (Mục 5.4 của dàn bài RFC 3647):} CPS cần xác định danh mục các sự kiện phải ghi log (khởi động/dừng dịch vụ, truy cập quản trị, tạo khóa, phát hành chứng thư, tạo CRL) kèm nhãn thời gian tin cậy. Dữ liệu nhật ký được khuyến nghị sao lưu định kỳ vào các phân vùng lưu trữ khó sửa đổi hoặc hệ thống thu thập log tập trung được phân quyền độc lập.
     
-    \item \textbf{Đánh giá tuân thủ (Mục 8 của dàn bài RFC 3647):} RFC~3647 liệt kê các chủ đề về tần suất đánh giá, phạm vi kiểm toán và tư cách của tổ chức đánh giá. Theo chính sách quản lý Root Store và quy định của CA/Browser Forum~\cite{cabforum_br}, các CA công cộng thực tế phải trải qua các đợt kiểm toán định kỳ hằng năm bởi các tổ chức kiểm toán độc lập đủ điều kiện theo các chuẩn mực như WebTrust for CA hoặc ETSI EN 319 411.
+    \item \textbf{Đánh giá tuân thủ (Mục 8 của dàn bài RFC 3647):} RFC~3647 liệt kê các chủ đề về tần suất đánh giá, phạm vi kiểm toán và tư cách của tổ chức đánh giá. Theo chính sách quản lý Root Store và quy định của CA/Browser Forum~\cite{cabforum_br}, các CA công cộng thực tế phải trải qua các đợt kiểm toán định kỳ hằng năm bởi các tổ chức kiểm toán độc lập đủ điều kiện theo các chuẩn mực như WebTrust for CA~\cite{webtrust} hoặc ETSI EN 319 411~\cite{etsi_en_319_411}.
     
-    \item \textbf{Bài học từ sự cố DigiNotar (Fox-IT, 2011)~\cite{prins2011diginotar}:} Báo cáo điều tra pháp y của Fox-IT về vụ xâm nhập nhà cấp phát chứng thư số DigiNotar cho thấy đơn vị này đã vượt qua các kỳ kiểm toán định kỳ trước đó, nhưng trên thực tế hệ thống mạng vẫn tồn tại lỗ hổng nghiêm trọng: hạ tầng CA không được phân tách mạng đúng chuẩn, không áp dụng HSM chặt chẽ, mật khẩu quản trị yếu và kẻ tấn công có thể can thiệp xóa nhật ký kiểm toán mà không bị phát hiện. Sự cố này chứng minh rằng văn bản chính sách CP/CPS và chứng chỉ kiểm toán chỉ là điều kiện cần chứ không phải điều kiện đủ; an toàn của hệ thống PKI phụ thuộc trực tiếp vào việc thực thi giám sát kỹ thuật liên tục và phòng thủ theo chiều sâu.
+    \item \textbf{Bài học từ sự cố DigiNotar (Fox-IT, 2011)~\cite{prins2011diginotar}:} Báo cáo điều tra pháp y độc lập của Fox-IT~\cite{prins2011diginotar} về vụ xâm nhập nhà cấp phát chứng thư số DigiNotar (Hà Lan) làm sáng tỏ những lỗ hổng nghiêm trọng trong quản trị hạ tầng CA: Mặc dù DigiNotar có trang bị thiết bị HSM (nCipher netHSM) và khóa CA chỉ được kích hoạt thông qua thẻ thông minh kèm mã PIN, toàn bộ 8 máy chủ quản lý CA đều bị tin tặc chiếm quyền điều khiển, cho phép kẻ tấn công thực hiện ký phát hàng loạt chứng thư giả mạo ngay trong lúc khóa đang ở trạng thái kích hoạt (activated). Thêm vào đó, tất cả máy chủ CA đều gia nhập cùng một miền Windows (Active Directory) với chính sách mật khẩu yếu dễ bị vét cạn, hệ thống không cài đặt phần mềm chống mã độc, nhật ký an ninh lưu trữ cục bộ trên chính máy bị chiếm quyền và đã bị can thiệp xóa dấu vết. Cấu trúc mạng nội bộ dù chia 24 phân đoạn và có vùng Secure-net nhưng các chính sách tường lửa lỏng lẻo với nhiều luật ngoại lệ. Sự cố DigiNotar là minh chứng lịch sử đắt giá cho thấy: phần cứng HSM, văn bản chính sách CP/CPS và kiểm toán định kỳ chỉ là điều kiện cần; an ninh thực sự của hệ thống PKI phụ thuộc cốt lõi vào sự nghiêm ngặt trong triển khai phân tách mạng, quản trị danh tính và giám sát kỹ thuật liên tục.
 \end{itemize}
 
 \subsection{Đối chiếu chính sách CA thực tế và môi trường thực nghiệm của nhóm}
 \label{subsec:real-vs-lab-ca}
 
-Chính sách vận hành hoàn chỉnh của một CA trong môi trường sản xuất không thể được suy diễn hay đại diện chỉ thông qua các kịch bản thực nghiệm trong phòng lab. Bảng~\ref{tab:rfc3647-vs-lab} tổng hợp sự khác biệt cơ bản giữa yêu cầu của một CA thực tế theo khung RFC~3647 và môi trường thử nghiệm đã được triển khai:
+Chính sách vận hành hoàn chỉnh của một CA trong môi trường sản xuất không thể được suy diễn hay đại diện chỉ thông qua các kịch bản thực nghiệm trong phòng lab. Cần nhấn mạnh rằng, theo điều khoản phạm vi áp dụng (Scope) trong Tiêu chuẩn Baseline Requirements của CA/Browser Forum~\cite{cabforum_br}, bộ tiêu chuẩn BR không điều chỉnh các hệ thống PKI nội bộ doanh nghiệp mà Root CA không được các nhà phát triển phần mềm/hệ điều hành (như Microsoft, Apple, Google, Mozilla) phân phối mặc định trong Root Trust Store; các yêu cầu kỹ thuật và thủ tục nghiêm ngặt của BR chỉ mang tính bắt buộc khi được các chương trình Root Store chấp nhận và thực thi. Luận điểm này là cơ sở giải thích vì sao môi trường lab thực nghiệm của nhóm nằm ngoài phạm vi điều chỉnh bắt buộc của BR và được thiết kế tinh giản phục vụ học thuật.
 
-\begin{table}[!htbp]
-\centering
-\small
-\renewcommand{\arraystretch}{1.25}
-\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
-\toprule
-\textbf{Chủ đề theo dàn bài RFC~3647} & \textbf{Yêu cầu đặc tả trong CPS của CA thực tế} & \textbf{Triển khai trong bài lab thực nghiệm của nhóm} \\
-\midrule
-\textbf{Xác minh danh tính (Mục~3)} & Quy trình thẩm định hồ sơ pháp lý chặt chẽ theo phân hạng chứng thư (DV, OV, EV), đối chiếu cơ sở dữ liệu doanh nghiệp và xác minh tên miền thực tế. & Bỏ qua hoàn toàn quy trình xác minh thực tế; thông tin chủ thể (Subject DN) được tự gán trực tiếp qua tệp cấu hình hoặc lệnh OpenSSL. \\
-\midrule
-\textbf{Kiểm soát thủ tục \& vai trò tin cậy (Mục~5.2)} & Phân tách chặt chẽ tối thiểu 4 vai trò độc lập; không cho phép kiêm nhiệm; áp dụng cơ chế kiểm soát kép (Dual Control) cho các tác vụ nhạy cảm. & Toàn bộ thao tác (sinh khóa, tạo CSR, ký chứng thư, thu hồi) do một cá nhân duy nhất thực hiện trên cùng một tài khoản hệ điều hành. \\
-\midrule
-\textbf{Nhật ký kiểm toán (Mục~5.4)} & Ghi vết tự động, toàn diện các sự kiện an ninh với nhãn thời gian tin cậy; chuyển log về máy chủ tập trung hoặc lưu trữ bất biến. & Chỉ dựa vào tệp văn bản thô \texttt{index.txt} và \texttt{serial} của OpenSSL; không có cơ chế lưu vết truy cập quản trị hay chống chỉnh sửa log. \\
-\midrule
-\textbf{Bảo vệ khóa bí mật của CA (Mục~6.2, 6.2.2)} & Lưu trữ trong thiết bị mật mã phần cứng chuyên dụng (HSM); kích hoạt bằng cơ chế chia sẻ bí mật ngưỡng nhiều người ($m$-trên-$n$). & Khóa bí mật của Root CA và Intermediate CA lưu trực tiếp dưới dạng tệp tin phần mềm (\texttt{.key}) trên ổ đĩa máy tính, chỉ bảo vệ bằng mật khẩu phần mềm. \\
-\midrule
-\textbf{Đánh giá tuân thủ (Mục~8)} & Định kỳ kiểm toán độc lập hằng năm theo các chuẩn mực quốc tế (WebTrust, ETSI) để duy trì chứng thư trên Root Store. & Không có quy trình đánh giá tuân thủ; là hệ thống tự tạo và tự tin cậy cục bộ phục vụ học thuật. \\
-\midrule
-\textbf{Pháp lý và trách nhiệm (Mục~9)} & Quy định rõ về quỹ bảo hiểm, trách nhiệm tài chính với bên tin cậy và cơ chế giải quyết tranh chấp. & Hoàn toàn không phát sinh cam kết pháp lý hay ràng buộc tài chính. \\
-\bottomrule
-\end{tabularx}
-\caption[So sánh đối chiếu giữa khung RFC 3647, CA thực tế và bài lab]{So sánh đối chiếu giữa khung dàn bài RFC~3647, triển khai CA thực tế và bài lab của nhóm.}
-\label{tab:rfc3647-vs-lab}
-\end{table}
+Bảng~\ref{tab:rfc3647-vs-lab} tổng hợp sự khác biệt cơ bản giữa yêu cầu của một CA công cộng thực tế theo khung RFC~3647 và môi trường thử nghiệm đã được triển khai:
 
-Sự đối chiếu trên làm rõ rằng các ca kiểm thử từ TC01 đến TC10 được thực hiện trong báo cáo chỉ nhằm mục đích chứng minh tính đúng đắn của logic kỹ thuật, định dạng X.509 và giải thuật xác thực chuỗi chứng thư (Path Validation) theo chuẩn RFC~5280~\cite{rfc5280}. Các kết quả này hoàn toàn không phản ánh mức độ an toàn vận hành, năng lực phòng vệ hay tính tuân thủ quy trình an ninh mạng mà một CA thực tế thường phải thiết lập.
+\input{report/tables/rfc3647-vs-lab}
 
+
+Sự đối chiếu trên làm rõ rằng các ca kiểm thử từ TC01 đến TC10 được thực hiện trong báo cáo chỉ nhằm mục đích quan sát phản ứng của quy trình xác minh chuỗi chứng thư đối với từng điều kiện vi phạm kỹ thuật cụ thể theo chuẩn RFC~5280~\cite{rfc5280}. Các kết quả này hoàn toàn không phản ánh mức độ an toàn vận hành, năng lực phòng vệ hay tính tuân thủ quy trình an ninh mạng mà một CA thực tế thường phải thiết lập.

@@ -1,0 +1,24 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Chủ đề theo dàn bài RFC~3647} & \textbf{CPS của CA công cộng thường đặc tả} & \textbf{Triển khai trong bài lab thực nghiệm của nhóm} \\
+\midrule
+\textbf{Xác minh danh tính (Mục~3)} & Thường đặc tả quy trình thẩm định hồ sơ pháp lý theo phân hạng chứng thư (DV, OV, EV), đối chiếu cơ sở dữ liệu doanh nghiệp và xác minh quyền kiểm soát tên miền. & Bỏ qua hoàn toàn quy trình xác minh thực tế; thông tin chủ thể (Subject DN) được tự gán trực tiếp qua tệp cấu hình hoặc câu lệnh OpenSSL. \\
+\midrule
+\textbf{Kiểm soát thủ tục \& vai trò tin cậy (Mục~5.2)} & Thường phân tách các vai trò độc lập (Quản trị viên, Vận hành, Kiểm toán, An ninh); áp dụng cơ chế kiểm soát kép (Dual Control) cho tác vụ nhạy cảm. & Toàn bộ thao tác do nhóm nghiên cứu thực hiện trên một máy trạm, một tài khoản hệ điều hành, không phân tách vai trò. \\
+\midrule
+\textbf{Nhật ký kiểm toán (Mục~5.4)} & Ghi vết tự động các sự kiện an ninh với nhãn thời gian tin cậy; chuyển log về máy chủ tập trung an toàn hoặc phân vùng lưu trữ bất biến. & Chỉ dựa vào tệp văn bản thô \texttt{index.txt} và \texttt{serial} của OpenSSL; không có cơ chế lưu vết truy cập quản trị hay chống chỉnh sửa log. \\
+\midrule
+\textbf{Bảo vệ khóa bí mật của CA (Mục~6.2, 6.2.2)} & Lưu trữ bắt buộc trong thiết bị HSM đạt chuẩn tối thiểu FIPS 140-2/140-3 Level 3; kích hoạt bằng cơ chế chia sẻ bí mật ngưỡng nhiều người ($m$-trên-$n$). & Khóa bí mật của Root CA và Intermediate CA lưu trực tiếp dưới dạng tệp tin phần mềm (\texttt{.key}) không đặt mật khẩu (\texttt{-nodes}) trên ổ đĩa máy tính, không sử dụng thiết bị phần cứng bảo mật HSM. \\
+\midrule
+\textbf{Đánh giá tuân thủ (Mục~8)} & Định kỳ thực hiện kiểm toán độc lập hằng năm theo các chuẩn mực quốc tế (WebTrust, ETSI) để duy trì sự tin cậy trên Root Store. & Không có quy trình đánh giá tuân thủ; là hệ thống tự tạo và tự tin cậy cục bộ phục vụ học thuật. \\
+\midrule
+\textbf{Pháp lý và trách nhiệm (Mục~9)} & Quy định rõ về quỹ bảo hiểm rủi ro, cam kết tài chính với bên tin cậy và cơ chế tài phán giải quyết khiếu nại. & Hoàn toàn không phát sinh cam kết pháp lý hay ràng buộc tài chính. \\
+\bottomrule
+\end{tabularx}
+\caption[So sánh đối chiếu giữa khung RFC 3647, CA thực tế và bài lab]{So sánh đối chiếu giữa khung dàn bài RFC~3647, triển khai CA thực tế và bài lab của nhóm.}
+\label{tab:rfc3647-vs-lab}
+\end{table}

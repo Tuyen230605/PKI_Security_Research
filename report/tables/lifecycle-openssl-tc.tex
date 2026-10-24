@@ -1,0 +1,26 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.8cm}>{\raggedright\arraybackslash}p{5.8cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Giai đoạn vòng đời} & \textbf{Lệnh OpenSSL thực thi trong Lab} & \textbf{Ca kiểm thử liên quan} \\
+\midrule
+\textbf{1. Sinh cặp khóa} & \texttt{openssl genrsa -aes256 ...} hoặc \texttt{openssl ecparam ...} & Nền tảng mọi kịch bản \\
+\midrule
+\textbf{2. Tạo CSR (PoP)} & \texttt{openssl req -new -key ... -out ...} & TC01, TC02, TC04, TC08 \\
+\midrule
+\textbf{4. Cấp phát chứng thư} & \texttt{openssl ca -in ... -out ... -extfile ...} & TC01, TC04 (thiếu SAN), TC05 (chữ ký bị sửa đổi), TC08 (sai Key Usage) \\
+\midrule
+\textbf{5. Triển khai cấu hình} & Cấu hình tệp chứng thư và chuỗi Intermediate CA bundle & TC06 (thiếu Intermediate CA bundle) \\
+\midrule
+\textbf{6. Xác minh đường dẫn} & \texttt{openssl verify -CAfile ... -untrusted ...} & TC01 (thành công), TC02 (chữ ký sai), TC10 (CA giả mạo) \\
+\midrule
+\textbf{8. Kiểm tra thời hạn} & \texttt{openssl verify} (so khớp thời gian hệ thống) & TC03 (chứng thư hết hạn) \\
+\midrule
+\textbf{9. Thu hồi chứng thư} & \texttt{openssl ca -revoke ...} và \texttt{openssl ca -gencrl ...} & TC07 (chứng thư bị thu hồi qua CRL) \\
+\bottomrule
+\end{tabularx}
+\caption{Ánh xạ các giai đoạn vòng đời chứng thư X.509 với lệnh OpenSSL và ca kiểm thử.}
+\label{tab:lifecycle-openssl-tc}
+\end{table}

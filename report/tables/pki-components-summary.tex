@@ -1,0 +1,26 @@
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{2.7cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Thành phần} & \textbf{Khóa quản lý} & \textbf{Trạng thái vận hành} & \textbf{Chức năng chính} \\
+\midrule
+\textbf{Trust Anchor} & Khóa công khai Root CA & Tích hợp sẵn trong OS/Browser & Điểm mốc tin cậy tuyệt đối để neo chuỗi xác minh. \\
+\midrule
+\textbf{Root CA} & $SK_{\mathrm{Root}}$, $PK_{\mathrm{Root}}$ & Ngoại tuyến (Offline, HSM) & Ký phát hành chứng thư tự ký và ủy quyền cho Sub-CA. \\
+\midrule
+\textbf{Intermediate CA} & $SK_{\mathrm{Sub}}$, $PK_{\mathrm{Sub}}$ & Trực tuyến (Online) & Ký phát hành chứng thư cho End-entity, ký danh sách CRL. \\
+\midrule
+\textbf{RA} & Khóa xác thực danh tính & Trực tuyến & Thẩm tra định danh, duyệt yêu cầu trước khi gửi sang CA. \\
+\midrule
+\textbf{Chủ thể (Subject)} & $SK_{\mathrm{Entity}}$, $PK_{\mathrm{Entity}}$ & Trực tuyến (Web/Client) & Nắm giữ khóa bí mật, dùng chứng thư để chứng minh danh tính. \\
+\midrule
+\textbf{Bên tin cậy (RP)} & Sở hữu Trust Store & Trực tuyến (Client) & Thẩm định đường dẫn chứng thư, kiểm tra trạng thái thu hồi. \\
+\midrule
+\textbf{Kho lưu trữ (Repo)} & Không giữ khóa ký & Trực tuyến (HTTP, LDAP) & Lưu trữ, xuất bản chứng thư CA, CRL và dịch vụ OCSP. \\
+\bottomrule
+\end{tabularx}
+\caption{Tổng hợp vai trò và đặc điểm vận hành của các thành phần trong PKI.}
+\label{tab:pki-components-summary}
+\end{table}

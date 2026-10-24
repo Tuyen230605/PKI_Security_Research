@@ -17,7 +17,7 @@ Hạ tầng khóa công khai (PKI) về bản chất là một cơ chế quản 
 \begin{itemize}
     \item \textbf{Các thuộc tính PKI hỗ trợ trực tiếp:}
     \begin{itemize}
-        \item \textit{Tính xác thực (Authenticity):} Đây là mục tiêu cốt lõi của PKI. Thông qua chứng thư số chuẩn ITU-T X.509 và chữ ký số của Tổ chức chứng thực (CA), PKI liên kết chặt chẽ danh tính thực tế của chủ thể (Subject) với khóa công khai tương ứng, loại bỏ triệt để nguy cơ phân phối khóa công khai trần không rõ nguồn gốc.
+        \item \textit{Tính xác thực (Authenticity):} Đây là mục tiêu cốt lõi của PKI. Thông qua chứng thư số chuẩn ITU-T X.509 và chữ ký số của Tổ chức chứng thực (CA), PKI liên kết chặt chẽ danh tính thực tế của chủ thể (Subject) với khóa công khai tương ứng, giảm thiểu và ngăn chặn nguy cơ phân phối khóa công khai trần không rõ nguồn gốc trong điều kiện CA được bảo vệ an toàn.
         \item \textit{Tính toàn vẹn (Integrity) và Chống chối bỏ (Non-repudiation):} Bằng việc đóng gói dữ liệu và ký số bằng khóa bí mật của CA hoặc của chủ thể, PKI bảo đảm tính toàn vẹn của chứng thư số và thông điệp giao dịch; đồng thời ngăn chặn bên ký chối bỏ trách nhiệm về dữ liệu đã ban hành.
     \end{itemize}
     \item \textbf{Các thuộc tính cần kết hợp cơ chế bảo vệ khác:}
@@ -29,28 +29,8 @@ Hạ tầng khóa công khai (PKI) về bản chất là một cơ chế quản 
 
 Bảng~\ref{tab:pki-security-goals} tóm tắt phạm vi hỗ trợ của PKI đối với các mục tiêu an ninh thông tin.
 
-\begin{table}[htbp]
-\centering
-\small
-\renewcommand{\arraystretch}{1.3}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{8.5cm}}
-\toprule
-\textbf{Mục tiêu an ninh} & \textbf{Vai trò của PKI} & \textbf{Cơ chế thực hiện / Phối hợp} \\
-\midrule
-\textbf{Xác thực (Authenticity)} & Hỗ trợ trực tiếp & Chứng thư số X.509, chữ ký số của CA trên Subject PublicKey. \\
-\midrule
-\textbf{Toàn vẹn (Integrity)} & Hỗ trợ trực tiếp & Hàm băm mật mã và chữ ký số trên cấu trúc chứng thư. \\
-\midrule
-\textbf{Chống chối bỏ (Non-repudiation)} & Hỗ trợ trực tiếp & Chữ ký số gắn liền với khóa bí mật duy nhất của thực thể. \\
-\midrule
-\textbf{Bí mật (Confidentiality)} & Kết hợp bên ngoài & Giao thức TLS bắt tay thỏa thuận khóa phiên (ECDHE) và mã hóa đối xứng (AES-GCM). \\
-\midrule
-\textbf{Sẵn sàng (Availability)} & Kết hợp bên ngoài & Hạ tầng mạng phân tán, bộ đệm chứng thực, OCSP Stapling, CDN. \\
-\bottomrule
-\end{tabular}
-\caption[Phân định phạm vi hỗ trợ của PKI đối với mục tiêu an ninh thông tin]{Phân định phạm vi hỗ trợ của PKI đối với các mục tiêu an ninh thông tin.}
-\label{tab:pki-security-goals}
-\end{table}
+\input{report/tables/pki-security-goals}
+
 
 \subsection{Nguyên lý quản lý khóa và vòng đời khóa mật mã}
 \label{subsec:key-lifecycle}
@@ -63,9 +43,9 @@ Theo \textit{Nguyên lý Kerckhoffs}, độ an toàn của một hệ thống m�
 Quản lý khóa (Key Management) là tập hợp toàn bộ các chính sách và kỹ thuật nhằm kiểm soát cặp khóa xuyên suốt vòng đời (Key Lifecycle):
 \begin{enumerate}
     \item \textbf{Khởi tạo khóa (Generation):} Phải sử dụng bộ sinh số ngẫu nhiên giả an toàn mật mã (CSPRNG) và tuân thủ độ dài khóa khuyến nghị (ví dụ RSA $\ge$ 2048-bit, ECC $\ge$ 256-bit) để chống thám mã vét cạn.
-    \item \textbf{Lưu trữ và bảo vệ khóa bí mật (Storage):} Khóa bí mật của các CA gốc và máy chủ quan trọng phải được lưu trữ trong các mô-đun phần cứng chuyên dụng (Hardware Security Module - HSM hoặc TPM) với chính sách kiểm soát truy cập nghiêm ngặt (quản trị phân quyền $k$-out-of-$n$). Khóa tuyệt đối không được xuất ra ngoài bộ nhớ dưới dạng bản rõ.
+    \item \textbf{Lưu trữ và bảo vệ khóa bí mật (Storage):} Khóa bí mật của các CA gốc và Intermediate CA bắt buộc phải được tạo sinh và lưu trữ trong các mô-đun phần cứng an toàn chuyên dụng (Hardware Security Module -- HSM) với chính sách kiểm soát truy cập nghiêm ngặt (quản trị phân quyền ngưỡng $m$-trên-$n$). Khóa tuyệt đối không được xuất ra ngoài bộ nhớ dưới dạng bản rõ.
     \item \textbf{Phân phối và chứng thực (Distribution):} Khóa công khai được đóng gói thành yêu cầu cấp chứng thư (CSR) và gửi tới CA để thẩm định, cấp phát chứng thư X.509.
-    \item \textbf{Thời hạn sử dụng (Cryptoperiod):} Mọi khóa mật mã đều phải có thời hạn hiệu lực hữu hạn (\texttt{notBefore} và \texttt{notAfter}) để hạn chế lượng bản mã tích lũy cho đối thủ phân tích, đồng thời bắt buộc chu kỳ thay thế khóa định kỳ.
+    \item \textbf{Thời hạn sử dụng an toàn của khóa (Cryptoperiod):} Mọi khóa mật mã đều cần được ấn định thời hạn sử dụng an toàn (Cryptoperiod) nhằm giới hạn khối lượng bản mã tích lũy cho đối thủ thám mã và hạn chế rủi ro thỏa hiệp khóa theo thời gian. Cần phân biệt rõ Cryptoperiod (vòng đời mật mã của khóa) với thời hạn hiệu lực của chứng thư số (Certificate Validity Period xác định bởi các trường \texttt{notBefore} và \texttt{notAfter}), vốn là khoảng thời gian chứng thư được CA bảo chứng về mối liên kết giữa định danh và khóa công khai (như phân tích tại Mục~\ref{sec:certificate-lifecycle}).
     \item \textbf{Thu hồi và tiêu hủy (Revocation \& Destruction):} Khi khóa bí mật nghi ngờ bị lộ, chủ sở hữu phải lập tức yêu cầu CA đưa chứng thư vào danh sách thu hồi (CRL/OCSP). Khi hết vòng đời, khóa bí mật phải bị xóa hủy an toàn (zeroize) để ngăn ngừa phục hồi dữ liệu từ phần cứng.
 \end{enumerate}
 
@@ -90,9 +70,9 @@ Quản lý khóa (Key Management) là tập hợp toàn bộ các chính sách v
     
     Cần lưu ý rằng các biểu thức trên chỉ đại diện cho mô hình khái niệm trừu tượng. Trong thực tế triển khai, thao tác tính toán phụ thuộc chặt chẽ vào cấu trúc toán học của từng lược đồ chữ ký và các cơ chế đệm (padding) chuẩn hóa:
     \begin{itemize}
-        \item \textit{RSA (PKCS\#1 v1.5 / RSA-PSS):} Dữ liệu băm được đệm theo sơ đồ xác suất PSS để ngăn chặn tấn công đại số trước khi áp dụng phép lũy thừa modulo: $\sigma = (H_{pad}(m))^d \pmod N$.
+        \item \textit{RSA (PKCS\#1 v1.5 / RSA-PSS):} Chuẩn cổ điển PKCS\#1 v1.5 áp dụng cơ chế đệm tất định (deterministic padding); trong khi chuẩn hiện đại RSA-PSS sử dụng sơ đồ đệm xác suất (probabilistic signature scheme) với muối ngẫu nhiên (salt) nhằm ngăn chặn triệt để các dạng tấn công đại số trước khi thực hiện lũy thừa modulo: $\sigma = (H_{pad}(m))^d \pmod N$.
         \item \textit{ECDSA (Elliptic Curve Digital Signature Algorithm):} Thực hiện trên nhóm điểm của đường cong elip, yêu cầu sinh một giá trị ngẫu nhiên bí mật $k$ trên mỗi phiên ký để tạo cặp giá trị chữ ký $(r, s)$.
-        \item \textit{Ed25519 (EdDSA):} Sử dụng đường cong xoắn Edwards với cơ chế sinh tham số ngẫu nhiên mang tính tất định dẫn xuất từ khóa bí mật và thông điệp, triệt tiêu rủi ro lộ khóa do bộ sinh số ngẫu nhiên kém an toàn.
+        \item \textit{Ed25519 (EdDSA):} Sử dụng đường cong xoắn Edwards với cơ chế sinh tham số ngẫu nhiên mang tính tất định dẫn xuất từ khóa bí mật và thông điệp. Đáng chú ý, ở chế độ PureEdDSA (RFC 8032), thuật toán ký trực tiếp trên toàn bộ thông điệp $m$ và thực hiện băm nội tại bằng SHA-512 chứ không đòi hỏi một bước băm $H(m)$ riêng biệt từ bên ngoài như các lược đồ truyền thống.
     \end{itemize}
 
     \item \textbf{Chứng thư số (Digital Certificate):} Chữ ký số chứng minh được một thông điệp được tạo ra bởi người sở hữu khóa $SK$, nhưng không thể trả lời câu hỏi thực thể đó là ai ngoài đời thực. Chứng thư số chuẩn ITU-T X.509 đóng vai trò đóng gói khóa công khai $PK$ cùng định danh của chủ thể (Subject) và được một bên thứ ba tin cậy (Certificate Authority - CA) xác thực bằng chữ ký số sử dụng khóa bí mật $SK_{CA}$. Bằng cách này, chứng thư số hoàn thiện mắt xích liên kết tin cậy (binding) giữa danh tính và khóa công khai.
@@ -102,42 +82,7 @@ Bản chất kỹ thuật và giới hạn của các thành phần mật mã đ
 
 \clearpage
 
-\begin{table}[!htbp]
-\centering
-\caption{So sánh bản chất và vai trò của các thành phần mật mã trong PKI}
-\label{tab:crypto_comparison}
-\small
-\renewcommand{\arraystretch}{1.3}
-\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{3.2cm} >{\raggedright\arraybackslash}p{2.6cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}p{3.2cm}@{}}
-\toprule
-\textbf{Khái niệm} & \textbf{Bản chất kỹ thuật} & \textbf{Khóa bí mật ($SK$)} & \textbf{Giá trị an ninh cung cấp} & \textbf{Hạn chế nội tại} \\
-\midrule
-\textbf{Cặp khóa ($PK, SK$)} & 
-Hai khóa có liên hệ toán học; $PK$ công khai, $SK$ bảo mật. & 
-Chỉ duy nhất chủ sở hữu hợp pháp nắm giữ và bảo vệ. & 
-Nền tảng cho ký số, xác thực sở hữu và thỏa thuận khóa phiên. & 
-Không tự liên kết được với danh tính thực thể ngoài đời thực. \\
-\midrule
-\textbf{Hàm băm ($H$)} & 
-Ánh xạ thông điệp tùy ý thành digest có độ dài cố định. & 
-Không sử dụng khóa. & 
-Bảo đảm tính toàn vẹn, tóm lược dữ liệu, kháng va chạm. & 
-Không xác thực nguồn gốc do bất kỳ ai cũng tính toán được. \\
-\midrule
-\textbf{Chữ ký số} & 
-Cặp thuật toán Sign/Verify thao tác trên giá trị băm thông điệp. & 
-Ký bằng $SK$ của chủ thể; kiểm tra bằng $PK$ tương ứng. & 
-Xác thực nguồn gốc dữ liệu, bảo đảm tính toàn vẹn và chống chối bỏ. & 
-Chỉ xác minh tính hợp lệ của dữ liệu với $PK$, không định danh người ký. \\
-\midrule
-\textbf{Chứng thư số} & 
-Cấu trúc dữ liệu liên kết $PK$ với danh tính, được CA ký. & 
-Ký bởi $SK_{CA}$; cấu trúc chứng thư không bao giờ chứa $SK$. & 
-Thiết lập liên kết tin cậy giữa khóa công khai và danh tính chủ thể. & 
-Phụ thuộc độ tin cậy của CA, thời hạn hiệu lực và trạng thái thu hồi. \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\input{report/tables/crypto-comparison}
 
 \clearpage
 
@@ -151,13 +96,13 @@ Một trong những sai lầm phổ biến khi tiếp cận mật mã học là 
     \begin{itemize}
         \item \textit{Bản chất:} Chứng thư số của máy chủ chứa khóa công khai dài hạn ($PK_{server}$) và được chứng thực thông qua chữ ký số của một CA tin cậy ($SK_{CA}$) nhằm giải quyết bài toán liên kết định danh.
         \item \textit{Cơ chế trong TLS 1.3:} Trong giai đoạn bắt tay (Handshake), máy chủ gửi chứng thư X.509 cho client và phát hành thông điệp xác thực \texttt{CertificateVerify}. Thông điệp này được ký bằng khóa bí mật dài hạn ($SK_{server}$) lên toàn bộ bản ghi lịch sử (\textit{transcript}) của các gói tin bắt tay trước đó.
-        \item \textit{Mục tiêu:} Sử dụng các thuật toán chữ ký số hiện đại (như RSA-PSS, ECDSA với đường cong secp256r1/secp384r1, hoặc Ed25519) nhằm chứng minh máy chủ thực sự sở hữu khóa bí mật tương ứng với chứng thư (\textit{Proof of Possession}), loại bỏ hoàn toàn nguy cơ giả mạo danh tính (impersonation). Khóa công khai này tuyệt đối không dùng để mã hóa lưu lượng dữ liệu.
+        \item \textit{Mục tiêu:} Sử dụng các thuật toán chữ ký số hiện đại (như RSA-PSS, ECDSA với đường cong secp256r1/secp384r1, hoặc Ed25519) nhằm chứng minh máy chủ thực sự sở hữu khóa bí mật tương ứng với chứng thư (\textit{Proof of Possession}), ngăn chặn việc đối thủ đánh cắp và tái sử dụng chứng thư; tuy nhiên bước này không chứng minh được chứng thư đó có bị CA cấp phát sai hoặc bị giả mạo hay không nếu CA đã bị xâm nhập. Khóa công khai này tuyệt đối không dùng để mã hóa lưu lượng dữ liệu.
     \end{itemize}
 
     \item \textbf{Thỏa thuận khóa phiên (Key Exchange / Agreement Layer):}
     \begin{itemize}
         \item \textit{Bản chất:} Nhằm thiết lập một khóa bí mật chung giữa client và server qua kênh truyền không tin cậy mà không bao giờ truyền trực tiếp khóa đó trên mạng.
-        \item \textit{Cơ chế trong TLS 1.3:} Khác biệt căn bản với các phiên bản TLS cũ (vốn cho phép dùng khóa RSA của chứng thư để mã hóa và gửi khóa tiền phiên \textit{pre-master secret}), TLS 1.3 đã loại bỏ hoàn toàn cơ chế trao đổi khóa RSA tĩnh. Thay vào đó, giao thức bắt buộc sử dụng cơ chế trao đổi khóa tạm thời dựa trên Diffie-Hellman: ECDHE (\textit{Ephemeral Elliptic Curve Diffie-Hellman}, như X25519) hoặc DHE.
+        \item \textit{Cơ chế trong TLS 1.3:} Khác biệt căn bản với các phiên bản TLS cũ (vốn cho phép dùng khóa RSA của chứng thư để mã hóa và gửi khóa tiền phiên \textit{pre-master secret}), TLS 1.3 đã loại bỏ hoàn toàn cơ chế trao đổi khóa RSA tĩnh. Trong các phiên bắt tay xác thực dựa trên chứng thư số (Certificate-based Handshake), giao thức bắt buộc sử dụng cơ chế trao đổi khóa tạm thời dựa trên Diffie-Hellman: ECDHE (\textit{Ephemeral Elliptic Curve Diffie-Hellman}, như X25519) hoặc DHE (ngoại trừ chế độ chỉ sử dụng khóa chia sẻ trước PSK-only).
         \item \textit{Đặc tính Bí mật chuyển tiếp hoàn hảo (Perfect Forward Secrecy - PFS):} Cặp khóa bất đối xứng tạm thời (\textit{ephemeral key pair}) được sinh ngẫu nhiên độc lập cho từng phiên kết nối và bị hủy ngay sau khi bắt tay. Do đó, ngay cả khi khóa bí mật dài hạn của máy chủ bị xâm phạm trong tương lai, kẻ tấn công cũng không thể giải mã hồi cứu các phiên truyền thông đã lưu vết trong quá khứ.
     \end{itemize}
 
@@ -171,32 +116,6 @@ Một trong những sai lầm phổ biến khi tiếp cận mật mã học là 
 
 Sự phân định vai trò và phối hợp giữa các thành phần thuật toán trong TLS 1.3 được tổng hợp tại Bảng~\ref{tab:tls_algorithms}.
 
-\begin{table}[htbp]
-\centering
-\caption{Phân định vai trò các thuật toán mật mã trong giao thức TLS 1.3}
-\label{tab:tls_algorithms}
-\small
-\renewcommand{\arraystretch}{1.3}
-\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{3.2cm} >{\raggedright\arraybackslash}p{3.4cm} >{\raggedright\arraybackslash}X@{}}
-\toprule
-\textbf{Lớp chức năng} & \textbf{Thuật toán tiêu biểu} & \textbf{Khóa mật mã sử dụng} & \textbf{Mục tiêu an ninh đáp ứng} \\
-\midrule
-\textbf{Xác thực (Authentication)} & 
-RSA-PSS, ECDSA (secp256r1), Ed25519. & 
-Khóa bất đối xứng dài hạn ($PK, SK$) trong chứng thư X.509. & 
-Xác thực nguồn gốc máy chủ, ngăn chặn tấn công mạo danh và người đứng giữa (MITM). \\
-\midrule
-\textbf{Thỏa thuận khóa (Key Exchange)} & 
-ECDHE (X25519, secp256r1), DHE. & 
-Cặp khóa bất đối xứng tạm thời (ephemeral), sinh mới mỗi phiên. & 
-Thiết lập bí mật chung an toàn; bảo đảm Bí mật chuyển tiếp hoàn hảo (PFS). \\
-\midrule
-\textbf{Mã hóa dữ liệu (Record Layer)} & 
-AEAD (AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305). & 
-Khóa đối xứng phiên (Session Key) suy dẫn qua HKDF. & 
-Bảo đảm tính bí mật và toàn vẹn dữ liệu ứng dụng với tốc độ và hiệu năng tối ưu. \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\input{report/tables/tls-algorithms}
 
 Trong phạm vi của đề tài nghiên cứu này, các nội dung tiếp theo (Chương 3, Chương 4 và kết quả thực nghiệm tại Chương 6) sẽ tập trung làm rõ lớp chức năng đầu tiên: cấu trúc chứng thư X.509, quy trình thẩm định chuỗi tin cậy và cơ chế thu hồi của hạ tầng PKI.
