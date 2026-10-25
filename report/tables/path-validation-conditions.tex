@@ -1,0 +1,26 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.2cm}>{\raggedright\arraybackslash}p{2.8cm}}
+\toprule
+\textbf{Điều kiện kiểm tra} & \textbf{Áp dụng cho} & \textbf{Ca kiểm thử} \\
+\midrule
+Chữ ký của chứng thư được tạo bằng khóa của bên phát hành & Mọi chứng thư, trừ trust anchor & TC05 \\
+\midrule
+Chuỗi nối được tới trust anchor đã cấu hình & Toàn đường dẫn & TC02, TC06, TC10 \\
+\midrule
+Thời điểm xác minh nằm trong [\texttt{notBefore}, \texttt{notAfter}] & Mọi chứng thư & TC03 \\
+\midrule
+Ràng buộc CA: \texttt{CA:TRUE} với mắt xích trung gian, \texttt{pathLenConstraint} không bị vượt & Root, Intermediate & Không có ca riêng \\
+\midrule
+Mục đích sử dụng: Key Usage / EKU phù hợp (\texttt{serverAuth}) & Chứng thư máy chủ & TC08 \\
+\midrule
+Tên máy chủ khớp với SAN & Chứng thư máy chủ & TC04 \\
+\midrule
+Trạng thái thu hồi (chỉ khi được bật) & Mọi chứng thư & TC07 (xem Mục~\ref{sec:revocation-mechanisms}) \\
+\bottomrule
+\end{tabularx}
+\caption{Các điều kiện xác minh đường dẫn và ca kiểm thử tương ứng}
+\label{tab:path-validation-conditions}
+\end{table}

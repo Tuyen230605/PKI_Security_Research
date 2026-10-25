@@ -86,7 +86,56 @@ Từ kết quả trích xuất trên Hình~\ref{fig:openssl-x509-terminal-real},
 
 \section{Xây dựng và xác minh đường dẫn}
 \label{sec:path-validation}
-Minh họa Root CA $\rightarrow$ Intermediate CA $\rightarrow$ server. Cần mô tả chữ ký từng mắt xích, trust anchor, hiệu lực, mục đích sử dụng, tên máy chủ và trạng thái thu hồi. Root CA tự ký chỉ trở thành trust anchor khi client cấu hình tin cậy nó.
+
+Một chứng thư máy chủ không tự mang đủ bằng chứng để được tin cậy. Relying party phải chỉ ra được một đường dẫn chứng thư (certification path) nối chứng thư đó tới một trust anchor mà chính nó đã cấu hình. Việc này gồm hai giai đoạn: xây dựng đường dẫn (path building) và xác minh đường dẫn (path validation, RFC~5280~\cite{rfc5280}, mục~6).
+
+\subsection{Chuỗi chứng thư trong lab}
+\label{subsec:lab-trust-chain}
+
+Lab dùng chuỗi ba mắt xích $\mathrm{Root\ CA} \rightarrow \mathrm{Intermediate\ CA} \rightarrow \text{chứng thư máy chủ}$, như minh họa ở Hình~\ref{fig:trust-chain-validation}.
+\begin{itemize}
+    \item \textbf{Root CA} (\texttt{Lab Root CA}): Chứng thư tự ký ($\mathrm{Issuer} \equiv \mathrm{Subject}$), \texttt{basicConstraints} critical với \texttt{CA:TRUE}. Khóa $SK_{\mathrm{Root}}$ dùng để ký chứng thư của Intermediate CA.
+    \item \textbf{Intermediate CA} (\texttt{Lab Intermediate CA}): Được Root ký phát với chữ ký $\sigma_{\mathrm{Sub}} = \mathrm{Sign}_{SK_{\mathrm{Root}}}(\mathrm{TBS}_{\mathrm{Sub}})$. Chứng thư này có cờ \texttt{CA:TRUE} và \texttt{pathlen:0}, nghĩa là chỉ được cấp chứng thư thực thể cuối, không được cấp thêm CA cấp dưới. Khóa $SK_{\mathrm{Sub}}$ dùng để ký chứng thư máy chủ.
+    \item \textbf{Chứng thư máy chủ} (\texttt{server-a.test}): Được Intermediate CA ký phát với chữ ký $\sigma_{\mathrm{Server}} = \mathrm{Sign}_{SK_{\mathrm{Sub}}}(\mathrm{TBS}_{\mathrm{Server}})$, thiết lập \texttt{CA:FALSE}, SAN \texttt{DNS:server-a.test} và EKU \texttt{serverAuth}.
+\end{itemize}
+
+\begin{figure}[!htbp]
+\centering
+\input{report/figures/trust-chain-validation}
+\caption{Chuỗi chứng thư Root CA $\rightarrow$ Intermediate CA $\rightarrow$ server trong lab: quan hệ ký phát và quan hệ thẩm định giữa các mắt xích.}
+\label{fig:trust-chain-validation}
+\end{figure}
+
+\subsection{Quy trình xây dựng và xác minh}
+\label{subsec:path-building-validation}
+
+\noindent\textbf{Xây dựng đường dẫn.} Xuất phát từ chứng thư máy chủ, relying party tìm chứng thư của bên phát hành bằng cách khớp trường \texttt{Issuer} của chứng thư dưới với \texttt{Subject} của chứng thư trên, đồng thời khớp trường AKI với SKI (chỉ khớp tên là chưa đủ, vì một CA có thể có nhiều khóa cùng tên). Các chứng thư trung gian thường lấy từ chuỗi do máy chủ gửi kèm và chưa được tin cậy ở thời điểm này. Quá trình dừng khi gặp một chứng thư nằm trong kho trust anchor của client.
+
+\noindent\textbf{Trust anchor.} Một Root CA tự ký chỉ trở thành trust anchor khi client được cấu hình để tin cậy nó (trong lab là tùy chọn \texttt{-CAfile}). Độ tin cậy của Root đến từ cấu hình đó, không đến từ chữ ký tự ký, vì bất kỳ ai cũng tạo được chứng thư tự ký cho chính mình.
+
+\noindent\textbf{Xác minh đường dẫn.} Thuật toán của RFC~5280 xử lý từng chứng thư trên đường dẫn từ trust anchor xuống chứng thư đích. Mỗi mắt xích phải đạt các điều kiện ở Bảng~\ref{tab:path-validation-conditions}. Chỉ cần một điều kiện không đạt là chứng thư bị từ chối theo chính sách xác minh được bật, dù các chữ ký vẫn đúng về mặt toán học. Đây là cơ sở của giả thuyết $H_1$ và được kiểm chứng bằng các ca TC02--TC08 ở Chương~\ref{chap:experiment}.
+
+\input{report/tables/path-validation-conditions}
+
+Khi mọi điều kiện đều đạt, kết quả là PASS (TC01, TC09).
+
+\subsection{Quan sát từ lab}
+\label{subsec:lab-observations}
+
+Hình~\ref{fig:openssl-verify-terminal} trình bày hai lần chạy \texttt{openssl verify} với cùng chứng thư \texttt{server-a.crt}.
+
+\noindent\textbf{Lần 1 (đủ chuỗi):} Khi cung cấp Root qua \texttt{-CAfile} và Intermediate qua \texttt{-untrusted}, kết quả là \texttt{OK}, kèm \texttt{-purpose sslserver} và \texttt{-verify\_hostname server-a.test} nên EKU và SAN cũng được kiểm. Chuỗi in ra gồm ba mức: depth~0 là server, depth~1 là Lab Intermediate CA, depth~2 là Lab Root CA. Nhãn \texttt{(untrusted)} ở depth~0 và 1 nghĩa là hai chứng thư này không nằm trong kho tin cậy; chỉ Root là trust anchor.
+
+\noindent\textbf{Lần 2 (thiếu Intermediate):} Khi bỏ \texttt{-untrusted}, OpenSSL báo \texttt{error 20 at 0 depth lookup: unable to get local issuer certificate}. Chữ ký trên chứng thư máy chủ vẫn đúng, nhưng không tìm được chứng thư của bên phát hành nên không dựng được đường dẫn tới trust anchor. Lỗi gắn với depth~0 vì đó là chứng thư không tìm được issuer. Đây là ca TC06.
+
+Cần lưu ý hai điểm. Thứ nhất, cả hai lệnh không bật kiểm tra thu hồi, nên \texttt{OK} chỉ cho biết các điều kiện trong Bảng~\ref{tab:path-validation-conditions} (trừ thu hồi) đã đạt; trạng thái thu hồi được xét riêng ở Mục~\ref{sec:revocation-mechanisms}. Thứ hai, kết quả của TC06 phụ thuộc vào client: OpenSSL không tự bổ sung chứng thư trung gian còn thiếu, trong khi một số client khác có cơ chế bù (qua AIA hoặc bộ nhớ đệm). Điều này phù hợp với giới hạn của lab đã nêu ở Mục~6.4.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{report/figures/openssl-verify-terminal.png}
+\caption{Kết quả \texttt{openssl verify} với chuỗi đầy đủ (OK) và khi thiếu chứng thư Intermediate CA (lỗi 20, TC06).}
+\label{fig:openssl-verify-terminal}
+\end{figure}
 
 \section{Thu hồi và trạng thái chứng thư}
 \label{sec:revocation-mechanisms}
