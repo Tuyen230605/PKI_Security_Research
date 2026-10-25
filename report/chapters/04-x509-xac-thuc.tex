@@ -78,9 +78,9 @@ Từ kết quả trích xuất trên Hình~\ref{fig:openssl-x509-terminal-real},
 \begin{itemize}
     \item \textbf{Phiên bản và Số sê-ri:} Chứng thư mang phiên bản \texttt{3 (0x2)} cho phép sử dụng các extension v3, và số sê-ri \texttt{4096 (0x1000)} được quản lý trong cơ sở dữ liệu \texttt{index.txt} của Intermediate CA.
     \item \textbf{Cặp định danh Issuer và Subject:} Thể hiện rõ mô hình phân tầng: \texttt{Issuer} trỏ về \texttt{CN = Lab Intermediate CA}, còn \texttt{Subject} định danh máy chủ dịch vụ \texttt{CN = server-a.test}.
-    \item \textbf{Subject Alternative Name (SAN):} Chỉ định tên miền hợp lệ \texttt{DNS:server-a.test}, đáp ứng yêu cầu đối chiếu tên máy chủ của client (đối chứng với ca kiểm thử TC04).
+    \item \textbf{SAN:} Chỉ định tên miền hợp lệ \texttt{DNS:server-a.test}, đáp ứng yêu cầu đối chiếu tên máy chủ của client (đối chứng với ca kiểm thử TC04).
     \item \textbf{Basic Constraints:} Thiết lập \texttt{critical, CA:FALSE}, định vị đây là chứng thư thực thể cuối (End-entity) và không có quyền ký phát chứng thư phái sinh.
-    \item \textbf{Key Usage và EKU:} \texttt{Key Usage} kích hoạt \texttt{Digital Signature}, \texttt{Key Encipherment}; \texttt{EKU} kích hoạt \texttt{serverAuth}, đáp ứng điều kiện xác thực máy chủ TLS (đối chứng ca TC08).
+    \item \textbf{Key Usage và EKU:} Bật \texttt{Digital Signature}, \texttt{Key Encipherment}; \texttt{EKU} kích hoạt \texttt{serverAuth}, đáp ứng điều kiện xác thực máy chủ TLS (đối chứng ca TC08).
     \item \textbf{Định danh khóa (SKI và AKI):} Trường SKI và AKI chứa mã băm nhận diện khóa công khai của máy chủ và của Intermediate CA, hỗ trợ thuật toán xây dựng và neo chuỗi tin cậy.
 \end{itemize}
 
