@@ -3,7 +3,7 @@
 \section{Cấu trúc chứng thư X.509 v3}
 \label{sec:x509-structure}
 
-Chuẩn ITU-T X.509 phiên bản 3 (được quy chuẩn hóa trong hồ sơ Internet PKI bởi RFC~5280~\cite{rfc5280}) định nghĩa định dạng chứng thư số bằng cú pháp trừu tượng ASN.1 (Abstract Syntax Notation One). Cấu trúc tổng thể của một chứng thư X.509 v3 bao gồm ba trường chính ở cấp cao nhất:
+Chuẩn ITU-T X.509 phiên bản 3 (RFC~5280~\cite{rfc5280}) định nghĩa định dạng chứng thư số bằng cú pháp ASN.1 (Abstract Syntax Notation One). Cấu trúc tổng thể của chứng thư X.509 v3 gồm ba trường chính ở cấp cao nhất:
 \begin{verbatim}
 Certificate  ::=  SEQUENCE  {
     tbsCertificate       TBSCertificate,
@@ -15,60 +15,30 @@ Trong đó:
 \begin{itemize}
     \item \texttt{tbsCertificate} (To-Be-Signed Certificate): Khối dữ liệu chứa toàn bộ thông tin định danh và tham số kỹ thuật cần được ký bảo đảm.
     \item \texttt{signatureAlgorithm}: Định danh thuật toán mật mã mà CA sử dụng để tạo chữ ký số (ví dụ: \texttt{sha256WithRSAEncryption} hoặc \texttt{ecdsa-with-SHA256}).
-    \item \texttt{signatureValue}: Giá trị chữ ký số thực tế (chuỗi bit \texttt{BIT STRING}) do CA tính toán trên cấu trúc \texttt{tbsCertificate} đã được mã hóa theo quy tắc chuẩn hóa DER (Distinguished Encoding Rules).
+    \item \texttt{signatureValue}: Giá trị chữ ký số thực tế (chuỗi bit \texttt{BIT STRING}) do CA tính toán trên cấu trúc \texttt{tbsCertificate} mã hóa theo quy tắc chuẩn hóa DER.
 \end{itemize}
 
-Trong đó, \texttt{tbsCertificate} là đối tượng cốt lõi phản ánh toàn bộ nội dung quản trị và kỹ thuật của chứng thư. Theo Mục~4.1 và Mục~4.2 của chuẩn RFC~5280~\cite{rfc5280}, các trường chuẩn cơ bản và các phần mở rộng (Extensions) thiết yếu bao gồm:
+Khối \texttt{tbsCertificate} là đối tượng cốt lõi phản ánh toàn bộ nội dung quản trị và kỹ thuật của chứng thư. Theo Mục~4.1 và 4.2 của RFC~5280~\cite{rfc5280}, các trường chuẩn và phần mở rộng thiết yếu bao gồm:
 
 \subsection{Các trường dữ liệu chuẩn (Standard Fields)}
 \label{subsec:standard-fields}
 
 \begin{itemize}
-    \item \textbf{Số sê-ri (Serial Number):}
-    \begin{itemize}
-        \item \textit{Định nghĩa ASN.1:} \texttt{CertificateSerialNumber ::= INTEGER}
-        \item \textit{Đặc tả kỹ thuật:} Là một số nguyên dương duy nhất do chính CA phát hành gán cho mỗi chứng thư mà mình ban hành. Theo quy định của RFC~5280 (Mục 4.1.2.2), độ dài của \texttt{serialNumber} không được vượt quá 20 octet (160 bit). Để bảo đảm an toàn chống lại các kỹ thuật tấn công va chạm tiền ảnh trên hàm băm (như từng xảy ra đối với các thuật toán cũ MD5 hay SHA-1), các CA hiện đại bắt buộc phải sinh số sê-ri với tính bất định cao (chứa ít nhất 64 bit entropy ngẫu nhiên) thay vì sử dụng cơ chế tăng tuần tự đơn giản.
-    \end{itemize}
+    \item \textbf{Số sê-ri (Serial Number):} Số nguyên dương duy nhất do CA gán cho mỗi chứng thư ban hành, độ dài không quá 20 octet theo RFC~5280 (Mục 4.1.2.2). Để chống tấn công va chạm (collision) trên hàm băm, theo BR~\cite{cabforum_br}, CA công cộng phải sinh serial có ít nhất 64 bit ngẫu nhiên thay vì sử dụng cơ chế tăng tuần tự đơn giản.
 
-    \item \textbf{Tên đơn vị cấp phát (Issuer):}
-    \begin{itemize}
-        \item \textit{Định nghĩa ASN.1:} \texttt{Name ::= CHOICE \{ rdnSequence RDNSequence \}}
-        \item \textit{Đặc tả kỹ thuật:} Định danh danh tính của tổ chức đã ký và phát hành chứng thư dưới dạng Tên phân biệt (Distinguished Name -- DN) theo chuẩn X.500. Trường này bao gồm chuỗi các thuộc tính định danh (Relative Distinguished Names -- RDN) như Quốc gia ($C$), Tổ chức ($O$), Đơn vị tổ chức ($OU$), Tên phổ biến ($CN$ -- Common Name). Đối với chứng thư tự ký của Root CA, trường \texttt{issuer} trùng khớp hoàn toàn với trường \texttt{subject}.
-    \end{itemize}
+    \item \textbf{Tên đơn vị cấp phát (Issuer):} Định danh CA đã ký và phát hành chứng thư dưới dạng Tên phân biệt (Distinguished Name -- DN) theo chuẩn X.500, gồm chuỗi các thuộc tính như Quốc gia ($C$), Tổ chức ($O$), Tên phổ biến ($CN$). Đối với chứng thư tự ký của Root CA, trường \texttt{issuer} trùng khớp hoàn toàn với trường \texttt{subject}.
 
-    \item \textbf{Thời hạn hiệu lực (Validity):}
-    \begin{itemize}
-        \item \textit{Định nghĩa ASN.1:}
-\begin{verbatim}
-Validity ::= SEQUENCE {
-    notBefore      Time,
-    notAfter       Time }
-\end{verbatim}
-        \item \textit{Đặc tả kỹ thuật:} Xác định khoảng thời gian mà CA bảo đảm thông tin trong chứng thư có giá trị pháp lý và kỹ thuật. Đối với các mốc thời gian trước năm 2050, định dạng \texttt{UTCTime} (độ chính xác đến giây \texttt{YYMMDDHHMMSSZ}) được áp dụng; các mốc từ năm 2050 trở đi sử dụng \texttt{GeneralizedTime}. Relying party bắt buộc phải kiểm tra thời điểm xác minh nằm trong khoảng $[notBefore, notAfter]$; vượt ra ngoài khoảng này, chứng thư sẽ bị từ chối dù chữ ký số vẫn hoàn toàn đúng về mặt toán học (kiểm chứng thực nghiệm tại ca kiểm thử TC03).
-    \end{itemize}
+    \item \textbf{Thời hạn hiệu lực (Validity):} Xác định khoảng thời gian mà CA cam kết duy trì thông tin trạng thái chứng thư, xác định bởi cặp mốc \texttt{notBefore} và \texttt{notAfter} (dùng \texttt{UTCTime} trước năm 2050 và \texttt{GeneralizedTime} từ năm 2050 trở đi). Thuật toán xác minh yêu cầu kiểm tra thời điểm xác minh nằm trong khoảng này; kết quả phụ thuộc chính sách của client (kiểm chứng tại ca kiểm thử TC03).
 
-    \item \textbf{Tên chủ thể (Subject):}
-    \begin{itemize}
-        \item \textit{Định nghĩa ASN.1:} \texttt{Name}
-        \item \textit{Đặc tả kỹ thuật:} Định danh thực thể sở hữu khóa công khai được đóng gói bên trong chứng thư, cũng được biểu diễn dưới dạng DN theo chuẩn X.500. Đối với chứng thư máy chủ TLS hiện đại, RFC~5280 và CA/Browser Forum khuyến nghị để trống trường này hoặc chỉ sử dụng cho mục đích nhận diện tổ chức, trong khi việc định danh tên miền định tuyến chuyển dịch hoàn toàn sang phần mở rộng Subject Alternative Name (SAN).
-    \end{itemize}
+    \item \textbf{Tên chủ thể (Subject):} Định danh thực thể sở hữu khóa công khai bên trong chứng thư dưới dạng DN. RFC~5280 cho phép Subject rỗng khi danh tính nằm hoàn toàn trong SAN (khi đó SAN phải critical); chứng thư TLS hiện đại định danh tên máy chủ chủ yếu qua SAN.
 
-    \item \textbf{Thông tin khóa công khai của chủ thể (Subject Public Key Info):}
-    \begin{itemize}
-        \item \textit{Định nghĩa ASN.1:}
-\begin{verbatim}
-SubjectPublicKeyInfo ::= SEQUENCE {
-    algorithm            AlgorithmIdentifier,
-    subjectPublicKey     BIT STRING }
-\end{verbatim}
-        \item \textit{Đặc tả kỹ thuật:} Chứa khóa công khai thực tế của chủ thể cùng với mã định danh thuật toán (OID) và các tham số toán học liên quan (ví dụ: độ dài modulus $N$ và số mũ công khai $e$ đối với RSA; định danh đường cong elip đối với ECDSA). Trường này cho phép relying party trích xuất đúng khóa công khai và thuật toán tương ứng để xác thực chữ ký của chủ thể mà không cần biết trước cấu hình hệ thống.
-    \end{itemize}
+    \item \textbf{Thông tin khóa công khai của chủ thể (Subject Public Key Info):} Chứa khóa công khai thực tế của chủ thể cùng mã OID định danh thuật toán và các tham số toán học liên quan (như modulus $N$, số mũ $e$ của RSA, hoặc định danh đường cong elip của ECDSA). Trường này cho phép relying party trích xuất đúng khóa và thuật toán để xác thực chữ ký của chủ thể mà không cần biết trước cấu hình.
 \end{itemize}
 
 \subsection{Các phần mở rộng X.509 v3 quan trọng (Standard Extensions)}
 \label{subsec:standard-extensions}
 
-Phần mở rộng phiên bản 3 cho phép bổ sung các thuộc tính kiểm soát chính sách và bảo mật linh hoạt. Cấu trúc ASN.1 chuẩn của mỗi phần mở rộng bao gồm:
+Phần mở rộng v3 cho phép bổ sung các thuộc tính kiểm soát chính sách và bảo mật linh hoạt. Cấu trúc ASN.1 chuẩn của mỗi phần mở rộng gồm:
 \begin{verbatim}
 Extension ::= SEQUENCE {
     extnID      OBJECT IDENTIFIER,
@@ -76,57 +46,21 @@ Extension ::= SEQUENCE {
     extnValue   OCTET STRING }
 \end{verbatim}
 
-Mỗi phần mở rộng bao gồm một mã định danh đối tượng (\texttt{extnID}), một cờ báo tính nghiêm ngặt (\texttt{critical} mang kiểu \texttt{BOOLEAN}), và giá trị nhị phân đóng gói của phần mở rộng (\texttt{extnValue}). Nếu cờ \texttt{critical} được đặt là \texttt{TRUE}, mọi ứng dụng xác thực bắt buộc phải hiểu và xử lý đúng ngữ nghĩa của extension đó; nếu không nhận diện được, ứng dụng bắt buộc phải từ chối chứng thư ngay lập tức. Các phần mở rộng cốt lõi bao gồm:
-
+Mỗi extension gồm mã định danh (\texttt{extnID}), cờ \texttt{critical} và giá trị dữ liệu (\texttt{extnValue}). Nếu \texttt{critical: TRUE}, validator bắt buộc phải nhận diện và xử lý extension đó; nếu không hiểu, validator bắt buộc phải từ chối chứng thư. Các phần mở rộng cốt lõi bao gồm:
 \begin{itemize}
-    \item \textbf{Subject Alternative Name -- SAN (RFC~5280, Mục 4.2.1.6):}
-    \begin{itemize}
-        \item \textit{OID:} \texttt{id-ce-subjectAltName} (\texttt{2.5.29.17})
-        \item \textit{Đặc tả kỹ thuật:} Cho phép gán thêm nhiều danh tính bổ sung cho chủ thể dưới các định dạng mạng khác nhau: tên miền máy chủ (\texttt{dNSName}), địa chỉ IP (\texttt{iPAddress}), địa chỉ thư điện tử (\texttt{rfc822Name}), hoặc định danh tài nguyên đồng nhất (\texttt{uniformResourceIdentifier}). Trong các giao thức web hiện đại (HTTPS/TLS), SAN là căn cứ định danh bắt buộc và tối thượng để đối chiếu tên miền (Host Name Verification); trường Common Name ($CN$) truyền thống trong Subject đã bị loại bỏ vai trò thẩm định tên máy chủ (kiểm chứng tại ca kiểm thử vi phạm tên miền TC04).
-    \end{itemize}
+    \item \textbf{Subject Alternative Name (SAN -- OID \texttt{2.5.29.17}):} Cho phép gán thêm nhiều danh tính cho chủ thể dưới các định dạng như tên miền (\texttt{dNSName}) hoặc địa chỉ IP (\texttt{iPAddress}). Các client hiện đại đối chiếu tên máy chủ với SAN, không dựa vào CN (kiểm chứng tại ca kiểm thử TC04).
 
-    \item \textbf{Ràng buộc cơ bản -- Basic Constraints (RFC~5280, Mục 4.2.1.9):}
-    \begin{itemize}
-        \item \textit{OID:} \texttt{id-ce-basicConstraints} (\texttt{2.5.29.19})
-        \item \textit{Định nghĩa ASN.1:}
-\begin{verbatim}
-BasicConstraints ::= SEQUENCE {
-    cA                      BOOLEAN DEFAULT FALSE,
-    pathLenConstraint       INTEGER (0..MAX) OPTIONAL }
-\end{verbatim}
-        \item \textit{Đặc tả kỹ thuật:} Xác định liệu thực thể sở hữu chứng thư có quyền đóng vai trò là một Cơ quan chứng thực (CA) để ký cấp chứng thư cho các đối tượng khác hay không (\texttt{cA: TRUE} hoặc \texttt{cA: FALSE}). Nếu là chứng thư CA, tham số tùy chọn \texttt{pathLenConstraint} giới hạn độ sâu tối đa của chuỗi chứng thư trung gian được phép ủy quyền tiếp theo. Đối với các chứng thư thực thể cuối (End-entity như Web Server), extension này bắt buộc phải cấu hình \texttt{cA: FALSE} (hoặc không thiết lập) để ngăn chặn hành vi tự ý biến chứng thư máy chủ thành CA lậu nhằm ký mạo danh. Phần mở rộng này thường được đánh dấu \texttt{critical: TRUE}.
-    \end{itemize}
+    \item \textbf{Ràng buộc cơ bản -- Basic Constraints (OID \texttt{2.5.29.19}):} Xác định thực thể có quyền đóng vai trò CA để ký cấp chứng thư hay không qua cờ \texttt{cA} và giới hạn độ sâu tùy chọn \texttt{pathLenConstraint}. Chứng thư CA phải có extension này và phải critical (RFC~5280 mục 4.2.1.9). Thực thể cuối có thể không có extension này hoặc có \texttt{cA:FALSE}; extension tự nó không ngăn chặn, mà validator từ chối dùng chứng thư \texttt{cA:FALSE} làm CA.
 
-    \item \textbf{Mục đích sử dụng khóa -- Key Usage (RFC~5280, Mục 4.2.1.3):}
-    \begin{itemize}
-        \item \textit{OID:} \texttt{id-ce-keyUsage} (\texttt{2.5.29.15})
-        \item \textit{Đặc tả kỹ thuật:} Là một chuỗi bit giới hạn các thao tác mật mã cơ sở mà khóa công khai trong chứng thư được phép thực hiện. Các cờ tiêu biểu gồm:
-        \begin{itemize}
-            \item \texttt{digitalSignature}: Dùng để xác thực thông điệp và danh tính thực thể (trừ việc ký chứng thư hoặc CRL).
-            \item \texttt{keyEncipherment}: Dùng để mã hóa và vận chuyển khóa bí mật (cơ chế trao đổi khóa RSA tĩnh trước đây).
-            \item \texttt{keyCertSign}: Dành riêng cho CA để ký phát hành chứng thư X.509 (chỉ xuất hiện khi \texttt{cA: TRUE}).
-            \item \texttt{cRLSign}: Dành riêng cho CA để ký danh sách thu hồi chứng thư (CRL).
-        \end{itemize}
-        Việc giới hạn này bảo đảm nguyên tắc phân tách mục đích mật mã, ngăn ngừa việc sử dụng một cặp khóa cho các ngữ cảnh có tính chất bảo vệ trái ngược nhau. Thường được đánh dấu \texttt{critical: TRUE}.
-    \end{itemize}
+    \item \textbf{Mục đích sử dụng khóa -- Key Usage (OID \texttt{2.5.29.15}):} Chuỗi bit giới hạn các thao tác mật mã cơ sở của khóa công khai (như \texttt{digitalSignature}, \texttt{keyCertSign}, \texttt{cRLSign}), thường đặt \texttt{critical: TRUE} để ngăn ngừa dùng một khóa cho các ngữ cảnh mâu thuẫn. Cần lưu ý rằng \texttt{keyEncipherment} không cần cho TLS 1.3/ECDHE (chỉ cần \texttt{digitalSignature}).
 
-    \item \textbf{Mục đích sử dụng khóa mở rộng -- Extended Key Usage -- EKU (RFC~5280, Mục 4.2.1.12):}
-    \begin{itemize}
-        \item \textit{OID:} \texttt{id-ce-extKeyUsage} (\texttt{2.5.29.37})
-        \item \textit{Đặc tả kỹ thuật:} Xác định cụ thể các giao thức ứng dụng cấp cao mà khóa công khai được phép áp dụng thông qua một danh sách các mã OID. Các mục đích điển hình bao gồm:
-        \begin{itemize}
-            \item \texttt{serverAuth} (\texttt{id-kp-serverAuth} / \texttt{1.3.6.1.5.5.7.3.1}): Xác thực máy chủ TLS/HTTPS.
-            \item \texttt{clientAuth} (\texttt{id-kp-clientAuth} / \texttt{1.3.6.1.5.5.7.3.2}): Xác thực phía client.
-            \item \texttt{codeSigning} (\texttt{id-kp-codeSigning} / \texttt{1.3.6.1.5.5.7.3.3}): Ký số mã nguồn phần mềm.
-        \end{itemize}
-        Relying party kiểm tra nghiêm ngặt trường này: nếu một chứng thư có khóa hợp lệ nhưng EKU không cấu hình \texttt{serverAuth}, quá trình bắt tay TLS máy chủ sẽ bị chặn đứng (kiểm chứng tại ca kiểm thử TC08 ở Chương~\ref{chap:experiment}).
-    \end{itemize}
+    \item \textbf{Mục đích sử dụng khóa mở rộng (EKU -- OID \texttt{2.5.29.37}):} Xác định giao thức ứng dụng cấp cao mà khóa được áp dụng qua danh sách OID, tiêu biểu như \texttt{serverAuth} (xác thực máy chủ TLS) hoặc \texttt{codeSigning} (ký mã nguồn). Kết nối TLS máy chủ bị từ chối theo chính sách xác minh khi EKU có mặt mà không chứa \texttt{serverAuth} (kiểm chứng tại ca TC08). Chứng thư không có EKU thường không bị giới hạn mục đích.
 \end{itemize}
 
 \subsection{Trích xuất thực tế cấu trúc chứng thư trong môi trường Lab}
 \label{subsec:lab-cert-extraction}
 
-Dưới đây là kết quả giải mã cấu trúc chi tiết của chứng thư máy chủ TLS (\texttt{server-a.crt}) được tạo lập và phát hành bởi Intermediate CA trong môi trường thực nghiệm của nhóm bằng công cụ OpenSSL qua lệnh:
+Dưới đây là kết quả giải mã cấu trúc chi tiết của chứng thư máy chủ TLS (\texttt{server-a.crt}) được cấp bởi Intermediate CA trong môi trường lab bằng lệnh:
 \begin{verbatim}
 $ openssl x509 -in demo/out/servers/server-a.crt -text -noout
 \end{verbatim}
@@ -140,15 +74,14 @@ $ openssl x509 -in demo/out/servers/server-a.crt -text -noout
 
 \noindent\textbf{Phân tích từ kết quả thực nghiệm:}
 
-Từ dữ liệu trích xuất thực tế trên Hình~\ref{fig:openssl-x509-terminal-real}, các trường cấu trúc của chứng thư máy chủ phản ánh đúng các thiết lập chính sách đã được nghiên cứu:
+Từ kết quả trích xuất trên Hình~\ref{fig:openssl-x509-terminal-real}, các trường cấu trúc của chứng thư máy chủ phản ánh đúng các thiết lập chính sách đã nghiên cứu:
 \begin{itemize}
-    \item \textbf{Trường Version:} Ghi nhận giá trị \texttt{3 (0x2)}, xác nhận định dạng X.509 phiên bản 3 cho phép chứa các trường mở rộng hiện đại.
-    \item \textbf{Trường Serial Number:} Mang giá trị \texttt{4096 (0x1000)} do Intermediate CA cấp phát quản lý và theo dõi trong tệp cơ sở dữ liệu thu hồi \texttt{index.txt}.
-    \item \textbf{Cặp trường Issuer và Subject:} Thể hiện rõ mô hình phân tầng: \texttt{Issuer} trỏ về Tên phân biệt của Intermediate CA (\texttt{CN = Lab Intermediate CA}), trong khi \texttt{Subject} phản ánh định danh máy chủ dịch vụ (\texttt{CN = server-a.test}).
-    \item \textbf{Phần mở rộng Subject Alternative Name (SAN):} Chỉ định rõ tên miền truy cập hợp lệ (\texttt{DNS:server-a.test}), khớp với yêu cầu xác thực máy chủ hiện đại (đối chứng với ca kiểm thử vi phạm tên miền TC04).
-    \item \textbf{Cờ Basic Constraints:} Ghi nhận thuộc tính \texttt{critical, CA:FALSE}, khẳng định chứng thư này là thực thể cuối (End-entity), triệt tiêu hoàn toàn quyền hạn ký phát chứng thư phái sinh (ngăn ngừa nguy cơ tấn công leo thang CA).
-    \item \textbf{Trường Key Usage và Extended Key Usage:} Được ấn định chặt chẽ: \texttt{Key Usage} kích hoạt \texttt{Digital Signature, Key Encipherment}; \texttt{Extended Key Usage} chỉ định duy nhất \texttt{TLS Web Server Authentication (serverAuth)}, thỏa mãn tuyệt đối các điều kiện xác thực của thư viện máy trạm cho giao thức TLS (đối chứng với ca kiểm thử vi phạm mục đích sử dụng TC08).
-    \item \textbf{Các trường định danh khóa (SKI và AKI):} Trường \texttt{Subject Key Identifier} và \texttt{Authority Key Identifier} chứa mã hash SHA-1 định danh khóa công khai của chứng thư và của Intermediate CA, cung cấp cơ sở dữ liệu để thuật toán thẩm định chuỗi tin cậy (Mục~\ref{sec:path-validation}) tự động truy vết và neo chuỗi chứng thư chính xác lên Trust Anchor.
+    \item \textbf{Phiên bản và Số sê-ri:} Chứng thư mang phiên bản \texttt{3 (0x2)} cho phép sử dụng các extension v3, và số sê-ri \texttt{4096 (0x1000)} được quản lý trong cơ sở dữ liệu \texttt{index.txt} của Intermediate CA.
+    \item \textbf{Cặp định danh Issuer và Subject:} Thể hiện rõ mô hình phân tầng: \texttt{Issuer} trỏ về \texttt{CN = Lab Intermediate CA}, còn \texttt{Subject} định danh máy chủ dịch vụ \texttt{CN = server-a.test}.
+    \item \textbf{Subject Alternative Name (SAN):} Chỉ định tên miền hợp lệ \texttt{DNS:server-a.test}, đáp ứng yêu cầu đối chiếu tên máy chủ của client (đối chứng với ca kiểm thử TC04).
+    \item \textbf{Basic Constraints:} Thiết lập \texttt{critical, CA:FALSE}, định vị đây là chứng thư thực thể cuối (End-entity) và không có quyền ký phát chứng thư phái sinh.
+    \item \textbf{Key Usage và EKU:} \texttt{Key Usage} kích hoạt \texttt{Digital Signature}, \texttt{Key Encipherment}; \texttt{EKU} kích hoạt \texttt{serverAuth}, đáp ứng điều kiện xác thực máy chủ TLS (đối chứng ca TC08).
+    \item \textbf{Định danh khóa (SKI và AKI):} Trường SKI và AKI chứa mã băm nhận diện khóa công khai của máy chủ và của Intermediate CA, hỗ trợ thuật toán xây dựng và neo chuỗi tin cậy.
 \end{itemize}
 
 \section{Xây dựng và xác minh đường dẫn}
