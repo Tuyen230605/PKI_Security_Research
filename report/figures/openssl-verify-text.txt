@@ -1,0 +1,13 @@
+tuyen@pki-lab:~/PKI_Security_Research$ openssl verify -show_chain -CAfile demo/out/root/root.crt -untrusted demo/out/intermediate/ca.crt -purpose sslserver -verify_hostname server-a.test demo/out/servers/server-a.crt
+demo/out/servers/server-a.crt: OK
+Chain:
+depth=0: CN=server-a.test (untrusted)
+depth=1: CN=Lab Intermediate CA (untrusted)
+depth=2: CN=Lab Root CA
+
+tuyen@pki-lab:~/PKI_Security_Research$ openssl verify -CAfile demo/out/root/root.crt -purpose sslserver -verify_hostname server-a.test demo/out/servers/server-a.crt
+CN=server-a.test
+error 20 at 0 depth lookup: unable to get local issuer certificate
+error demo/out/servers/server-a.crt: verification failed
+
+tuyen@pki-lab:~/PKI_Security_Research$ 

@@ -1,0 +1,110 @@
+\resizebox{0.92\textwidth}{!}{%
+\begin{tikzpicture}[
+    % Định dạng các khối theo sắc xám học thuật nhất quán với Hình 3.1
+    rootbox/.style={draw=black, very thick, double, fill=gray!18, rounded corners=6pt, text width=7.4cm, align=left, inner sep=6pt, font=\small, text=black},
+    cabox/.style={draw=black, thick, fill=gray!10, rounded corners=6pt, text width=7.4cm, align=left, inner sep=6pt, font=\small, text=black},
+    leafbox/.style={draw=black, thick, fill=white, rounded corners=6pt, text width=7.4cm, align=left, inner sep=6pt, font=\small, text=black},
+    storebox/.style={draw=black, thick, dashed, fill=gray!6, rounded corners=6pt, text width=6.8cm, align=center, inner sep=6pt, font=\small, text=black},
+    % Kiểu mũi tên nét liền (tiến trình ký) và nét đứt (tiến trình thẩm định)
+    issuancearrow/.style={-{Stealth[scale=1.1]}, thick, black},
+    valarrow/.style={-{Stealth[scale=1.15]}, very thick, dash pattern=on 5pt off 2.5pt, black},
+    trustarrow/.style={-{Stealth[scale=1.15]}, very thick, dash pattern=on 6pt off 3pt, black}
+]
+
+    % --- KHỐI GỐC TIN CẬY (TRUST ANCHOR TRÊN CÙNG) ---
+    \node[storebox] (store) at (0, 13.6) {
+        \textbf{Kho chứng thư tin cậy (Root Trust Store)}\\[2pt]
+        {\scriptsize Quản lý bởi Hệ điều hành / Trình duyệt (Relying Party)\\[1pt]Chứa bản sao khóa công khai $PK_{\mathrm{Root}}$ được tin cậy mặc định}
+    };
+
+    % --- KHỐI 1: Root CA ---
+    \node[rootbox] (root) at (0, 9.6) {
+        \textbf{Mắt xích 1: Root CA (Trust Anchor)}\\[2pt]
+        {\scriptsize \texttt{Subject: CN = Lab Root CA}}\\[1pt]
+        {\scriptsize \texttt{Issuer:  CN = Lab Root CA} (Tự ký - Self-signed)}\\[1pt]
+        {\scriptsize Khóa: Cặp khóa gốc $(SK_{\mathrm{Root}}, PK_{\mathrm{Root}})$}\\[1pt]
+        {\scriptsize \texttt{Basic Constraints: critical, CA:TRUE}}\\[1pt]
+        {\scriptsize \texttt{SKI:} Mã băm nhận diện khóa $PK_{\mathrm{Root}}$}
+    };
+
+    % --- KHỐI 2: Intermediate CA ---
+    \node[cabox] (subca) at (0, 4.8) {
+        \textbf{Mắt xích 2: Intermediate CA (Sub-CA)}\\[2pt]
+        {\scriptsize \texttt{Subject: CN = Lab Intermediate CA}}\\[1pt]
+        {\scriptsize \texttt{Issuer:  CN = Lab Root CA}}\\[1pt]
+        {\scriptsize Khóa: Cặp khóa trung gian $(SK_{\mathrm{Sub}}, PK_{\mathrm{Sub}})$}\\[1pt]
+        {\scriptsize \texttt{Basic Constraints: critical, CA:TRUE, pathlen:0}}\\[1pt]
+        {\scriptsize \texttt{AKI:} Trỏ tới $\mathrm{SKI}_{\mathrm{Root}}$ \textbar{} \texttt{SKI:} Băm khóa $PK_{\mathrm{Sub}}$}
+    };
+
+    % --- KHỐI 3: Server Certificate ---
+    \node[leafbox] (server) at (0, 0.0) {
+        \textbf{Mắt xích 3: Server Certificate (Thực thể cuối)}\\[2pt]
+        {\scriptsize \texttt{Subject: CN = server-a.test}}\\[1pt]
+        {\scriptsize \texttt{Issuer:  CN = Lab Intermediate CA}}\\[1pt]
+        {\scriptsize Khóa: Khóa công khai $PK_{\mathrm{Server}}$ ($SK_{\mathrm{Server}}$ lưu an toàn trên Server)}\\[1pt]
+        {\scriptsize \texttt{Basic Constraints: CA:FALSE} \textbar{} \texttt{SAN: DNS:server-a.test}}\\[1pt]
+        {\scriptsize \texttt{AKI:} Trỏ tới $\mathrm{SKI}_{\mathrm{Sub}}$ \textbar{} \texttt{EKU: serverAuth}}
+    };
+
+    % Neo Root CA vào Trust Store
+    \draw[trustarrow] (root.north) -- (store.south)
+        node[midway, right=6pt, font=\scriptsize\bfseries] {Neo niềm tin (Trust Anchor)};
+
+    % ==============================================================
+    % TIÊU ĐỀ HAI TIẾN TRÌNH Ở ĐỈNH (KHÔNG XUNG ĐỘT)
+    % ==============================================================
+    \node[align=center, font=\footnotesize\bfseries, text=black] at (-6.2, 13.6) {
+        [TIẾN TRÌNH KÝ PHÁT]\\[2pt]
+        {\scriptsize (Dùng khóa bí mật $SK$)}
+    };
+
+    \node[align=center, font=\footnotesize\bfseries, text=black] at (6.4, 13.6) {
+        [TIẾN TRÌNH THẨM ĐỊNH]\\[2pt]
+        {\scriptsize (Dùng khóa công khai $PK$)}
+    };
+
+    % ==============================================================
+    % TIẾN TRÌNH KÝ PHÁT (BÊN TRÁI - TỪ TRÊN XUỐNG)
+    % ==============================================================
+    % Root CA ký Sub-CA
+    \draw[issuancearrow] (root.west) -- (-4.8, 9.6) -- (-4.8, 4.8) -- (subca.west);
+    \node[anchor=east, align=right, font=\footnotesize] at (-5.0, 7.2) {
+        \textbf{1. Ký phát Sub-CA:}\\[2pt]
+        $\sigma_{\mathrm{Sub}} = \mathrm{Sign}_{SK_{\mathrm{Root}}}(\mathrm{TBS}_{\mathrm{Sub}})$\\[2pt]
+        {\scriptsize Khóa $SK_{\mathrm{Root}}$ ký lên}\\
+        {\scriptsize chứng thư Intermediate}
+    };
+
+    % Sub-CA ký Server Certificate
+    \draw[issuancearrow] (subca.west) -- (-4.8, 4.8) -- (-4.8, 0.0) -- (server.west);
+    \node[anchor=east, align=right, font=\footnotesize] at (-5.0, 2.4) {
+        \textbf{2. Ký phát Server:}\\[2pt]
+        $\sigma_{\mathrm{Server}} = \mathrm{Sign}_{SK_{\mathrm{Sub}}}(\mathrm{TBS}_{\mathrm{Server}})$\\[2pt]
+        {\scriptsize Khóa $SK_{\mathrm{Sub}}$ ký lên}\\
+        {\scriptsize chứng thư máy chủ}
+    };
+
+    % ==============================================================
+    % TIẾN TRÌNH THẨM ĐỊNH RFC 5280 (BÊN PHẢI - TỪ DƯỚI LÊN)
+    % ==============================================================
+    % Thẩm định Server Certificate
+    \draw[valarrow] (server.east) -- (5.0, 0.0) -- (5.0, 4.8) -- (subca.east);
+    \node[anchor=west, align=left, font=\footnotesize] at (5.2, 2.4) {
+        \textbf{3. Thẩm định Server Certificate:}\\[2pt]
+        $\mathrm{Verify}_{PK_{\mathrm{Sub}}}(\sigma_{\mathrm{Server}}) = \mathrm{True}$\\[2pt]
+        {\scriptsize $\bullet$ Đối chiếu: $\mathrm{Issuer} \equiv \mathrm{Subject}_{\mathrm{Sub}}$}\\[1pt]
+        {\scriptsize $\bullet$ Khớp khóa: $\mathrm{AKI}_{\mathrm{Server}} \equiv \mathrm{SKI}_{\mathrm{Sub}}$}
+    };
+
+    % Thẩm định Intermediate CA
+    \draw[valarrow] (subca.east) -- (5.0, 4.8) -- (5.0, 9.6) -- (root.east);
+    \node[anchor=west, align=left, font=\footnotesize] at (5.2, 7.2) {
+        \textbf{4. Thẩm định Intermediate CA:}\\[2pt]
+        $\mathrm{Verify}_{PK_{\mathrm{Root}}}(\sigma_{\mathrm{Sub}}) = \mathrm{True}$\\[2pt]
+        {\scriptsize $\bullet$ Đối chiếu: $\mathrm{Issuer} \equiv \mathrm{Subject}_{\mathrm{Root}}$}\\[1pt]
+        {\scriptsize $\bullet$ Khớp khóa: $\mathrm{AKI}_{\mathrm{Sub}} \equiv \mathrm{SKI}_{\mathrm{Root}}$}
+    };
+
+\end{tikzpicture}%
+}
