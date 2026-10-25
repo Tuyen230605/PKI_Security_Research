@@ -1,73 +1,60 @@
 \chapter{Giới thiệu và xác định vấn đề nghiên cứu}
 \label{chap:gioi-thieu}
 
-Chương này trình bày bối cảnh ra đời của mật mã khóa công khai, phân tích lỗ hổng cố hữu trong phân phối khóa trần qua kịch bản tấn công người đứng giữa (MITM), từ đó dẫn dắt đến sự cần thiết của Hạ tầng khóa công khai (PKI). Tiếp đó, chương xác định rõ mục tiêu, 3 giả thuyết nghiên cứu (H1--H3), 4 câu hỏi nghiên cứu (RQ1--RQ4), phạm vi triển khai, các giới hạn ngoài phạm vi và phương pháp luận của đề tài.
-
 \section{Bối cảnh và bài toán}
 \label{sec:context-problem}
 
 \subsection{Bối cảnh mật mã khóa công khai}
-Trong các hệ thống thông tin hiện đại, việc truyền thông qua các mạng công cộng như Internet luôn đối mặt với nguy cơ bị nghe lén, can thiệp và sửa đổi dữ liệu. Mật mã khóa công khai (Public-Key Cryptography hay mật mã bất đối xứng) ra đời từ công trình mang tính bước ngoặt của Diffie và Hellman (1976)~\cite{diffie1976new}, tiếp nối bởi hệ mật RSA của Rivest, Shamir và Adleman (1978)~\cite{rsa1978}, nhằm giải quyết hạn chế cốt tử của mật mã đối xứng: bài toán phân phối trước một khóa bí mật chung qua kênh truyền an toàn. Trong mật mã khóa công khai, mỗi thực thể tham gia sở hữu một cặp khóa có quan hệ toán học chặt chẽ nhưng không thể suy dẫn khóa này từ khóa kia với năng lực tính toán thực tế:
-\begin{itemize}
-    \item \textbf{Khóa công khai (Public Key):} Ký hiệu là $PU$ (theo quy ước kinh điển) hoặc $PK$ (theo chuẩn mật mã học hiện đại). Khóa này được công bố rộng rãi cho mọi đối tượng trong hệ thống mà không cần giữ bí mật.
-    \item \textbf{Khóa bí mật (Private Key / Secret Key):} Ký hiệu tương ứng là $PR$ hoặc $SK$. Khóa này được chủ sở hữu lưu giữ tuyệt đối bí mật và không bao giờ tiết lộ cho bất kỳ ai.
-\end{itemize}
+Trong các hệ thống thông tin, việc truyền thông qua mạng công cộng luôn đối mặt với nguy cơ bị nghe lén và can thiệp. Mật mã khóa công khai ra đời từ công trình của Diffie và Hellman (1976)~\cite{diffie1976new}, tiếp nối bởi hệ mật RSA của Rivest, Shamir và Adleman (1978)~\cite{rsa1978}, nhằm giải quyết hạn chế phân phối khóa bí mật chung của mật mã đối xứng. Trong mật mã khóa công khai, mỗi thực thể sở hữu một cặp khóa có quan hệ toán học chặt chẽ nhưng không thể suy dẫn khóa này từ khóa kia với năng lực tính toán thực tế: \textbf{Khóa công khai (Public Key - $PU$/$PK$)} được công bố rộng rãi mà không cần giữ bí mật; còn \textbf{Khóa bí mật (Private Key - $PR$/$SK$)} được chủ sở hữu lưu giữ bí mật và không tiết lộ cho bên thứ ba.
 
-\noindent\textit{Quy ước ký hiệu cặp khóa:} Trong toàn bộ báo cáo này, hai hệ ký hiệu cặp khóa $(PU, PR)$ (Public Key / Private Key) và $(PK, SK)$ (Public Key / Secret Key) được hiểu hoàn toàn tương đương nhau về bản chất mật mã học. Nhằm giữ tính trực quan và gắn liền với kịch bản truyền thông kinh điển giữa các chủ thể (Alice, Bob và Eve), Chương 1 sử dụng hệ ký hiệu $(PU_B, PR_B)$ và $(PU_E, PR_E)$. Từ Chương 2 trở đi, khi đi sâu vào đặc tả kỹ thuật thuật toán, cấu trúc chứng thư X.509 và giao thức TLS 1.3, tài liệu sử dụng thống nhất ký hiệu chuẩn mực $(PK, SK)$ (ví dụ: $SK_{\mathrm{CA}}$, $PK_{\mathrm{server}}$).
+\noindent\textit{Quy ước ký hiệu cặp khóa:} Hai hệ ký hiệu $(PU, PR)$ và $(PK, SK)$ tương đương nhau về bản chất. Nhằm trực quan với kịch bản truyền thông kinh điển giữa Alice, Bob và Eve, Chương 1 sử dụng hệ ký hiệu $(PU_B, PR_B)$ và $(PU_E, PR_E)$. Từ Chương 2 trở đi, tài liệu sử dụng thống nhất ký hiệu chuẩn mực $(PK, SK)$ (ví dụ: $SK_{\mathrm{CA}}$, $PK_{\mathrm{server}}$).
 
-Xét kịch bản trao đổi thông tin kinh điển: \textbf{Alice} là bên gửi thông điệp, \textbf{Bob} là bên nhận thông điệp, và \textbf{Eve} là đối thủ tiềm tàng có khả năng giám sát, đánh chặn hoặc sửa đổi các gói tin lưu thông trên mạng. Để gửi một thông điệp bí mật đến Bob, Alice cần sử dụng khóa công khai của Bob để mã hóa. Tuy nhiên, một bài toán then chốt xuất hiện: \textit{Làm thế nào để Alice xác minh rằng khóa công khai mà mình nhận được qua mạng thực sự thuộc về Bob, chứ không phải do đối thủ Eve giả mạo?}
+Xét kịch bản kinh điển: Alice gửi thông điệp, Bob nhận thông điệp, và Eve là đối thủ có khả năng giám sát, đánh chặn hoặc sửa đổi gói tin. Để gửi thông điệp bí mật đến Bob, Alice dùng khóa công khai của Bob để mã hóa. Vấn đề cốt lõi là: \textit{Làm thế nào Alice xác minh khóa công khai nhận được thực sự thuộc về Bob, chứ không phải do đối thủ Eve giả mạo?}
 
 \subsection{Quá trình truyền thông điệp mã hóa trong điều kiện lý tưởng}
-Trong điều kiện lý tưởng, khi kênh truyền thông không bị can thiệp và khóa công khai được chuyển giao một cách toàn vẹn:
+Trong điều kiện lý tưởng, khi kênh truyền không bị can thiệp và khóa công khai chuyển giao toàn vẹn:
 \begin{enumerate}
-    \item Bob khởi tạo cặp khóa cá nhân gồm khóa công khai $PU_B$ và khóa bí mật $PR_B$.
+    \item Bob khởi tạo cặp khóa gồm khóa công khai $PU_B$ và khóa bí mật $PR_B$.
     \item Bob cung cấp khóa công khai $PU_B$ cho Alice qua kênh mạng.
-    \item Alice sử dụng khóa công khai $PU_B$ của Bob cùng hàm mã hóa $E(\cdot)$ để mã hóa thông điệp $M$, tạo thành bản mã $C$:
+    \item Alice dùng khóa công khai $PU_B$ của Bob cùng hàm mã hóa $E(\cdot)$ để mã hóa thông điệp $M$, tạo thành bản mã $C$:
     \begin{equation}
         C = E(PU_B, M)
     \end{equation}
-    \item Bob nhận bản mã $C$ và sử dụng khóa bí mật duy nhất tương ứng $PR_B$ cùng hàm giải mã $D(\cdot)$ để khôi phục lại thông điệp gốc $M$:
+    \item Bob nhận bản mã $C$ và dùng khóa bí mật tương ứng $PR_B$ cùng hàm giải mã $D(\cdot)$ để khôi phục thông điệp $M$:
     \begin{equation}
         M = D(PR_B, C)
     \end{equation}
 \end{enumerate}
 
-Cơ chế trên đại diện cho mô hình lý thuyết đơn giản hóa nhằm minh họa nguyên lý bảo mật bất đối xứng. Trong thực tế, các thuật toán khóa công khai có chi phí tính toán rất lớn nên không được dùng để mã hóa trực tiếp thông điệp dài; thay vào đó, các giao thức truyền thông an toàn hiện đại (tiêu biểu như TLS 1.3~\cite{rfc8446}) luôn áp dụng mô hình mật mã lai (Hybrid Cryptography): sử dụng mật mã khóa công khai để xác thực danh tính và thỏa thuận khóa phiên (ECDHE), sau đó dùng thuật toán đối xứng tốc độ cao (như AES-GCM) để mã hóa luồng dữ liệu (phân tích chi tiết tại Mục~\ref{sec:crypto_roles_in_tls}). Quy trình này chỉ đạt được mục tiêu bảo mật dự kiến khi hai điều kiện tiên quyết được thỏa mãn đồng thời: (1) Alice nhận đúng khóa công khai $PU_B$ của Bob, và (2) giao thức cùng thuật toán mã hóa được sử dụng là an toàn. Nếu Alice bị lừa sử dụng một chiếc khóa khác, tính bí mật của toàn bộ thông điệp sẽ bị vô hiệu hóa hoàn toàn.
+Mô hình lý thuyết trên minh họa nguyên lý cơ bản. Trong thực tế, các giao thức an toàn như TLS 1.3~\cite{rfc8446} áp dụng mô hình mật mã lai: dùng khóa công khai để xác thực và thỏa thuận khóa phiên (ECDHE), rồi dùng thuật toán đối xứng (như AES-GCM) để mã hóa dữ liệu (Mục~\ref{sec:crypto_roles_in_tls}). Cơ chế này chỉ an toàn khi Alice nhận đúng khóa $PU_B$ của Bob và thuật toán là an toàn. Nếu Alice bị lừa dùng một chiếc khóa khác, tính bí mật sẽ bị phá vỡ hoàn toàn.
 
 \subsection{Cuộc tấn công thay thế khóa của Eve}
-Khi việc phân phối khóa công khai diễn ra trên kênh truyền mở mà thiếu cơ chế xác thực nguồn gốc, đối thủ Eve có thể thực hiện một cuộc tấn công thay thế khóa theo phương thức người đứng giữa (\textit{Man-in-the-Middle - MITM}). Giả sử Eve sở hữu một cặp khóa của riêng mình gồm khóa công khai $PU_E$ và khóa bí mật $PR_E$. Cuộc tấn công diễn ra theo trình tự 6 bước:
+Khi phân phối khóa công khai trên kênh mở mà thiếu cơ chế xác thực nguồn gốc, đối thủ Eve có thể thực hiện tấn công thay thế khóa theo phương thức người đứng giữa (\textit{Man-in-the-Middle - MITM}). Giả sử Eve sở hữu cặp khóa $(PU_E, PR_E)$. Cuộc tấn công diễn ra qua 6 bước:
 \begin{enumerate}
-    \item Bob gửi khóa công khai $PU_B$ của mình cho Alice qua mạng.
-    \item Eve chặn thông điệp chứa $PU_B$ trên đường truyền và thay thế bằng khóa công khai của mình là $PU_E$.
-    \item Alice nhận được $PU_E$ nhưng nhầm tưởng đó là khóa của Bob; do đó Alice sử dụng $PU_E$ để mã hóa thông điệp $M$:
+    \item Bob gửi khóa công khai $PU_B$ cho Alice qua mạng.
+    \item Eve chặn thông điệp chứa $PU_B$ trên đường truyền và thay bằng khóa của mình là $PU_E$.
+    \item Alice nhận được $PU_E$ nhưng nhầm là của Bob; do đó Alice dùng $PU_E$ để mã hóa thông điệp $M$:
     \begin{equation}
         C_1 = E(PU_E, M)
     \end{equation}
-    \item Alice gửi bản mã $C_1$ đi. Eve chặn bắt $C_1$ và sử dụng khóa bí mật $PR_E$ của mình để giải mã:
+    \item Alice gửi bản mã $C_1$. Eve chặn $C_1$ và dùng khóa bí mật $PR_E$ để giải mã:
     \begin{equation}
         M = D(PR_E, C_1)
     \end{equation}
-    Tại thời điểm này, Eve đọc được trọn vẹn nội dung thông điệp gốc $M$ của Alice.
-    \item Để duy trì sự ngụy trang, Eve sử dụng khóa công khai thật sự của Bob ($PU_B$) để mã hóa lại thông điệp $M$:
+    Tại thời điểm này, Eve đọc được trọn vẹn nội dung thông điệp gốc $M$.
+    \item Để duy trì ngụy trang, Eve dùng khóa công khai thật của Bob ($PU_B$) để mã hóa lại $M$:
     \begin{equation}
         C_2 = E(PU_B, M)
     \end{equation}
-    sau đó Eve chuyển tiếp bản mã $C_2$ tới Bob dưới danh nghĩa Alice.
-    \item Bob nhận được $C_2$, sử dụng khóa bí mật $PR_B$ của mình để giải mã:
+    sau đó chuyển tiếp bản mã $C_2$ tới Bob dưới danh nghĩa Alice.
+    \item Bob nhận được $C_2$, dùng khóa bí mật $PR_B$ để giải mã:
     \begin{equation}
         M = D(PR_B, C_2)
     \end{equation}
-    Bob khôi phục được đúng thông điệp $M$ ban đầu và hoàn toàn không nhận ra cuộc tấn công nếu không có cơ chế xác thực thích hợp.
+    Bob khôi phục đúng thông điệp $M$ ban đầu và không nhận ra cuộc tấn công nếu thiếu cơ chế xác thực thích hợp.
 \end{enumerate}
 
-Ý nghĩa của các biểu thức trong cuộc tấn công:
-\begin{itemize}
-    \item $C_1 = E(PU_E, M)$ thể hiện bản mã tạo ra do Alice mã hóa bằng khóa công khai của kẻ tấn công Eve thay vì của Bob.
-    \item $M = D(PR_E, C_1)$ chứng minh Eve có khả năng giải mã trực tiếp và thu thập nội dung thông tin mật nhờ nắm giữ khóa bí mật $PR_E$.
-    \item $C_2 = E(PU_B, M)$ thể hiện việc Eve tái mã hóa thông điệp bằng khóa công khai hợp lệ của Bob để che đậy sự can thiệp của mình.
-\end{itemize}
-
-Cuộc tấn công người đứng giữa (MITM) này thành công vì Eve đã lợi dụng việc Alice hoàn toàn không có khả năng xác minh nguồn gốc và tính hợp lệ của khóa công khai nhận được. Mô hình trao đổi bình thường và cuộc tấn công thay thế khóa được minh họa tổng hợp tại Hình~\ref{fig:mitm-key-exchange}.
+Cuộc tấn công MITM thành công vì Alice không có khả năng xác minh tính xác thực của khóa công khai nhận được. Mô hình trao đổi thông thường và cuộc tấn công thay thế khóa được minh họa tại Hình~\ref{fig:mitm-key-exchange}.
 
 \begin{figure}[!htbp]
 \centering
@@ -78,97 +65,71 @@ Cuộc tấn công người đứng giữa (MITM) này thành công vì Eve đã
 
 \subsection{Phân tích bản chất bài toán và vai trò của PKI}
 \label{subsec:analysis-pki-role}
-Phân tích kịch bản tấn công của Eve làm bộc lộ những bài học cơ bản về an toàn mật mã:
-\begin{itemize}
-    \item \textbf{Phân biệt tính bí mật của dữ liệu và tính xác thực của khóa công khai:} Mật mã hóa chỉ đảm bảo tính bí mật (confidentiality) của thông điệp đối với đối tượng sở hữu khóa bí mật tương ứng. Tuy nhiên, tính bí mật đó trở nên vô nghĩa nếu bản thân chiếc khóa công khai được dùng để mã hóa không bảo đảm tính xác thực (authenticity) và không có căn cứ xác thực nguồn gốc (origin authenticity).
-    \item \textbf{Sự phân tách giữa tính đúng đắn toán học và an toàn hệ thống:} Các thuật toán mật mã cơ sở (như các hàm mã hóa phi đối xứng) vẫn hoạt động hoàn toàn chính xác theo đúng các định lý toán học ($C_1$ giải mã chính xác bằng $PR_E$, và $C_2$ giải mã chính xác bằng $PR_B$). Mặc dù thuật toán không hề bị bẻ gãy, hệ thống bảo mật tổng thể vẫn bị phá vỡ vì khóa đưa vào thuật toán không thuộc về đúng đối tượng dự kiến.
-    \item \textbf{Các nguy cơ và hậu quả bảo mật:}
-    \begin{itemize}
-        \item \textit{Lộ lọt dữ liệu bí mật:} Kẻ tấn công có thể đọc trộm toàn bộ thông điệp trao đổi giữa các bên.
-        \item \textit{Giả mạo danh tính (Impersonation):} Kẻ tấn công có thể thay phiên đóng vai cả hai bên đối thoại một cách trót lọt.
-        \item \textit{Sửa đổi và thao túng thông điệp (Tampering):} Eve không chỉ dừng lại ở việc đọc trộm mà còn có thể can thiệp, sửa đổi nội dung $M$ thành $M'$ trước khi mã hóa lại thành $C_2 = E(PU_B, M')$, gây sai lệch hoàn toàn dữ liệu nếu giao thức không có cơ chế bảo vệ tính toàn vẹn và chữ ký số thích hợp.
-    \end{itemize}
-\end{itemize}
+Kịch bản tấn công của Eve cho thấy tính bí mật của dữ liệu chỉ có ý nghĩa khi khóa công khai được xác thực nguồn gốc. Dù các thuật toán mật mã hoạt động đúng đắn về mặt toán học ($C_1$ giải mã đúng bằng $PR_E$, $C_2$ giải mã đúng bằng $PR_B$), an toàn hệ thống vẫn bị phá vỡ vì khóa đưa vào bị đánh tráo. Hậu quả là kẻ tấn công có thể nghe lén, giả mạo danh tính (impersonation) hoặc sửa đổi dữ liệu (tampering) mà các bên không phát hiện được.
 
-Do đó, thách thức cốt lõi đặt ra là: \textbf{Phải có một cơ chế đáng tin cậy để liên kết (bind) một khóa công khai cụ thể với danh tính thực tế của chủ sở hữu hợp pháp}.
+Do đó, thách thức cốt lõi là: \textbf{Phải có một cơ chế đáng tin cậy để liên kết (bind) một khóa công khai cụ thể với danh tính thực tế của chủ sở hữu hợp pháp}.
 
-Để thiết lập mối liên kết đáng tin cậy giữa danh tính và khóa công khai mà không đòi hỏi các bên phải gặp mặt trực tiếp hoặc thiết lập kênh bí mật trước, \textbf{Hạ tầng khóa công khai (Public Key Infrastructure - PKI)} đã được chuẩn hóa và triển khai như một giải pháp nền tảng. PKI là một hệ thống hạ tầng toàn diện bao gồm phần cứng, phần mềm, chính sách và tiêu chuẩn hỗ trợ quản lý, phân phối, lưu trữ và xác thực mối liên hệ giữa khóa công khai với danh tính của các thực thể thông qua các cấu phần và cơ chế then chốt:
-\begin{itemize}
-    \item \textbf{Tổ chức chứng thực số (Certificate Authority - CA):} Là bên thứ ba đáng tin cậy (Trusted Third Party). CA có trách nhiệm thẩm tra tính chính xác về danh tính của đối tượng yêu cầu trước khi cấp phát chứng thư số.
-    \item \textbf{Chứng thư số (Digital Certificate):} Là cấu trúc dữ liệu điện tử (thường theo chuẩn quốc tế ITU-T X.509) đóng gói khóa công khai cùng với các thông tin định danh của chủ thể (Subject) sở hữu khóa đó.
-    \item \textbf{Chữ ký số (Digital Signature):} CA sử dụng khóa bí mật của chính mình để tạo chữ ký số trên toàn bộ nội dung của chứng thư, bảo đảm tính toàn vẹn và chống chối bỏ cho mối liên kết giữa danh tính và khóa công khai.
-\end{itemize}
+Để giải quyết thách thức này, \textbf{Hạ tầng khóa công khai (Public Key Infrastructure - PKI)} được chuẩn hóa và triển khai. PKI là hệ thống hạ tầng toàn diện bao gồm chính sách, tiêu chuẩn, phần cứng và phần mềm, thiết lập mối liên kết tin cậy qua ba cấu phần cốt lõi: \textit{Tổ chức chứng thực số (CA)} đóng vai trò bên thứ ba đáng tin cậy thẩm tra danh tính; \textit{Chứng thư số (chuẩn ITU-T X.509)} đóng gói khóa công khai cùng thông tin định danh của chủ thể (Subject); và \textit{Chữ ký số} do CA tạo bằng khóa bí mật của mình để đảm bảo tính toàn vẹn và chống chối bỏ cho liên kết đó.
 
-Trong môi trường có sự hỗ trợ của PKI, khi Alice muốn liên lạc với Bob, thay vì nhận một khóa công khai trần dễ bị đánh tráo, Alice sẽ nhận được một chứng thư số của Bob do một CA đáng tin cậy ban hành. Để chấp nhận chứng thư đó, Alice kích hoạt quy trình thẩm định đường dẫn đầy đủ theo các chuẩn mực kỹ thuật:
+Trong môi trường PKI, Alice nhận được chứng thư số của Bob do CA ban hành. Để chấp nhận chứng thư, Alice thực hiện quy trình thẩm định đường dẫn theo 6 bước:
 \begin{enumerate}
-    \item \textbf{Xây dựng chuỗi tin cậy (Path Building):} Alice truy vết chuỗi chứng thư từ chứng thư của Bob ngược lên một Gốc tin cậy (Trust Anchor) đã được cấu hình sẵn trong kho chứng thư cục bộ (Trust Store).
-    \item \textbf{Xác thực chữ ký số (Signature Verification):} Alice sử dụng khóa công khai của CA tương ứng để kiểm tra tính toàn vẹn chữ ký số trên từng mắt xích của chuỗi.
-    \item \textbf{Thẩm định ràng buộc cơ bản (Constraints Verification):} Alice kiểm tra phần mở rộng \texttt{basicConstraints} (cụ thể là cờ \texttt{cA} và giới hạn độ sâu \texttt{pathLen}) nhằm ngăn chặn chứng thư thực thể cuối đóng vai trò CA mạo danh.
-    \item \textbf{Đối chiếu mục đích sử dụng khóa (Key Usage / EKU):} Alice đối chiếu các trường \texttt{KeyUsage} và \texttt{ExtendedKeyUsage} nhằm đảm bảo khóa được dùng đúng mục đích được cấp (ví dụ: TLS Web Server Authentication).
-    \item \textbf{Khớp định danh chủ thể (Identity Matching):} Alice kiểm tra trường Subject Alternative Name (SAN) xem tên miền hoặc định danh truy cập có trùng khớp chính xác với Bob hay không.
-    \item \textbf{Kiểm tra thời hạn hiệu lực và trạng thái thu hồi:} Alice đối chiếu thời điểm hiện tại với khoảng thời gian hợp lệ (\texttt{notBefore}, \texttt{notAfter}), đồng thời kiểm tra xem chứng thư có bị thu hồi trước thời hạn (do lộ khóa bí mật hay thay đổi thông tin) hay không thông qua danh sách thu hồi chứng thư (CRL) hoặc giao thức trạng thái chứng thư trực tuyến (OCSP).
+    \item \textbf{Xây dựng chuỗi tin cậy (Path Building):} Truy vết chuỗi từ chứng thư Bob ngược về Trust Anchor trong Trust Store cục bộ.
+    \item \textbf{Xác thực chữ ký số (Signature Verification):} Dùng khóa công khai của CA tương ứng kiểm tra chữ ký số trên từng mắt xích.
+    \item \textbf{Thẩm định ràng buộc cơ bản (Constraints Verification):} Kiểm tra extension \texttt{basicConstraints} (cờ \texttt{cA}, \texttt{pathLen}) ngăn chặn mạo danh CA.
+    \item \textbf{Đối chiếu mục đích sử dụng khóa (Key Usage / EKU):} Đối chiếu \texttt{KeyUsage} và \texttt{ExtendedKeyUsage} bảo đảm đúng mục đích cấp.
+    \item \textbf{Khớp định danh chủ thể (Identity Matching):} Kiểm tra trường SAN xem tên miền truy cập có trùng khớp với đối tác hay không.
+    \item \textbf{Kiểm tra thời hạn hiệu lực và trạng thái thu hồi:} Đối chiếu thời gian với khoảng [\texttt{notBefore}, \texttt{notAfter}] và kiểm tra thu hồi qua CRL hoặc OCSP.
 \end{enumerate}
 
 \noindent\textbf{Giới hạn của PKI và sự cố thực tế kinh điển (DigiNotar 2011):}
-Cần khẳng định rằng, PKI không phải là một giải pháp loại bỏ hoàn toàn mọi nguy cơ an ninh. PKI về thực chất là một hạ tầng quản trị niềm tin (\textit{trust management}); an ninh của hệ thống bị ràng buộc chặt chẽ bởi các chính sách vận hành và tính toàn vẹn của các CA gốc (Trust Anchors). Nếu một CA bị xâm nhập hoặc cấp sai chứng thư, toàn bộ chuỗi tin cậy sẽ bị lợi dụng để hợp thức hóa các hành vi tấn công mà quy trình kiểm tra chữ ký thông thường không thể tự phát hiện được vì chữ ký mật mã từ CA bị chiếm quyền vẫn hoàn toàn đúng về mặt toán học.
+Tuy vậy, PKI về bản chất là một hạ tầng quản trị niềm tin (\textit{trust management}); an ninh hệ thống phụ thuộc chặt chẽ vào chính sách vận hành và tính toàn vẹn của các CA gốc. Minh chứng điển hình là \textbf{sự cố DigiNotar (2011)}~\cite{prins2011diginotar}: khi CA công cộng của Hà Lan này bị xâm nhập, tin tặc đã phát hành tối thiểu 531 chứng thư giả mạo có chữ ký mật mã hoàn toàn hợp lệ cho \texttt{*.google.com} cùng nhiều tổ chức khác. Kẻ tấn công dùng các chứng thư này để triển khai MITM đối với khoảng 298.140 địa chỉ IP (ước tính thô), trong đó xấp xỉ 95\% ở Iran. Sự cố chỉ được phát hiện khi trình duyệt Google Chrome chặn chứng thư giả mạo nhờ cơ chế ghim chứng thư (\textit{Certificate Pinning}) vào ngày 28/08/2011, dẫn đến việc DigiNotar bị thu hồi và xóa vĩnh viễn khỏi Trust Store toàn cầu. Sự cố khẳng định chữ ký toán học đúng chỉ là điều kiện cần nhưng chưa đủ nếu quy trình vận hành và kiểm soát hạ tầng CA bị buông lỏng (xem chi tiết tại Mục~\ref{subsec:audit-log-compliance} và Chương~\ref{chap:threat-security}).
 
-Minh chứng điển hình cho giới hạn này là \textbf{sự cố DigiNotar (2011)}~\cite{prins2011diginotar}, khi một CA công cộng của Hà Lan bị tin tặc chiếm quyền kiểm soát hệ thống và phát hành trái phép hàng loạt chứng thư giả mạo (\textit{rogue certificates}) có chữ ký mật mã hoàn toàn hợp lệ cho tên miền \texttt{*.google.com} cùng nhiều tổ chức quốc tế khác. Kẻ tấn công đã sử dụng các chứng thư giả mạo này để triển khai tấn công người đứng giữa (MITM) đối với khoảng 298.140 địa chỉ IP (ước tính thô cho số lượng người dùng thực tế), trong đó xấp xỉ 95\% đặt tại Iran. Sự cố chỉ bị phát giác khi trình duyệt Google Chrome chủ động chặn chứng thư giả mạo của Google nhờ cơ chế ghim chứng thư (\textit{Certificate Pinning}) vào ngày 28/08/2011. Báo cáo điều tra pháp y độc lập của Fox-IT sau đó xác nhận tối thiểu 531 chứng thư giả mạo đã bị cấp phát, buộc các nhà phát triển hệ điều hành và trình duyệt phải thu hồi và loại bỏ vĩnh viễn DigiNotar khỏi Trust Store toàn cầu. Sự cố khẳng định một nguyên lý cốt lõi: chữ ký mật mã đúng chỉ là điều kiện cần nhưng chưa đủ để bảo đảm an toàn nếu quy trình vận hành và kiểm soát hạ tầng CA bị buông lỏng (phân tích chi tiết tại Mục~\ref{subsec:audit-log-compliance} và Chương~\ref{chap:threat-security}).
-
-Chính vì vậy, bài toán nghiên cứu trọng tâm được xác định là: \textbf{Làm thế nào để phân phối và xác thực khóa công khai một cách đáng tin cậy, hạn chế tối đa nguy cơ giả mạo và tấn công thay thế khóa, đồng thời đánh giá được các điều kiện chấp nhận và giới hạn an ninh của hệ thống trong thực tế triển khai?} Đây là động lực thúc đẩy các mục tiêu và câu hỏi nghiên cứu cụ thể trong đề tài này.
+Từ đó, bài toán nghiên cứu trọng tâm là: \textbf{Làm thế nào để phân phối và xác thực khóa công khai một cách đáng tin cậy, hạn chế tối đa nguy cơ giả mạo và tấn công thay thế khóa, đồng thời đánh giá được các điều kiện chấp nhận và giới hạn an ninh của hệ thống trong thực tế?}
 
 \section{Mục tiêu và câu hỏi nghiên cứu}
 \label{sec:objectives-rqs}
-Mục tiêu của đề tài là phân tích kiến trúc hạ tầng khóa công khai (PKI), tìm hiểu cơ chế xác thực chứng thư số theo tiêu chuẩn X.509 và xây dựng một môi trường thực nghiệm (lab) nhằm kiểm chứng các điều kiện chấp nhận hoặc từ chối chứng thư. Thông qua đó, đề tài làm rõ cách PKI thiết lập mối liên hệ tin cậy giữa danh tính và khóa công khai, đồng thời đánh giá vai trò của cơ chế thu hồi chứng thư trong việc bảo đảm an toàn thông tin.
+Mục tiêu của đề tài là phân tích kiến trúc PKI, cơ chế xác thực chứng thư X.509, và xây dựng môi trường lab kiểm chứng điều kiện chấp nhận/từ chối chứng thư cùng vai trò của cơ chế thu hồi.
 
-Để định hướng cho các phân tích lý thuyết và thực nghiệm, đề tài đặt ra ba giả thuyết nghiên cứu chính gắn liền với các câu hỏi nghiên cứu:
+Đề tài đặt ra ba giả thuyết nghiên cứu chính gắn liền với các câu hỏi nghiên cứu:
 \begin{itemize}
-    \item \textbf{Giả thuyết H1 (Về tính độc lập giữa chữ ký toán học và tính hợp lệ logic):} Tính đúng đắn toán học của chữ ký số là điều kiện cần nhưng không đủ để một chứng thư X.509 được chấp nhận; việc vi phạm bất kỳ ràng buộc logic nào (thời hạn, cờ cấu hình, giới hạn phân cấp) đều dẫn đến việc từ chối chứng thư. Giả thuyết này gắn trực tiếp với RQ2 và được kiểm chứng thực nghiệm qua các ca vi phạm cấu trúc (TC02--TC06, TC08, TC10).
-    \item \textbf{Giả thuyết H2 (Về độ trễ và sự phụ thuộc trong cơ chế thu hồi):} Cơ chế thu hồi chứng thư bằng danh sách thu hồi (CRL) tồn tại độ trễ truyền bá và phụ thuộc vào chính sách thẩm định chủ động của bên tin cậy; nếu client bỏ qua bước kiểm tra thu hồi thì chứng thư bị thu hồi vẫn được chấp nhận vô điều kiện. Giả thuyết này gắn với RQ3 và được kiểm chứng qua ca kiểm thử thu hồi TC07.
-    \item \textbf{Giả thuyết H3 (Về chi phí vận hành và tính khả thi triển khai):} Độ phức tạp và chi phí tính toán trong thẩm định đường dẫn chứng thư tăng theo chiều sâu của chuỗi phân cấp và khối lượng dữ liệu thu hồi. Giả thuyết này gắn với RQ2, RQ3 và định hướng phân tích chuyên sâu tại Chương~\ref{chap:x509-xac-thuc} và Chương~\ref{chap:experiment}.
+    \item \textbf{Giả thuyết H1 (Về tính độc lập giữa chữ ký toán học và tính hợp lệ logic):} Chữ ký số đúng là điều kiện cần nhưng không đủ; vi phạm bất kỳ ràng buộc logic nào (thời hạn, cờ cấu hình, giới hạn phân cấp) đều dẫn đến việc từ chối. Giả thuyết này gắn với RQ2 và được kiểm chứng qua các ca kiểm thử vi phạm cấu trúc (TC02--TC06, TC08, TC10).
+    \item \textbf{Giả thuyết H2 (Về độ trễ và sự phụ thuộc trong cơ chế thu hồi):} Thu hồi qua danh sách thu hồi (CRL) tồn tại độ trễ truyền bá và phụ thuộc chính sách client; nếu client bỏ qua kiểm tra thu hồi, chứng thư bị thu hồi vẫn được chấp nhận. Giả thuyết này gắn với RQ3 và được kiểm chứng qua ca TC07.
+    \item \textbf{Giả thuyết H3 (Về chi phí vận hành và tính khả thi triển khai):} Độ phức tạp và chi phí tính toán trong thẩm định đường dẫn tăng theo chiều sâu chuỗi phân cấp và dữ liệu thu hồi. Giả thuyết này gắn với RQ2, RQ3 và định hướng phân tích tại Chương~\ref{chap:x509-xac-thuc} và Chương~\ref{chap:experiment}.
 \end{itemize}
 
-Để hiện thực hóa mục tiêu và kiểm chứng các giả thuyết, đề tài tập trung giải quyết 4 câu hỏi nghiên cứu sau:
+Để hiện thực hóa mục tiêu và kiểm chứng các giả thuyết, đề tài tập trung giải quyết 4 câu hỏi nghiên cứu:
 \begin{enumerate}
   \item \textbf{RQ1:} PKI liên kết danh tính với khóa công khai bằng cách nào?
   \item \textbf{RQ2:} Những điều kiện nào khiến chứng thư X.509 được chấp nhận hoặc từ chối?
   \item \textbf{RQ3:} CRL và OCSP giúp giảm thiểu rủi ro liên quan đến chứng thư bị thu hồi như thế nào?
-  \item \textbf{RQ4:} Những điểm yếu nào vẫn tồn tại trong PKI ngay cả khi các thuật toán mật mã được sử dụng vẫn bảo đảm an toàn?
+  \item \textbf{RQ4:} Những điểm yếu nào vẫn tồn tại trong PKI ngay cả khi các thuật toán mật mã vẫn bảo đảm an toàn?
 \end{enumerate}
 
-Trong đó, mối liên hệ giữa các câu hỏi nghiên cứu với cấu trúc các chương trong báo cáo được phân bổ cụ thể:
+Mối liên hệ giữa các câu hỏi nghiên cứu với các chương trong báo cáo:
 \begin{itemize}
-    \item \textbf{RQ1} được làm sáng tỏ qua phân tích lý thuyết về kiến trúc PKI, mô hình tin cậy và cấu trúc chứng thư X.509 ở Chương~\ref{chap:kien-truc-pki} và Chương~\ref{chap:x509-xac-thuc};
-    \item \textbf{RQ2} và \textbf{RQ3} được đối chiếu giữa lý thuyết thuật toán xác thực đường dẫn, cơ chế thu hồi (Chương~\ref{chap:x509-xac-thuc}) và kiểm chứng trực quan bằng thực nghiệm 10 ca kiểm thử chuyên sâu (TC01--TC10) trên mô hình lab OpenSSL ở Chương~\ref{chap:experiment};
-    \item \textbf{RQ4} được mổ xẻ chuyên sâu qua mô hình hóa rủi ro, phân tích giới hạn của chữ ký hợp lệ tại Chương~\ref{chap:threat-security} và các hướng tiếp cận nâng cao (như Certificate Transparency, tự động hóa ACME) ở Chương~\ref{chap:ung-dung}.
+    \item \textbf{RQ1} được phân tích qua kiến trúc PKI, mô hình tin cậy và cấu trúc chứng thư X.509 ở Chương~\ref{chap:kien-truc-pki} và Chương~\ref{chap:x509-xac-thuc}.
+    \item \textbf{RQ2, RQ3} được đối chiếu giữa lý thuyết thẩm định đường dẫn, thu hồi (Chương~\ref{chap:x509-xac-thuc}) và kiểm chứng qua 10 ca kiểm thử (TC01--TC10) ở Chương~\ref{chap:experiment}.
+    \item \textbf{RQ4} được phân tích qua mô hình đe dọa, giới hạn chữ ký ở Chương~\ref{chap:threat-security} và hướng phát triển (CT, ACME) ở Chương~\ref{chap:ung-dung}.
 \end{itemize}
-
-Thông qua việc giải đáp các câu hỏi nghiên cứu và kiểm chứng bằng thực nghiệm, đề tài hướng đến việc làm rõ các yếu tố quyết định độ tin cậy của PKI, nhận diện những hạn chế trong quá trình xác thực và quản lý chứng thư số, từ đó nâng cao hiểu biết về khả năng ứng dụng cũng như các rủi ro an toàn thông tin của hệ thống PKI trong thực tế.
 
 \section{Phạm vi và phương pháp nghiên cứu}
 \label{sec:scope-methodology}
-\begin{itemize}
-    \item \textbf{Phạm vi nghiên cứu:} Đề tài tập trung nghiên cứu mô hình PKI phân cấp chuẩn ITU-T X.509 v3 và cơ chế xác thực máy chủ (Server Authentication) trong giao thức TLS trên môi trường phòng thí nghiệm nội bộ (lab). Trọng tâm nghiên cứu bao gồm cấu trúc các trường chứng thư và phần mở rộng quan trọng (SAN, Basic Constraints, Key Usage), thuật toán xác minh chuỗi tin cậy, cơ chế kiểm tra thu hồi qua CRL trong thực nghiệm và phân tích lý thuyết cơ chế OCSP, cùng các mô hình đe dọa và hạn chế an ninh cố hữu của PKI.
-    \item \textbf{Phương pháp nghiên cứu:} Đề tài kết hợp phương pháp nghiên cứu tài liệu chuẩn hóa quốc tế (RFC 5280~\cite{rfc5280}, RFC 6960~\cite{rfc6960}, RFC 8446~\cite{rfc8446}, RFC 3647~\cite{rfc3647}) với phương pháp thực nghiệm khoa học. Nhóm nghiên cứu thiết kế và triển khai một hạ tầng PKI mô phỏng (lab environment) bằng công cụ OpenSSL, xây dựng chuỗi chứng thư nhiều cấp và thực thi 10 ca kiểm thử độc lập (TC01--TC10) nhằm quan sát, ghi nhận và đối chiếu trực quan hành vi thẩm định chứng thư thực tế với các ràng buộc lý thuyết.
-\end{itemize}
+\textbf{Phạm vi nghiên cứu:} Đề tài tập trung vào mô hình PKI phân cấp X.509 v3 và xác thực máy chủ TLS trong môi trường lab, gồm cấu trúc trường/extension then chốt (SAN, Basic Constraints, Key Usage), thuật toán xác minh chuỗi tin cậy, cơ chế thu hồi (CRL/OCSP) và mô hình đe dọa.
 
-\noindent\textbf{Giới hạn và phạm vi ngoài nghiên cứu (Out of Scope):} Nhằm bảo đảm tính tập trung và khả thi của đề tài, các nội dung sau được xác định nằm ngoài phạm vi thực nghiệm:
-\begin{itemize}
-    \item \textit{Không triển khai dịch vụ OCSP trực tuyến:} Môi trường lab tập trung kiểm thử toàn diện cơ chế CRL cục bộ; giao thức OCSP và kỹ thuật OCSP Stapling chỉ được khảo sát, phân tích trên bình diện lý thuyết kiến trúc.
-    \item \textit{Không sử dụng phần cứng bảo mật HSM:} Toàn bộ khóa bí mật của Root CA và Intermediate CA trong bài lab được lưu trữ dưới dạng tệp tin phần mềm cục bộ phục vụ mục đích nghiên cứu học thuật, không trang bị mô-đun phần cứng chuyên dụng.
-    \item \textit{Không đo lường hiệu năng quy mô lớn:} Đề tài không thực hiện đo lường tải mạng hay benchmark thông lượng giao dịch chứng thực ở quy mô Internet thương mại.
-    \item \textit{Không bao gồm quy trình kiểm toán pháp lý:} Báo cáo không mô phỏng các thủ tục xác minh hồ sơ doanh nghiệp hay các quy trình đánh giá tuân thủ theo WebTrust/ETSI của các tổ chức CA thương mại ngoài đời thực.
-\end{itemize}
+\textbf{Phương pháp nghiên cứu:} Kết hợp nghiên cứu chuẩn quốc tế (RFC 5280~\cite{rfc5280}, RFC 6960~\cite{rfc6960}, RFC 8446~\cite{rfc8446}, RFC 3647~\cite{rfc3647}) với thực nghiệm: thiết lập PKI đa cấp bằng OpenSSL và thực thi 10 ca kiểm thử (TC01--TC10) đối chiếu với lý thuyết.
+
+\noindent\textbf{Giới hạn ngoài phạm vi (Out of Scope):} Đề tài không triển khai dịch vụ OCSP trực tuyến (chỉ phân tích lý thuyết, thực nghiệm tập trung vào CRL); không dùng phần cứng HSM (khóa CA lưu trữ dạng tệp tin phục vụ học thuật); không đo lường hiệu năng hay tải mạng quy mô lớn; và không mô phỏng quy trình kiểm toán pháp lý theo WebTrust/ETSI của các CA thương mại.
 
 \section{Cấu trúc của báo cáo}
 \label{sec:report-structure}
-Báo cáo nghiên cứu được bố cục thành 7 chương chuyên môn và phần kết luận, cụ thể như sau:
+Báo cáo được bố cục thành 7 chương chuyên môn và phần kết luận:
 \begin{itemize}
-    \item \textbf{Chương 1 -- Giới thiệu và xác định vấn đề nghiên cứu:} Trình bày bối cảnh ra đời của mật mã khóa công khai, phân tích lỗ hổng cố hữu trong phân phối khóa trần qua kịch bản tấn công người đứng giữa (MITM), sự cần thiết của PKI, mục tiêu, 3 giả thuyết nghiên cứu (H1--H3), 4 câu hỏi nghiên cứu (RQ1--RQ4), phạm vi triển khai và phương pháp luận của đề tài.
-    \item \textbf{Chương 2 -- Cơ sở mật mã khóa công khai và PKI:} Trình bày cơ sở lý thuyết mật mã bất đối xứng, hàm băm mật mã, chữ ký số, quản lý vòng đời khóa và vai trò của các lớp thuật toán trong giao thức TLS 1.3.
-    \item \textbf{Chương 3 -- Kiến trúc PKI và vòng đời chứng thư:} Phân tích kiến trúc tổng thể của PKI, các thành phần và mô hình tin cậy, quy trình quản lý vòng đời chứng thư và chính sách vận hành (CP/CPS) theo khung RFC 3647.
-    \item \textbf{Chương 4 -- X.509, chuỗi tin cậy và cơ chế xác thực:} Đi sâu vào cấu trúc chứng thư số chuẩn ITU-T X.509 v3, thuật toán xây dựng và thẩm định đường dẫn chứng thư, cùng cơ chế kiểm tra trạng thái thu hồi (CRL và OCSP).
-    \item \textbf{Chương 5 -- Phân tích bảo mật, mô hình tấn công và so sánh:} Mô hình hóa đe dọa, so sánh đối chiếu các mô hình tin cậy (PKI, Web of Trust, TOFU), và phân tích giới hạn của chữ ký hợp lệ thông qua nghiên cứu điển hình về sự cố DigiNotar (2011).
-    \item \textbf{Chương 6 -- Thiết kế và đánh giá thực nghiệm:} Thiết kế môi trường lab OpenSSL, kết quả thực nghiệm 10 ca kiểm thử (TC01--TC10) và các thảo luận, đánh giá chuyên sâu.
-    \item \textbf{Chương 7 -- Ứng dụng và hướng phát triển PKI:} Khảo sát các ứng dụng thực tế của PKI, cơ chế minh bạch chứng thư (Certificate Transparency - CT), tự động hóa quản lý chứng thư qua giao thức ACME và định hướng chuyển đổi sang mật mã hậu lượng tử (PQC).
-    \item \textbf{Kết luận và hướng phát triển:} Tổng kết các phát hiện chính, đối chiếu và giải đáp 4 câu hỏi nghiên cứu, chỉ rõ các giới hạn của mô hình thực nghiệm và đề xuất hướng nghiên cứu mở rộng trong tương lai.
+    \item \textbf{Chương 1 -- Giới thiệu:} Bối cảnh, phân tích MITM, vai trò PKI, mục tiêu, giả thuyết H1--H3, câu hỏi RQ1--RQ4 và phương pháp nghiên cứu.
+    \item \textbf{Chương 2 -- Cơ sở mật mã:} Mật mã bất đối xứng, hàm băm, chữ ký số, vòng đời khóa và các lớp thuật toán trong TLS 1.3.
+    \item \textbf{Chương 3 -- Kiến trúc PKI:} Cấu trúc phân cấp PKI, mô hình tin cậy, vòng đời chứng thư và chính sách vận hành CP/CPS (RFC 3647).
+    \item \textbf{Chương 4 -- X.509 và xác thực:} Cấu trúc chứng thư X.509 v3, thuật toán thẩm định đường dẫn và cơ chế thu hồi qua CRL và OCSP.
+    \item \textbf{Chương 5 -- Phân tích bảo mật:} Mô hình đe dọa, so sánh mô hình tin cậy và giới hạn an ninh của chữ ký qua sự cố DigiNotar.
+    \item \textbf{Chương 6 -- Đánh giá thực nghiệm:} Thiết kế lab OpenSSL, kết quả thực nghiệm 10 ca kiểm thử (TC01--TC10) và thảo luận chuyên sâu.
+    \item \textbf{Chương 7 -- Ứng dụng và xu hướng:} Ứng dụng thực tế, Certificate Transparency, giao thức ACME và định hướng hậu lượng tử.
+    \item \textbf{Kết luận và hướng phát triển:} Tổng kết các đóng góp, giải đáp câu hỏi nghiên cứu, nêu rõ hạn chế và hướng mở rộng.
 \end{itemize}
