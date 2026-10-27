@@ -57,6 +57,8 @@ Khi phân phối khóa công khai trên kênh mở mà thiếu cơ chế xác th
 
 Cuộc tấn công MITM thành công vì Alice không có khả năng xác minh tính xác thực của khóa công khai nhận được. Mô hình trao đổi thông thường và cuộc tấn công thay thế khóa được minh họa tại Hình~\ref{fig:mitm-key-exchange}.
 
+Cần phân biệt rõ hai mức độ đe dọa khác nhau: (i) Eve tự ý tráo khóa trên đường truyền (MITM thông thường), và (ii) Eve sở hữu một chứng thư giả mạo do một CA đáng tin cậy cấp phát. Trong trường hợp thứ nhất, chữ ký số của CA trên chứng thư giúp người nhận kiểm tra khóa công khai có thực sự được bảo chứng bởi CA đó hay không; tuy nhiên, người nhận vẫn phải thực hiện thẩm định toàn diện chuỗi tin cậy, thời hạn hiệu lực, danh tính máy chủ và trạng thái thu hồi. Trong trường hợp thứ hai, nếu CA bị xâm nhập và cấp chứng thư giả mạo, việc kiểm tra chữ ký đơn thuần sẽ hoàn toàn bất lực trong việc phát hiện gian lận.
+
 \begin{figure}[!htbp]
 \centering
 \input{report/figures/mitm-key-exchange}
@@ -93,9 +95,9 @@ Mục tiêu của đề tài là phân tích kiến trúc PKI, cơ chế xác th
 
 Đề tài đặt ra ba giả thuyết nghiên cứu chính gắn liền với các câu hỏi nghiên cứu:
 \begin{itemize}
-    \item \textbf{Giả thuyết H1 (Về tính độc lập giữa chữ ký toán học và tính hợp lệ logic):} Chữ ký số đúng là điều kiện cần nhưng không đủ; vi phạm bất kỳ ràng buộc logic nào (thời hạn, cờ cấu hình, giới hạn phân cấp) đều dẫn đến việc từ chối. Giả thuyết này gắn với RQ2 và được kiểm chứng qua các ca kiểm thử vi phạm cấu trúc (TC02--TC06, TC08, TC10).
-    \item \textbf{Giả thuyết H2 (Về độ trễ và sự phụ thuộc trong cơ chế thu hồi):} Thu hồi qua danh sách thu hồi (CRL) tồn tại độ trễ truyền bá và phụ thuộc chính sách client; nếu client bỏ qua kiểm tra thu hồi, chứng thư bị thu hồi vẫn được chấp nhận. Giả thuyết này gắn với RQ3 và được kiểm chứng qua ca TC07.
-    \item \textbf{Giả thuyết H3 (Về chi phí vận hành và tính khả thi triển khai):} Độ phức tạp và chi phí tính toán trong thẩm định đường dẫn tăng theo chiều sâu chuỗi phân cấp và dữ liệu thu hồi. Giả thuyết này gắn với RQ2, RQ3 và định hướng phân tích tại Chương~\ref{chap:x509-xac-thuc} và Chương~\ref{chap:experiment}.
+    \item \textbf{Giả thuyết H1 (Về tính độc lập giữa chữ ký số và quyết định chấp nhận chứng thư):} Chữ ký số hợp lệ của CA không tự nó bảo đảm chứng thư được chấp nhận. Quyết định xác minh còn phụ thuộc vào các điều kiện kiểm tra được thực thi tại client, bao gồm việc xây dựng chuỗi tin cậy về Trust Anchor, kiểm tra thời hạn hiệu lực, danh tính máy chủ (SAN), mục đích sử dụng (EKU) và trạng thái thu hồi. Giả thuyết này gắn liền với RQ2 và được kiểm chứng qua các ca kiểm thử thực nghiệm (TC01--TC08, TC10).
+    \item \textbf{Giả thuyết H2 (Về độ trễ và sự phụ thuộc trong cơ chế thu hồi):} Trạng thái tin cậy của chứng thư mang tính thời gian thực và phụ thuộc vào chính sách của client; nếu client không chủ động kích hoạt kiểm tra thu hồi qua danh sách thu hồi (CRL), chứng thư bị thu hồi vẫn vượt qua quy trình thẩm định để được chấp nhận. Giả thuyết này gắn với RQ3 và được kiểm chứng trực tiếp qua ca TC07 (đối chiếu với mốc chuẩn TC01).
+    \item \textbf{Giả thuyết H3 (Về chi phí vận hành và tính khả thi triển khai):} Độ phức tạp tính toán và chi phí lưu lượng trong thẩm định đường dẫn có xu hướng tăng theo độ sâu của chuỗi phân cấp và kích thước danh sách thu hồi. Trong phạm vi đề tài, giả thuyết này được phân tích định tính dựa trên các chuẩn RFC (RFC~5280, RFC~6960) và chưa được kiểm chứng thực nghiệm bằng phép đo hiệu năng chuyên biệt.
 \end{itemize}
 
 Để hiện thực hóa mục tiêu và kiểm chứng các giả thuyết, đề tài tập trung giải quyết 4 câu hỏi nghiên cứu:
@@ -117,7 +119,7 @@ Mối liên hệ giữa các câu hỏi nghiên cứu với các chương trong 
 \label{sec:scope-methodology}
 \textbf{Phạm vi nghiên cứu:} Đề tài tập trung vào mô hình PKI phân cấp X.509 v3 và xác thực máy chủ TLS trong môi trường lab, gồm cấu trúc trường/extension then chốt (SAN, Basic Constraints, Key Usage), thuật toán xác minh chuỗi tin cậy, cơ chế thu hồi (CRL/OCSP) và mô hình đe dọa.
 
-\textbf{Phương pháp nghiên cứu:} Kết hợp nghiên cứu chuẩn quốc tế (RFC 5280~\cite{rfc5280}, RFC 6960~\cite{rfc6960}, RFC 8446~\cite{rfc8446}, RFC 3647~\cite{rfc3647}) với thực nghiệm: thiết lập PKI đa cấp bằng OpenSSL và thực thi 10 ca kiểm thử (TC01--TC10) đối chiếu với lý thuyết.
+\textbf{Phương pháp nghiên cứu:} Kết hợp nghiên cứu chuẩn quốc tế (RFC~5280~\cite{rfc5280}, RFC~6960~\cite{rfc6960}, RFC~8446~\cite{rfc8446}, RFC~3647~\cite{rfc3647}) với thực nghiệm: thiết lập mô hình PKI đa cấp bằng OpenSSL và thực thi 10 ca kiểm thử (TC01--TC10) đối chiếu với lý thuyết. Các kết quả thực nghiệm được giới hạn trong môi trường PKI nội bộ được xây dựng bằng OpenSSL. Những nhận định về OCSP, hiệu năng ở quy mô lớn và hoạt động của các CA công cộng được phân tích trên cơ sở tài liệu tham khảo và chuẩn kỹ thuật, không được xem là kết quả thực nghiệm trực tiếp của đề tài.
 
 \noindent\textbf{Giới hạn ngoài phạm vi (Out of Scope):} Đề tài không triển khai dịch vụ OCSP trực tuyến (chỉ phân tích lý thuyết, thực nghiệm tập trung vào CRL); không dùng phần cứng HSM (khóa CA lưu trữ dạng tệp tin phục vụ học thuật); không đo lường hiệu năng hay tải mạng quy mô lớn; và không mô phỏng quy trình kiểm toán pháp lý theo WebTrust/ETSI của các CA thương mại.
 

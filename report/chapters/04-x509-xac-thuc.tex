@@ -15,7 +15,7 @@ Trong đó:
 \begin{itemize}
     \item \texttt{tbsCertificate} (To-Be-Signed Certificate): Khối dữ liệu chứa toàn bộ thông tin định danh và tham số kỹ thuật cần được ký bảo đảm.
     \item \texttt{signatureAlgorithm}: Định danh thuật toán mật mã mà CA sử dụng để tạo chữ ký số (ví dụ: \texttt{sha256WithRSAEncryption} hoặc \texttt{ecdsa-with-SHA256}).
-    \item \texttt{signatureValue}: Giá trị chữ ký số thực tế (chuỗi bit \texttt{BIT STRING}) do CA tính toán trên cấu trúc \texttt{tbsCertificate} mã hóa theo quy tắc chuẩn hóa DER.
+    \item \texttt{signatureValue}: Giá trị chữ ký số thực tế (chuỗi bit \texttt{BIT STRING}) do CA tính toán trên cấu trúc \texttt{tbsCertificate} mã hóa theo quy tắc chuẩn hóa DER. Việc sửa đổi dù chỉ một bit trên chứng thư đã phát hành sẽ phá hủy tính hợp lệ toán học của chữ ký và bị từ chối ngay lập tức (phép thử tính toàn vẹn này được kiểm chứng tại ca kiểm thử TC05).
 \end{itemize}
 
 Khối \texttt{tbsCertificate} là đối tượng cốt lõi phản ánh toàn bộ nội dung quản trị và kỹ thuật của chứng thư. Theo Mục~4.1 và 4.2 của RFC~5280~\cite{rfc5280}, các trường chuẩn và phần mở rộng thiết yếu bao gồm:
@@ -50,7 +50,7 @@ Mỗi extension gồm mã định danh (\texttt{extnID}), cờ \texttt{critical}
 \begin{itemize}
     \item \textbf{Subject Alternative Name (SAN -- OID \texttt{2.5.29.17}):} Cho phép gán thêm nhiều danh tính cho chủ thể dưới các định dạng như tên miền (\texttt{dNSName}) hoặc địa chỉ IP (\texttt{iPAddress}). Các client hiện đại đối chiếu tên máy chủ với SAN, không dựa vào CN (kiểm chứng tại ca kiểm thử TC04).
 
-    \item \textbf{Ràng buộc cơ bản -- Basic Constraints (OID \texttt{2.5.29.19}):} Xác định thực thể có quyền đóng vai trò CA để ký cấp chứng thư hay không qua cờ \texttt{cA} và giới hạn độ sâu tùy chọn \texttt{pathLenConstraint}. Chứng thư CA phải có extension này và phải critical (RFC~5280 mục 4.2.1.9). Thực thể cuối có thể không có extension này hoặc có \texttt{cA:FALSE}; extension tự nó không ngăn chặn, mà validator từ chối dùng chứng thư \texttt{cA:FALSE} làm CA.
+    \item \textbf{Ràng buộc cơ bản -- Basic Constraints (OID \texttt{2.5.29.19}):} Xác định thực thể có quyền đóng vai trò CA để ký cấp chứng thư hay không qua cờ \texttt{cA} và giới hạn độ sâu tùy chọn \texttt{pathLenConstraint}. Chứng thư CA phải có extension này và phải critical (RFC~5280 mục 4.2.1.9). Thực thể cuối có thể không có extension này hoặc có \texttt{cA:FALSE}; extension tự nó không ngăn chặn, mà validator từ chối dùng chứng thư \texttt{cA:FALSE} làm CA (ràng buộc này ảnh hưởng trực tiếp đến việc xây dựng chuỗi ở ca TC06).
 
     \item \textbf{Mục đích sử dụng khóa -- Key Usage (OID \texttt{2.5.29.15}):} Chuỗi bit giới hạn các thao tác mật mã cơ sở của khóa công khai (như \texttt{digitalSignature}, \texttt{keyCertSign}, \texttt{cRLSign}), thường đặt \texttt{critical: TRUE} để ngăn ngừa dùng một khóa cho các ngữ cảnh mâu thuẫn. Cần lưu ý rằng \texttt{keyEncipherment} không cần cho TLS 1.3/ECDHE (chỉ cần \texttt{digitalSignature}).
 
@@ -115,7 +115,17 @@ Lab dùng chuỗi ba mắt xích $\mathrm{Root\ CA} \rightarrow \mathrm{Intermed
 
 \noindent\textbf{Trust anchor.} Một Root CA tự ký chỉ trở thành trust anchor khi client được cấu hình để tin cậy nó (trong lab là tùy chọn \texttt{-CAfile}). Độ tin cậy của Root đến từ cấu hình đó, không đến từ chữ ký tự ký, vì bất kỳ ai cũng tạo được chứng thư tự ký cho chính mình.
 
-\noindent\textbf{Xác minh đường dẫn.} Thuật toán của RFC~5280 xử lý từng chứng thư trên đường dẫn từ trust anchor xuống chứng thư đích. Mỗi mắt xích phải đạt các điều kiện ở Bảng~\ref{tab:path-validation-conditions}. Chỉ cần một điều kiện không đạt là chứng thư bị từ chối theo chính sách xác minh được bật, dù các chữ ký vẫn đúng về mặt toán học. Đây là cơ sở của giả thuyết $H_1$ và được kiểm chứng bằng các ca TC02--TC08 ở Chương~\ref{chap:experiment}.
+\noindent\textbf{Xác minh đường dẫn.} Thuật toán của RFC~5280 quy định quy trình xử lý từng chứng thư trên đường dẫn từ trust anchor xuống chứng thư thực thể cuối qua 6 bước kiểm tra tuần tự:
+\begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item \textbf{Xây dựng đường dẫn (Path Construction):} Truy vết các mắt xích từ chứng thư máy chủ ngược lên Trust Anchor dựa trên cặp định danh Issuer/Subject và AKI/SKI.
+    \item \textbf{Xác minh chữ ký số (Signature Verification):} Dùng khóa công khai của bên cấp phát để kiểm tra tính toàn vẹn toán học của chữ ký trên từng chứng thư trong chuỗi.
+    \item \textbf{Kiểm tra khung thời hạn hiệu lực (Validity Check):} Đối chiếu thời điểm xác minh với khoảng \texttt{[notBefore, notAfter]} của từng mắt xích.
+    \item \textbf{Kiểm tra ràng buộc CA và extension liên quan (Constraints Check):} Thẩm tra \texttt{basicConstraints} (cờ \texttt{cA:TRUE} cho CA, giới hạn \texttt{pathLen}) và các ràng buộc chính sách.
+    \item \textbf{Kiểm tra danh tính máy chủ và mục đích sử dụng (Identity \& Purpose Matching):} So khớp tên miền truy cập với SAN và đối chiếu cờ EKU (\texttt{serverAuth}) theo yêu cầu ứng dụng.
+    \item \textbf{Kiểm tra trạng thái thu hồi (Revocation Status):} Tra cứu số sê-ri trong CRL hoặc truy vấn OCSP responder nếu chính sách kiểm tra thu hồi được kích hoạt.
+\end{enumerate}
+
+Cần lưu ý quan trọng rằng công cụ \texttt{openssl verify} không mặc định thực thi toàn bộ các bước trên. Hành vi xác minh phụ thuộc trực tiếp vào các tùy chọn dòng lệnh: kiểm tra hostname bắt buộc phải khai báo tường minh qua \texttt{-verify\_hostname}; kiểm tra mục đích TLS server cần chỉ định \texttt{-purpose sslserver}; và kiểm tra thu hồi đòi hỏi cờ \texttt{-crl\_check}. Nếu thiếu các tùy chọn này, lệnh chỉ thực hiện xác minh chuỗi cơ bản. Mỗi mắt xích phải đạt các điều kiện ở Bảng~\ref{tab:path-validation-conditions}. Chỉ cần một điều kiện không đạt là chứng thư bị từ chối theo chính sách xác minh được bật, dù các chữ ký vẫn đúng về mặt toán học. Đây là cơ sở của giả thuyết $H_1$ và được kiểm chứng bằng các ca TC02--TC08, TC10 ở Chương~\ref{chap:experiment}.
 
 \input{report/tables/path-validation-conditions}
 
@@ -161,8 +171,6 @@ Với OCSP, client gửi tới OCSP responder một truy vấn chứa định da
 Điểm mạnh là thông tin theo từng chứng thư, nhỏ gọn và mới hơn CRL. Điểm yếu là cần responder trực tuyến (khả dụng), responder biết client đang kiểm tra chứng thư nào (riêng tư), và khi không liên lạc được responder thì client phải tự quyết định chấp nhận hay từ chối.
 
 Trong Web PKI, BR từ phiên bản 2.0.1 (hiệu lực 15/03/2024) đã chuyển OCSP thành tùy chọn và đặt yêu cầu công bố CRL~\cite{cabforum_br}. Phân tích sâu hơn ở Mục~\ref{sec:trust-models-comparison}.
-
-\newpage
 
 \subsection{So sánh CRL và OCSP}
 \label{subsec:crl-vs-ocsp}

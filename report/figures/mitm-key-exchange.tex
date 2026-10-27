@@ -74,7 +74,7 @@
 
     % Bước 3: Alice gửi C1 về cho Eve (nhầm là Bob)
     \draw[msg] (12.7, -0.3) -- (7.25, -0.3)
-        node[midway, above=3pt, font=\footnotesize] {3. Alice gửi bản mã $C_1 = E(PU_E, M)$};
+        node[midway, above=3pt, font=\footnotesize, fill=white, inner sep=2pt] {3. Gửi bản mã $C_1 = E(PU_E, M)$};
 
     % Hộp Eve giải mã, đọc trộm và mã hóa lại
     \node[evenote, text width=6.6cm] (evedecrypt) at (7.25, -1.8) {
@@ -83,10 +83,11 @@
         \textbf{Eve mã hóa lại bằng $PU_B$ thật của Bob:}\\
         $C_2 = E(PU_B, M)$
     };
+    \draw[evelifeline] (evedecrypt.south) -- (7.25, -4.5);
 
     % Bước 4: Eve gửi C2 cho Bob
-    \draw[evemsg] (7.25, -3.5) -- (1.8, -3.5)
-        node[midway, above=3pt, font=\footnotesize] {4. Chuyển tiếp bản mã $C_2 = E(PU_B, M)$};
+    \draw[evemsg] (7.25, -3.6) -- (1.8, -3.6)
+        node[midway, above=3pt, font=\footnotesize, fill=white, inner sep=2pt] {4. Chuyển tiếp $C_2 = E(PU_B, M)$};
 
     % Hàng kết quả cuối cùng: 3 khối cân xứng
     \node[note, text width=3.2cm] at (1.8, -5.3) {

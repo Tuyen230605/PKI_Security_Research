@@ -12,11 +12,10 @@ An toàn của PKI phụ thuộc vào một số ít tài sản then chốt. B�
 \subsection{Mô hình đối thủ và giả định}
 \label{subsec:threat-assumptions}
 
-Đối thủ cơ sở là Eve ở Mục~\ref{subsec:eve-mitm-attack}: kẻ tấn công chủ động trên đường truyền, có khả năng quan sát, chặn và sửa gói tin. Giả định xuyên suốt là các thuật toán mật mã an toàn, nên đối thủ không bẻ được chữ ký hay hàm băm. Ngoài Eve, báo cáo xét thêm ba loại đối thủ mạnh hơn:
+Mô hình đe dọa trong PKI được phân tầng thành hai kịch bản đối thủ với năng lực và phạm vi ảnh hưởng khác nhau:
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
-    \item Kẻ nắm khóa bí mật máy chủ (do lộ khóa hoặc đánh cắp).
-    \item Kẻ kiểm soát một CA, tức là có thể khiến CA ký chứng thư theo ý mình (trường hợp DigiNotar, Mục~\ref{subsec:diginotar-case}).
-    \item Kẻ can thiệp trust store hoặc cấu hình của client, ví dụ cài thêm trust anchor hoặc tắt kiểm tra thu hồi.
+    \item \textbf{Đối thủ trên đường truyền (Network-level Attacker -- Eve):} Đây là đối thủ cơ sở ở Mục~\ref{subsec:eve-mitm-attack}, có khả năng quan sát, đánh chặn và can thiệp luồng dữ liệu mạng giữa client và server nhằm tráo khóa công khai hoặc mạo danh máy chủ. Giả định các thuật toán mật mã là an toàn (Eve không thể bẻ khóa hay phá hàm băm). Quy trình thẩm định chuỗi và đối chiếu ngữ cảnh (RFC~5280) được thiết kế để triệt tiêu hoàn toàn kịch bản này.
+    \item \textbf{Đối thủ xâm nhập CA hoặc can thiệp Trust Store (System-level Attacker):} Lớp đối thủ nguy hiểm hơn, bao gồm: kẻ đánh cắp khóa bí mật máy chủ; kẻ can thiệp Trust Store cục bộ; hoặc nguy hiểm nhất là kẻ chiếm quyền kiểm soát CA (sự cố DigiNotar, Mục~\ref{subsec:diginotar-case}). Kẻ tấn công ký phát được chứng thư giả mạo hợp lệ về toán học và dẫn chuỗi về Trust Anchor có sẵn. Xác minh cục bộ của client hoàn toàn bất lực trước đối thủ cấp hệ thống này.
 \end{itemize}
 
 \subsection{Các mối đe dọa và rủi ro}
@@ -25,8 +24,6 @@ An toàn của PKI phụ thuộc vào một số ít tài sản then chốt. B�
 Bảng~\ref{tab:pki-threats} phân loại các mối đe dọa, tài sản liên quan, cơ chế kiểm soát và giới hạn thực tế trong PKI.
 
 \input{report/tables/pki-threats-controls}
-
-\newpage
 
 Hai nhận xét rút ra từ Bảng~\ref{tab:pki-threats}:
 \begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
@@ -63,6 +60,8 @@ DigiNotar là CA của Hà Lan có root nằm trong danh sách tin cậy của n
     \item Thu hồi không giải quyết được trường hợp CA không biết mình đã cấp chứng thư nào.
 \end{itemize}
 
+\noindent\textbf{Liên hệ với mô hình lab của đề tài.} Kịch bản DigiNotar minh họa rõ nét giới hạn căn bản của mô hình tin cậy khi chính CA được tin cậy bị xâm nhập; các ca kiểm thử trong lab của đề tài (Chương~\ref{chap:experiment}) chủ yếu kiểm tra những điều kiện xác minh ngữ cảnh cục bộ theo RFC~5280, không mô phỏng đầy đủ tình huống CA công cộng bị thỏa hiệp toàn diện.
+
 \section{So sánh các cơ chế tin cậy và thu hồi}
 \label{sec:trust-models-comparison}
 
@@ -86,8 +85,6 @@ Bảng~\ref{tab:trust-models} cho thấy PKI không loại bỏ nhu cầu về m
 
 Không mô hình nào vượt trội ở mọi môi trường. Với Web công cộng, nơi các bên chưa từng quen biết nhau, PKI dựa trên CA là lựa chọn khả thi, nhưng tin cậy tập trung buộc phải bổ sung giám sát như Certificate Transparency (RFC~9162~\cite{rfc9162}, Mục~\ref{sec:certificate-transparency}). Với nhóm nhỏ hoặc quản trị hệ thống, TOFU hoặc PKI nội bộ có chi phí vận hành thấp. Với cộng đồng cá nhân có quan hệ trực tiếp, Web of Trust tránh được CA trung tâm. Trong thực tế, các mô hình thường được kết hợp.
 
-\clearpage
-
 \subsection{Thu hồi và rút ngắn thời hạn}
 \label{subsec:revocation-vs-short-lived}
 
@@ -101,8 +98,38 @@ Cả ba cơ chế đều chỉ xử lý được những chứng thư mà CA bi�
 
 Lab chỉ kiểm thử CRL (TC07), nên phần so sánh OCSP và chứng thư thời hạn ngắn là phân tích lý thuyết. Giả thuyết $H_2$ (độ trễ và sự phụ thuộc của thu hồi) được kiểm chứng qua TC07. Giả thuyết $H_3$ về chi phí vẫn mang tính định tính trong Bảng~\ref{tab:revocation-vs-shortlived}; nếu muốn kiểm chứng thực nghiệm, một phép đo nhỏ (kích thước CRL và thời gian xác minh theo số chứng thư bị thu hồi) là đủ, còn nếu không làm thì ghi rõ $H_3$ chưa được kiểm chứng.
 
-\newpage
-
 \section{Giới hạn của chữ ký hợp lệ}
 \label{sec:valid-signature-limits}
-Cần liên hệ với kết quả ở Chương~\ref{chap:experiment}: một chữ ký đúng không tự chứng minh trust anchor, hostname, hiệu lực, EKU hoặc trạng thái thu hồi đều thỏa chính sách client.
+
+Từ phân tích lý thuyết ở các mục trước và bằng chứng thực nghiệm tại Chương~\ref{chap:experiment}, có thể khẳng định: \textbf{chữ ký số hợp lệ chỉ là điều kiện cần (necessary condition), hoàn toàn không phải là điều kiện đủ (sufficient condition) để chứng thư được client tin cậy} (chứng minh cho giả thuyết $H_1$). Về mặt toán học, chữ ký số của CA chỉ bảo đảm tính toàn vẹn của nội dung chứng thư và tính xác thực nguồn gốc từ thực thể nắm giữ khóa bí mật. Tuy nhiên, tính đúng đắn mật mã này không mang ngữ nghĩa ngữ cảnh (\textit{semantic context}) và không phản ánh trạng thái vận hành theo thời gian thực.
+
+Kết quả kiểm thử thực nghiệm tại Mục~\ref{sec:exp-results} cung cấp bằng chứng thực tế rõ ràng cho nhận định trên. Trong khi ca kiểm thử TC05 chứng minh chữ ký hợp lệ là điều kiện bắt buộc (chữ ký bị sửa đổi bit lập tức bị OpenSSL từ chối với \texttt{error 7: certificate signature failure}), thì ca kiểm thử chuẩn TC01 đóng vai trò làm mốc đối chứng (baseline) khi thỏa mãn trọn vẹn cả tính đúng đắn toán học lẫn các điều kiện chính sách. Ngược lại, một loạt ca kiểm thử khác (TC02, TC03, TC04, TC06, TC07, TC08, TC10) chỉ ra rằng dù chữ ký toán học hoàn toàn nguyên vẹn, chứng thư vẫn bị client bác bỏ ngay lập tức nếu vi phạm một trong các ràng buộc ngữ cảnh:
+\begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item \textbf{Không dẫn tới Trust Anchor được cấu hình:} Chứng thư tự ký không được tin cậy (TC02 -- \texttt{error 18: self-signed certificate}) hoặc chuỗi chứng thư hợp lệ nhưng thuộc về một CA nằm ngoài Trust Store của client (TC10 -- \texttt{error 20: unable to get local issuer certificate}).
+    \item \textbf{Đứt gãy đường dẫn chứng thư:} Thiếu chứng thư Intermediate CA trong chuỗi truyền nhận khiến client không thể dựng tiếp đường dẫn lên Trust Anchor (TC06 -- \texttt{error 20: unable to get local issuer certificate}).
+    \item \textbf{Thời điểm xác minh nằm ngoài khung hiệu lực:} Thời gian kiểm tra nằm ngoài khoảng \texttt{[notBefore,} \texttt{notAfter]} (TC03 -- \texttt{error 10: certificate has expired}).
+    \item \textbf{Tên máy chủ truy cập không trùng khớp với SAN:} Tên miền yêu cầu kết nối không nằm trong danh sách Subject Alternative Name (TC04 -- \texttt{error 62: hostname mismatch}).
+    \item \textbf{Mục đích sử dụng thực tế không được cấp phép trong EKU:} Chứng thư chỉ cấp cờ \texttt{clientAuth} bị từ chối khi hoạt động với vai trò TLS server (TC08 -- \texttt{error 26: unsuitable certificate purpose}).
+    \item \textbf{Trạng thái chứng thư đã bị thu hồi trong CRL:} Khóa hoặc chứng thư bị thỏa hiệp và đã đưa vào danh sách thu hồi (TC07 -- \texttt{error 23: certificate revoked}).
+\end{enumerate}
+
+Bên cạnh đó, quyết định xác minh mang tính tương đối và phụ thuộc trực tiếp vào chính sách cũng như các cờ kiểm tra do client kích hoạt, đúng như dự đoán của giả thuyết $H_2$. Điển hình ở trường hợp thu hồi (đối chiếu giữa TC01 và TC07): chữ ký của CA trên chứng thư là một giá trị mật mã bất biến, nhưng trạng thái tin cậy của nó đã bị hủy bỏ; nếu client không chủ động bật cờ kiểm tra danh sách thu hồi (\texttt{-crl\_check}), chứng thư bị thu hồi vẫn vượt qua toàn bộ quy trình thẩm định để được chấp nhận. Tương tự, nếu client bỏ qua cờ kiểm tra tên máy chủ hoặc sử dụng một trust store bị cài cắm CA độc hại, tính hợp lệ toán học của chữ ký hoàn toàn không còn mang ý nghĩa bảo vệ.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{report/figures/tc-limits-valid-signature.png}
+\caption{Minh chứng thực nghiệm: Cùng một chứng thư có chữ ký hợp lệ nhưng bị từ chối ở các tầng kiểm tra ngữ cảnh khác nhau (TC01, TC04, TC03, TC07, TC08).}
+\label{fig:tc-limits-valid-signature}
+\end{figure}
+
+Hình~\ref{fig:tc-limits-valid-signature} đối chiếu trực quan 5 ca kiểm thử thực tế trên cùng một hệ thống lab: từ mốc đối chứng chuẩn TC01 (thẩm định thành công toàn diện) cho đến các trường hợp bị client từ chối do sai tên miền (TC04), hết hạn (TC03), bị thu hồi (TC07) và sai mục đích EKU (TC08). Ở mọi ca thất bại, chữ ký số của CA trên chứng thư đều hoàn toàn nguyên vẹn về mặt toán học, nhưng quá trình xác minh của OpenSSL trả về kết quả thất bại và thông báo lỗi tương ứng với điều kiện bị vi phạm trong cấu hình thử nghiệm. Mã lỗi quan sát được phụ thuộc vào lệnh, tùy chọn xác minh và trạng thái của chuỗi chứng thư.
+
+\pagebreak
+Những giới hạn trên dẫn đến hai bài học kiến trúc then chốt trong thiết kế và vận hành PKI:
+\begin{itemize}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}
+    \item \textbf{Thứ nhất, an toàn của một phiên giao dịch phụ thuộc vào toàn bộ quy trình thẩm định chuỗi và ngữ cảnh tại client (RFC~5280~\cite{rfc5280}, Mục~\ref{sec:path-validation}), chứ không chỉ dựa vào thuật toán ký số.} Chữ ký số hợp lệ cho thấy chữ ký trên chứng thư phù hợp với nội dung được ký và khóa công khai của bên phát hành dùng để xác minh. Tuy nhiên, điều này không tự chứng minh rằng quy trình cấp phát đã xác minh danh tính chính xác, rằng bên phát hành được client tin cậy, hoặc rằng chứng thư vẫn hợp lệ và được sử dụng đúng mục đích tại thời điểm kết nối.
+    \item \textbf{Thứ hai, việc xác minh cục bộ của client hoàn toàn bất lực trước kịch bản CA công cộng bị thỏa hiệp và phát hành chứng thư sai phạm có chủ đích.} Trong kịch bản DigiNotar (Mục~\ref{subsec:diginotar-case}), chứng thư giả mạo được cấp dưới danh nghĩa một CA mà các client liên quan vẫn tin cậy. Khi chuỗi chứng thư và các điều kiện xác minh cục bộ đều đáp ứng chính sách đang áp dụng, client có thể chấp nhận chứng thư dù việc cấp phát thực tế là sai phạm. Trường hợp này cho thấy xác minh chữ ký và chuỗi tin cậy không thể tự phát hiện mọi hành vi cấp chứng thư gian lận của một CA đã bị thỏa hiệp. Để giảm thiểu rủi ro này, Web PKI hiện đại bổ sung các cơ chế mở rộng: Certificate Transparency (RFC~9162~\cite{rfc9162}) cung cấp nhật ký công khai để hỗ trợ giám sát và phát hiện cấp phát bất thường từ bên ngoài; còn DNS CAA (RFC~8659~\cite{rfc8659}) cho phép chủ sở hữu tên miền công bố các CA được phép cấp phát theo chính sách nhằm hạn chế cấp sai ngay từ nguồn. Chi tiết ứng dụng của các cơ chế này sẽ được phân tích ở Chương~\ref{chap:ung-dung}.
+\end{itemize}
+
+Sự kết hợp giữa phân tích lý thuyết ở chương này và các kịch bản kiểm thử được thiết kế chi tiết tại Chương~\ref{chap:experiment} sẽ là tiền đề thực tiễn để đề xuất các giải pháp tăng cường an ninh toàn diện tại Chương~\ref{chap:ung-dung}.
+

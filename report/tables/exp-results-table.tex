@@ -1,0 +1,33 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabularx}{\textwidth}{l >{\raggedright\arraybackslash}p{3.8cm} c c c >{\raggedright\arraybackslash\ttfamily\scriptsize}X c}
+\toprule
+\textbf{ID} & \textbf{Điều kiện kiểm thử cụ thể} & \textbf{Kỳ vọng} & \textbf{Thực tế} & \textbf{Exit} & \textrm{\textbf{Mã lỗi / Output quan sát được}} & \textbf{Đánh giá} \\
+\midrule
+\textbf{TC01} & Chuỗi tin cậy đầy đủ, hostname khớp SAN, EKU \texttt{serverAuth} hợp lệ & PASS & PASS & 0 & server-a.crt: OK & Khớp \\
+\midrule
+\textbf{TC02} & Chứng thư tự ký (không có chuỗi dẫn tới Trust Anchor cấu hình) & FAIL & FAIL & 2 & error 18: self-signed certificate & Khớp \\
+\midrule
+\textbf{TC03} & Thời điểm kiểm tra đặt tại mốc tương lai sau ngày hết hạn (\texttt{-attime}) & FAIL & FAIL & 2 & error 10: certificate has expired & Khớp \\
+\midrule
+\textbf{TC04} & Hostname truy vấn (\texttt{wrong.test}) không trùng khớp với SAN & FAIL & FAIL & 2 & error 62: hostname mismatch & Khớp \\
+\midrule
+\textbf{TC05} & Chữ ký số trên chứng thư bị can thiệp trực tiếp vào payload nhị phân & FAIL & FAIL & 2 & error 7: certificate signature failure (invalid padding) & Khớp \\
+\midrule
+\textbf{TC06} & Bỏ qua chứng thư Intermediate CA trong tham số (\texttt{-untrusted}) & FAIL & FAIL & 2 & error 20: unable to get local issuer certificate & Khớp \\
+\midrule
+\textbf{TC07} & Chứng thư đã bị thu hồi và client bật kiểm tra CRL (\texttt{-crl\_check}) & FAIL & FAIL & 2 & error 23: certificate revoked & Khớp \\
+\midrule
+\textbf{TC08} & Chứng thư chỉ cấp EKU \texttt{clientAuth}, client đòi hỏi \texttt{sslserver} & FAIL & FAIL & 2 & error 26: unsuitable certificate purpose & Khớp \\
+\midrule
+\textbf{TC09} & Chứng thư còn hạn, chưa bị thu hồi, có nạp CRL hợp lệ & PASS & PASS & 0 & server-b.crt: OK & Khớp \\
+\midrule
+\textbf{TC10} & Chuỗi chứng thư hợp lệ nhưng không dẫn tới Root CA được cấu hình & FAIL & FAIL & 2 & error 20: unable to get local issuer certificate & Khớp \\
+\bottomrule
+\end{tabularx}
+\caption{Kết quả quan sát thực nghiệm bộ 10 ca kiểm thử PKI (TC01--TC10).}
+\label{tab:exp-results}
+\end{table}

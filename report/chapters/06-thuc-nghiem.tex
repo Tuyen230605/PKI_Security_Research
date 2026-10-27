@@ -1,36 +1,130 @@
 \chapter{Thiết kế và đánh giá thực nghiệm}
 \label{chap:experiment}
+
 \section{Giả thuyết và môi trường}
-H1: chữ ký hợp lệ chưa đủ để chứng thư được tin cậy. H2: thay đổi thời hạn, hostname, trust anchor hoặc trạng thái thu hồi làm thay đổi quyết định xác minh. H3: các cơ chế xác minh có giới hạn và chi phí vận hành khác nhau. Cần điền phiên bản OpenSSL, hệ điều hành, ngày chạy và thiết bị thực tế.
+\label{sec:exp-hypotheses-env}
+
+\subsection{Các giả thuyết nghiên cứu}
+\label{subsec:exp-hypotheses}
+Để giải quyết các câu hỏi nghiên cứu (RQ) đặt ra tại Mục~\ref{sec:objectives-rqs}, thực nghiệm được thiết kế nhằm kiểm chứng ba giả thuyết kỹ thuật cốt lõi:
+\begin{itemize}
+    \item \textbf{Giả thuyết $H_1$ (Điều kiện cần của chữ ký số):} Chữ ký số hợp lệ chỉ là điều kiện cần chứ chưa đủ để một chứng thư số được client tin cậy. Chứng thư chỉ được chấp nhận khi thỏa mãn đồng thời toàn bộ các ràng buộc ngữ cảnh: chuỗi tin cậy tới Trust Anchor, thời hạn hiệu lực, định danh tên máy chủ, mục đích sử dụng và trạng thái thu hồi.
+    \item \textbf{Giả thuyết $H_2$ (Tính động của quyết định xác minh):} Việc thay đổi các tham số ngữ cảnh (thời điểm kiểm tra, tên máy chủ, danh mục Trust Anchor) hoặc trạng thái thu hồi sẽ làm thay đổi trực tiếp quyết định thẩm định của client từ chấp thuận (\texttt{PASS}) sang từ chối (\texttt{FAIL}).
+    \item \textbf{Giả thuyết $H_3$ (Giới hạn và chi phí vận hành của cơ chế xác minh):} Các cơ chế thẩm định trạng thái chứng thư có sự đánh đổi rõ rệt về chi phí và giới hạn vận hành; trong đó, cơ chế kiểm tra thu hồi qua danh sách CRL đòi hỏi chi phí lưu trữ, băng thông phân phối định kỳ và có độ trễ cập nhật nhất định giữa các lần phát hành.
+\end{itemize}
+
+\subsection{Môi trường thực nghiệm}
+\label{subsec:exp-environment}
+Toàn bộ quy trình sinh khóa, cấp phát chứng thư, thu hồi và thực thi bộ kiểm thử tự động được triển khai trên môi trường máy trạm với các thông số trích xuất trực tiếp từ hệ thống:
+\begin{itemize}
+    \item \textbf{Hệ điều hành \& Nhân Kernel:} Fedora Linux 43 (Container Image), chạy trên nền tảng WSL2 với nhân \texttt{Linux 6.6.87.2-microsoft-standard-WSL2} kiến trúc \texttt{x86\_64}.
+    \item \textbf{Công cụ mật mã:} OpenSSL phiên bản \texttt{3.5.9} (phát hành ngày 29/09/2026, biên dịch ngày 30/09/2026 UTC), sử dụng thư viện OpenSSL 3.5.9 và cấu hình crypto-policy hệ thống tiêu chuẩn (\texttt{OPENSSLDIR: "/etc/pki/tls"}).
+    \item \textbf{Thiết bị phần cứng:} Bộ vi xử lý Intel(R) Core(TM) i7-11800H @ 2.30GHz (thế hệ thứ 11, 16 vCPU); dung lượng bộ nhớ RAM ảo hóa cấp phát cho WSL2 là 3.7~GiB (khả dụng 3.1~GiB).
+    \item \textbf{Thời điểm thực thi kiểm thử:} 01:58:15 (UTC+7), Thứ Tư, ngày 28 tháng 10 năm 2026.
+\end{itemize}
+Thông số môi trường thực tế được tự động kiểm tra và ghi lại qua kịch bản kiểm tra môi trường, thể hiện tổng hợp tại Hình~\ref{fig:env-summary}.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{report/figures/tcchap6.1/env-04-summary-environment.png}
+\caption{Thông số môi trường hệ điều hành, phần cứng và phiên bản OpenSSL thực tế của bài lab.}
+\label{fig:env-summary}
+\end{figure}
 
 \section{Mô hình và quy trình}
-Lab sử dụng Root CA $\rightarrow$ Intermediate CA $\rightarrow$ chứng thư máy chủ. Quy trình tái lập được ghi trong \texttt{demo/README.md}. Cần bổ sung sơ đồ do nhóm tự xây dựng, giải thích extension của từng chứng thư và chính sách xác minh được bật.
+\label{sec:exp-model-process}
+
+\subsection{Mô hình phân cấp chứng thư (PKI Hierarchy)}
+\label{subsec:pki-hierarchy}
+Hệ thống phòng lab thiết lập mô hình PKI phân cấp 2 tầng theo chuẩn RFC~5280~\cite{rfc5280} nhằm phản ánh đúng cấu trúc thực tế của Web PKI, được minh họa tại Hình~\ref{fig:lab-pki-hierarchy}.
+
+\begin{figure}[!htbp]
+\centering
+\input{report/figures/lab-pki-hierarchy}
+\caption{Mô hình phân cấp chứng thư X.509 hai tầng triển khai trong phòng lab thực nghiệm.}
+\label{fig:lab-pki-hierarchy}
+\end{figure}
+
+\subsection{Cấu hình X.509 Extensions và Chính sách xác minh}
+\label{subsec:x509-extensions-policy}
+Để cô lập từng điều kiện kiểm thử, các chứng thư trong bài lab được cấu hình phần mở rộng (\textit{extensions}) theo mục đích cụ thể:
+{\sloppy
+\begin{itemize}
+    \item \textbf{Root CA (\texttt{root.crt}):} Cấu hình \texttt{basicConstraints} = \texttt{critical, CA:TRUE}, \texttt{keyUsage} = \texttt{critical, keyCertSign, cRLSign}. Đóng vai trò là Trust Anchor độc lập, được nạp vào client qua cờ \texttt{-CAfile}.
+    \item \textbf{Intermediate CA (\texttt{ca.crt}):} Cấu hình \texttt{basicConstraints} = \texttt{critical, CA:TRUE, pathlen:0}, \texttt{keyUsage} = \texttt{critical, keyCertSign, cRLSign}. Được nạp qua tham số \texttt{-untrusted} để chứng minh chuỗi dẫn xuất hợp lệ.
+    \item \textbf{Chứng thư máy chủ chuẩn (\texttt{server-a.crt}, \texttt{server-b.crt}):} Cấu hình \texttt{basicConstraints} = \texttt{CA:FALSE}, \texttt{keyUsage} = \texttt{digitalSignature}, \texttt{keyEncipherment}, \texttt{extendedKeyUsage} = \texttt{serverAuth}, và \texttt{subjectAltName} = \texttt{DNS:server-a.test} (hoặc \texttt{DNS:server-b.test}).
+    \item \textbf{Chứng thư dị biệt phục vụ kiểm thử:}
+    \begin{itemize}
+        \item \texttt{client-only.crt}: Cấu hình \texttt{extendedKeyUsage} = \texttt{clientAuth} (thiếu \texttt{serverAuth}) để phục vụ kiểm thử ràng buộc EKU (TC08).
+        \item \texttt{rogue.crt}: Chứng thư tự ký mạo danh, không bắt nguồn từ Root CA trong trust store (TC02).
+        \item \texttt{other-ca/server.crt}: Chứng thư được ký hợp thức nhưng bởi một CA hoàn toàn xa lạ không nằm trong danh mục \texttt{-CAfile} của client (TC10).
+        \item \texttt{tampered.crt}: Chứng thư bị can thiệp đảo bit ở phần payload chữ ký số (TC05).
+    \end{itemize}
+\end{itemize}
+}
+
+\subsection{Quy trình thực nghiệm}
+\label{subsec:exp-workflow}
+Quy trình được tự động hóa hoàn toàn thông qua tệp điều khiển \texttt{Makefile} theo các bước tuần tự:
+\begin{enumerate}
+    \item \texttt{make clean}: Dọn dẹp toàn bộ dữ liệu tạm và thư mục xuất bản cũ.
+    \item \texttt{make ca}: Tạo cặp khóa RSA 4096-bit, khởi tạo cơ sở dữ liệu CA (\texttt{index.txt}, \texttt{serial}), và sinh chứng thư tự ký cho Root CA cùng Intermediate CA.
+    \item \texttt{make servers}: Tạo khóa RSA 2048-bit, tạo CSR và ký cấp phát chứng thư cho các máy chủ mục tiêu với các extension tương ứng.
+    \item \texttt{make revoke}: Thu hồi chứng thư \texttt{server-a.crt} bằng lệnh \texttt{openssl ca -revoke} với mã lý do \texttt{keyCompromise}, sau đó kết xuất danh sách thu hồi \texttt{ca.crl} bằng lệnh \texttt{openssl ca -gencrl}.
+    \item \texttt{make demo-test}: Kích hoạt script \texttt{demo/scripts/run\_tests.sh} để thực thi 10 ca kiểm thử (TC01--TC10), đối soát exit code và lưu vết kết quả ra tệp \url{demo/out/results.tsv}.
+\end{enumerate}
 
 \section{Test cases và kết quả}
 \label{sec:exp-results}
-\begin{table}[ht]
-\centering
-\caption{Bộ kiểm thử dự kiến; cột quan sát chỉ điền sau khi chạy lab}
-\begin{tabular}{p{1.4cm}p{9cm}p{2cm}}
-\toprule
-ID & Điều kiện & Kỳ vọng \\
-\midrule
-TC01 & Chuỗi tin cậy, hostname và mục đích phù hợp & PASS \\
-TC02 & CA phát hành không được tin cậy & FAIL \\
-TC03 & Thời điểm kiểm tra sau ngày hết hạn & FAIL \\
-TC04 & Hostname không khớp SAN & FAIL \\
-TC05 & Chữ ký chứng thư bị sửa & FAIL \\
-TC06 & Thiếu chứng thư Intermediate CA & FAIL \\
-TC07 & Đã thu hồi, bật kiểm tra CRL & FAIL \\
-TC08 & EKU không cho phép TLS server & FAIL \\
-TC09 & Còn hiệu lực, chưa thu hồi tại thời điểm kiểm tra & PASS \\
-TC10 & Chuỗi hợp lệ nhưng không dẫn tới trust anchor được cấu hình & FAIL \\
-\bottomrule
-\end{tabular}
-\end{table}
 
-Sau khi chạy \texttt{make demo-test}, lấy \texttt{demo/out/results.tsv}, kiểm tra từng lệnh/exit code và thêm bảng \emph{kết quả quan sát} với trích đoạn output. Không coi kỳ vọng ở bảng trên là bằng chứng thực nghiệm.
+\subsection{Bảng kết quả thực nghiệm quan sát}
+\label{subsec:exp-results-table}
+Quá trình kiểm thử thực hiện 10 ca kiểm thử độc lập (TC01--TC10) bằng công cụ \texttt{openssl verify}. Bảng~\ref{tab:exp-results} đối chiếu chi tiết giữa điều kiện kiểm thử, kết quả kỳ vọng và kết quả quan sát thực tế thu được từ hệ thống.
+
+\input{report/tables/exp-results-table}
+
+Hình~\ref{fig:suite-summary} trích xuất toàn văn kết quả thực thi tự động 10 ca kiểm thử từ giao diện dòng lệnh, xác thực tính khớp tuyệt đối giữa kết quả quan sát thực nghiệm và kỳ vọng thiết kế.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{report/figures/tcchap6.1/testcase-suite-summary.png}
+\caption{Tổng hợp kết quả thực thi tự động bộ 10 ca kiểm thử PKI qua script \texttt{run\_tests.sh}.}
+\label{fig:suite-summary}
+\end{figure}
+
+\subsection{Phân tích chi tiết các trường hợp quan sát}
+\label{subsec:exp-analysis-cases}
+Dựa trên kết quả quan sát tại Bảng~\ref{tab:exp-results}, các ca kiểm thử được phân nhóm và phân tích chuyên sâu:
+\begin{itemize}
+    \item \textbf{Nhóm xác minh toàn vẹn mật mã (TC05):} Khi chữ ký số bị sửa đổi bit, quá trình giải mã chữ ký bằng khóa công khai của bên phát hành gặp lỗi đệm PKCS\#1 v1.5 (\textit{invalid padding}), OpenSSL lập tức dừng thuật toán và báo \texttt{error 7: certificate signature failure}. Đây là bằng chứng cho thấy kiểm tra chữ ký là điều kiện tiên quyết bắt buộc.
+    \item \textbf{Nhóm xác minh chuỗi tin cậy (TC02, TC06, TC10):} Nếu thiếu chứng thư trung gian (TC06) hoặc chứng thư thuộc một CA khác không nằm trong Trust Store (TC10), OpenSSL đều trả về \texttt{error 20} (\texttt{unable to get local issuer certificate}). Trong trường hợp client gặp một chứng thư tự ký không tin cậy (TC02), lỗi trả về là \texttt{error 18 (self-signed certificate)}.
+    \item \textbf{Nhóm xác minh ngữ cảnh ứng dụng (TC03, TC04, TC08):} Dù chữ ký đúng và chuỗi tin cậy hoàn hảo, OpenSSL vẫn từ chối chứng thư khi sai lệch thời gian (\texttt{error 10} ở TC03), sai tên máy chủ (\texttt{error 62} ở TC04), hoặc sai mục đích cấp phép (\texttt{error 26} ở TC08).
+    \item \textbf{Nhóm kiểm tra trạng thái thu hồi (TC07, TC09):} Với chứng thư đã bị đưa vào \texttt{ca.crl}, cờ \texttt{-crl\_check} đã giúp OpenSSL chặn đứng việc sử dụng chứng thư với \texttt{error 23 (certificate revoked)}. Ngược lại, chứng thư \texttt{server-b.crt} chưa bị thu hồi vẫn vượt qua kiểm tra an toàn (TC09).
+\end{itemize}
 
 \section{Thảo luận và hạn chế}
 \label{sec:exp-limitations}
-Cần trả lời H1--H2 dựa trên dữ liệu. H3 đòi hỏi phép đo hoặc phương pháp so sánh riêng; nếu nhóm không làm, ghi rõ chưa kiểm chứng thực nghiệm. Lab CA nội bộ và OpenSSL không đại diện cho toàn bộ Web PKI; kiểm tra CRL ở đây được bật tường minh và không tương đương hành vi mặc định của mọi client. Nếu làm benchmark, ghi phần cứng, thông số khóa, số lần lặp, trung vị và độ lệch chuẩn.
+
+\subsection{Đánh giá và trả lời các giả thuyết nghiên cứu}
+\label{subsec:eval-hypotheses}
+
+\paragraph{Khẳng định Giả thuyết $H_1$:}
+Dữ liệu thực nghiệm từ Bảng~\ref{tab:exp-results} chứng minh $H_1$ hoàn toàn chính xác. Ngoại trừ TC05 bị hỏng chữ ký, toàn bộ 8 ca kiểm thử còn lại (TC02, TC03, TC04, TC06, TC07, TC08, TC10) đều sở hữu chữ ký số hợp lệ 100\% về mặt toán học do CA ký phát hành. Tuy nhiên, cả 8 trường hợp này đều bị OpenSSL trả về mã lỗi (\texttt{exit code 2}) và từ chối xác minh. Chỉ có TC01 và TC09 (thỏa mãn đồng thời toàn bộ các điều kiện ngữ cảnh) mới nhận được trạng thái \texttt{OK} (\texttt{exit code 0}). Điều này chứng minh chữ ký đúng chỉ là điều kiện cần.
+
+\paragraph{Khẳng định Giả thuyết $H_2$:}
+Dữ liệu thực nghiệm xác nhận tính tương đối của quyết định xác minh: Thay đổi mốc thời gian kiểm tra (\texttt{-attime}) làm đảo ngược kết quả từ \texttt{OK} sang \texttt{error 10}; thay đổi tên máy chủ truy vấn làm phát sinh \texttt{error 62}; thay đổi cờ mục đích kiểm tra (\texttt{-purpose sslserver}) phát hiện chứng thư sai EKU với \texttt{error 26}. Đặc biệt, với ca kiểm thử TC07, chứng thư bị thu hồi chỉ bị từ chối khi client kích hoạt cờ \texttt{-crl\_check}. Do lệnh \texttt{openssl verify} mặc định không kiểm tra thu hồi, nếu không truyền cờ này, chứng thư đã thu hồi vẫn sẽ được client chấp thuận. Quyết định xác minh phụ thuộc hoàn toàn vào cấu hình và chính sách của client tại thời điểm kiểm tra.
+
+\paragraph{Đánh giá Giả thuyết $H_3$:}
+Quá trình triển khai thực tế cho thấy cơ chế CRL bộc lộ chi phí vận hành rõ rệt: CA phải định kỳ phát hành tệp \texttt{ca.crl} mới trước mốc \texttt{nextUpdate}, và client phải tải toàn bộ tệp danh sách thu hồi về máy cục bộ. Do phạm vi bài lab tập trung vào tính đúng đắn chức năng (\textit{functional verification}) của quy trình xác minh đường dẫn tĩnh, đề tài chưa thực hiện đo lường hiệu năng (\textit{benchmark}) định lượng về độ trễ mạng hay mức tiêu thụ CPU/băng thông của CRL theo số lượng bản ghi thu hồi. Vì vậy, giả thuyết $H_3$ được xác nhận ở khía cạnh phân tích kiến trúc lý thuyết và quy trình cấu hình, chưa được kiểm chứng bằng số liệu thực nghiệm đo lường tải.
+
+\subsection{Hạn chế của bài lab}
+\label{subsec:lab-limitations}
+Mặc dù tái lập thành công các điều kiện biên của RFC~5280, bài lab tồn tại hai hạn chế chính cần ghi nhận:
+\begin{itemize}
+    \item \textbf{Tính chất cục bộ của môi trường OpenSSL CLI:} Thực nghiệm sử dụng tiện ích dòng lệnh \texttt{openssl verify} trên mô hình Root CA nội bộ. Đây là phép thẩm định đường dẫn tĩnh ở tầng thư viện mật mã, không chạy qua tiến trình bắt tay mạng TLS 1.3 hoàn chỉnh (chưa kiểm tra các thông điệp \texttt{CertificateVerify} và \texttt{Finished}).
+    \item \textbf{Khoảng cách với hành vi Web PKI thực tế:} Trình duyệt web thương mại áp dụng các cơ chế linh hoạt hơn nhưng cũng phức tạp hơn so với OpenSSL thuần túy:
+    \begin{itemize}
+        \item Trình duyệt hỗ trợ cơ chế AIA Fetching để chủ động tải chứng thư Intermediate CA bị thiếu qua mạng (trong khi OpenSSL báo lỗi ngay ở TC06 nếu thiếu \texttt{-untrusted}).
+        \item Phần lớn trình duyệt hiện đại đã loại bỏ việc kiểm tra CRL trực tiếp từ điểm phân phối (CDP) do vấn đề độ trễ và tính sẵn sàng, thay vào đó sử dụng danh sách thu hồi nén đẩy từ máy chủ cập nhật của hãng trình duyệt (như Google CRLSet, Mozilla OneCRL) hoặc áp dụng cơ chế OCSP Stapling. Do đó, cờ kiểm tra CRL tường minh trong lab không đại diện hoàn toàn cho hành vi mặc định của mọi client trên Internet.
+    \end{itemize}
+\end{itemize}

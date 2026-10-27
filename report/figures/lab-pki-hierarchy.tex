@@ -1,0 +1,63 @@
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[
+    rootbox/.style={draw=black, very thick, double, fill=gray!18, rounded corners=6pt, text width=7.4cm, align=center, inner sep=6pt, font=\small, text=black},
+    cabox/.style={draw=black, thick, fill=gray!10, rounded corners=6pt, text width=7.4cm, align=center, inner sep=6pt, font=\small, text=black},
+    serverbox/.style={draw=black, thick, fill=white, rounded corners=6pt, text width=6.8cm, align=center, inner sep=6pt, font=\small, text=black},
+    anomalybox/.style={draw=black, thick, dashed, fill=gray!6, rounded corners=6pt, text width=6.8cm, align=center, inner sep=6pt, font=\small, text=black},
+    arrow/.style={-{Stealth[scale=1.1]}, thick, black},
+    dashedarrow/.style={-{Stealth[scale=1.05]}, thick, dashed, black}
+]
+
+    % Tầng 1: Root CA
+    \node[rootbox] (root) at (7.5, 10.2) {
+        \textbf{Tổ chức chứng thực gốc (Root CA)}\\[2pt]
+        {\scriptsize Tệp: \texttt{demo/out/root/root.crt} (RSA 4096-bit, Tự ký)}\\[1pt]
+        {\scriptsize \texttt{basicConstraints = critical, CA:TRUE}}\\[1pt]
+        {\scriptsize \texttt{keyUsage = critical, keyCertSign, cRLSign}}\\
+        {\scriptsize \textit{(Nạp vào Trust Store của client qua cờ \texttt{-CAfile})}}
+    };
+
+    % Tầng 2: Intermediate CA
+    \node[cabox] (subca) at (7.5, 5.8) {
+        \textbf{Tổ chức chứng thực trung gian (Intermediate CA)}\\[2pt]
+        {\scriptsize Tệp: \texttt{demo/out/intermediate/ca.crt} (RSA 4096-bit)}\\[1pt]
+        {\scriptsize \texttt{basicConstraints = critical, CA:TRUE, pathlen:0}}\\[1pt]
+        {\scriptsize \texttt{keyUsage = critical, keyCertSign, cRLSign}}\\
+        {\scriptsize \textit{(Nạp vào client qua cờ \texttt{-untrusted} để dựng chuỗi tin cậy)}}
+    };
+
+    % Tầng 3 (Trái): End-Entity Servers hợp thức
+    \node[serverbox] (servers) at (3.5, 0.3) {
+        \textbf{Chứng thư máy chủ chuẩn (End-Entity)}\\[2pt]
+        {\scriptsize Tệp: \texttt{server-a.crt}, \texttt{server-b.crt} (RSA 2048-bit)}\\[1pt]
+        {\scriptsize \texttt{basicConstraints = CA:FALSE}}\\[1pt]
+        {\scriptsize \texttt{keyUsage = digitalSignature, keyEncipherment}}\\[1pt]
+        {\scriptsize \texttt{extendedKeyUsage = serverAuth}}\\[1pt]
+        {\scriptsize \texttt{subjectAltName = DNS:server-a.test (server-b.test)}}
+    };
+
+    % Tầng 3 (Phải): Các chứng thư dị biệt phục vụ kiểm thử
+    \node[anomalybox] (anomalies) at (11.5, 0.3) {
+        \textbf{Chứng thư dị biệt / Kịch bản vi phạm}\\[2pt]
+        {\scriptsize \texttt{client-only.crt}: EKU chỉ có \texttt{clientAuth} (TC08)}\\[1pt]
+        {\scriptsize \texttt{tampered.crt}: Bị sửa đổi bit chữ ký số (TC05)}\\[1pt]
+        {\scriptsize \texttt{rogue.crt}: Tự ký mạo danh, ngoài Root (TC02)}\\[1pt]
+        {\scriptsize \texttt{other-ca/server.crt}: Thuộc CA độc lập khác (TC10)}
+    };
+
+    % Luồng từ Root CA xuống Intermediate CA
+    \draw[arrow] (root.south) -- (subca.north)
+        node[midway, right=6pt, font=\footnotesize\bfseries] {Ký phát hành CA con};
+
+    % Tách nhánh từ Intermediate CA xuống tầng 3
+    \coordinate (split) at (7.5, 3.2);
+    \draw[thick] (subca.south) -- (split);
+
+    \draw[arrow] (split) -| (servers.north)
+        node[pos=0.35, above=3pt, font=\footnotesize\bfseries] {Ký cấp phát hợp thức};
+
+    \draw[dashedarrow] (split) -| (anomalies.north)
+        node[pos=0.35, above=3pt, font=\footnotesize\bfseries] {Cấp sai EKU / Can thiệp bit / Tự ký};
+
+\end{tikzpicture}%
+}

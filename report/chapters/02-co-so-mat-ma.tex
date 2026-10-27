@@ -4,7 +4,7 @@
 \label{sec:security-reqs-key-mgmt}
 
 \subsection{Yêu cầu bảo mật trong truyền thông và vai trò của PKI}
-Trong an toàn thông tin, việc bảo vệ luồng truyền thông và dữ liệu giao dịch xoay quanh các mục tiêu an ninh cơ bản (mô hình CIA mở rộng): tính bí mật (confidentiality), tính toàn vẹn (integrity), tính xác thực (authenticity), tính sẵn sàng (availability) và tính chống chối bỏ (non-repudiation). Là hạ tầng quản trị niềm tin và định danh số, PKI hỗ trợ trực tiếp tính xác thực, toàn vẹn và chống chối bỏ thông qua chứng thư X.509 và chữ ký số của CA. Đối với tính bí mật và tính sẵn sàng, PKI không trực tiếp đảm nhiệm mà cần phối hợp với các giao thức truyền thông an toàn (như thỏa thuận khóa ECDHE và mã hóa AEAD trong TLS 1.3~\cite{rfc8446}) cùng hạ tầng mạng phân tán (như OCSP Stapling, CDN). Phạm vi hỗ trợ của PKI được tóm tắt tại Bảng~\ref{tab:pki-security-goals}.
+Trong an toàn thông tin, việc bảo vệ luồng truyền thông và dữ liệu giao dịch xoay quanh các mục tiêu an ninh cơ bản (mô hình CIA mở rộng): tính bí mật (confidentiality), tính toàn vẹn (integrity), tính xác thực (authenticity), tính sẵn sàng (availability) và tính chống chối bỏ (non-repudiation). Là hạ tầng quản trị niềm tin và định danh số, PKI hỗ trợ xác thực danh tính thông qua chứng thư X.509 và chuỗi tin cậy, đồng thời chữ ký số của CA hỗ trợ kiểm tra tính toàn vẹn và nguồn gốc của dữ liệu được chứng thực. Cần lưu ý rằng tính chống chối bỏ không thể suy ra thuần túy từ tính hợp lệ của thuật toán ký số, mà còn phụ thuộc chặt chẽ vào quy trình quản trị khóa bí mật, kiểm soát vận hành và bối cảnh pháp lý. Đối với tính bí mật và tính sẵn sàng, PKI không tự đảm nhiệm mà đòi hỏi sự kết hợp với các giao thức truyền thông an toàn (như thỏa thuận khóa ECDHE và mã hóa AEAD trong TLS 1.3~\cite{rfc8446}) cùng hạ tầng phân tán (như OCSP Stapling, CDN). Mật mã cung cấp các công cụ toán học nền tảng, còn PKI cung cấp cơ chế liên kết khóa công khai với danh tính thực tế và quản lý niềm tin; sự phân định này sẽ được làm rõ ở Chương~\ref{chap:kien-truc-pki} và Chương~\ref{chap:x509-xac-thuc}. Phạm vi hỗ trợ của PKI được tóm tắt tại Bảng~\ref{tab:pki-security-goals}.
 
 \input{report/tables/pki-security-goals}
 
@@ -13,7 +13,7 @@ Trong an toàn thông tin, việc bảo vệ luồng truyền thông và dữ li
 Theo nguyên lý Kerckhoffs, độ an toàn của hệ thống mật mã phụ thuộc vào sự an toàn của khóa. Khóa công khai ($PK$) đòi hỏi tính toàn vẹn và xác thực nguồn gốc (do chứng thư PKI bảo chứng); còn khóa bí mật ($SK$) đòi hỏi tính bí mật tuyệt đối, nếu lộ thì toàn bộ bảo đảm an ninh đều sụp đổ. Quản lý khóa (Key Management) kiểm soát cặp khóa qua 5 giai đoạn vòng đời:
 \begin{enumerate}
     \item \textbf{Khởi tạo khóa (Generation):} Sử dụng bộ sinh số ngẫu nhiên giả an toàn mật mã (CSPRNG) và tuân thủ độ dài khóa khuyến nghị (RSA $\ge$ 2048-bit, ECC $\ge$ 256-bit) để chống thám mã vét cạn.
-    \item \textbf{Lưu trữ và bảo vệ khóa bí mật (Storage):} Khóa bí mật của Root CA và Intermediate CA bắt buộc phải lưu trong mô-đun phần cứng HSM với cơ chế phân quyền ngưỡng $m$-trên-$n$, tuyệt đối không xuất ra ngoài bộ nhớ dưới dạng bản rõ.
+    \item \textbf{Lưu trữ và bảo vệ khóa bí mật (Storage):} Đối với các hệ thống PKI có yêu cầu an toàn cao, sử dụng mô-đun phần cứng an toàn (HSM) để bảo vệ khóa riêng của CA với cơ chế phân quyền ngưỡng $m$-trên-$n$ là biện pháp thực hành được khuyến nghị mạnh. Tuy nhiên, việc sử dụng HSM không phải điều kiện phổ quát mang tính cú pháp để mọi chứng thư X.509 đều hợp lệ, mà phụ thuộc vào chính sách và môi trường triển khai (trong lab thực nghiệm của đề tài, khóa CA được lưu dưới dạng tệp tin cục bộ nhằm phục vụ nghiên cứu học thuật, xem Mục~\ref{subsec:real-vs-lab-ca}).
     \item \textbf{Phân phối và chứng thực (Distribution):} Khóa công khai được đóng gói trong yêu cầu cấp chứng thư (CSR) và gửi tới CA để thẩm định, cấp phát chứng thư X.509.
     \item \textbf{Thời hạn sử dụng an toàn của khóa (Cryptoperiod):} Khóa cần được ấn định Cryptoperiod nhằm giới hạn khối lượng bản mã tích lũy và hạn chế rủi ro thỏa hiệp khóa theo thời gian. Cần phân biệt Cryptoperiod (vòng đời mật mã của khóa) với thời hạn hiệu lực chứng thư (Certificate Validity xác định bởi \texttt{notBefore} và \texttt{notAfter}), vốn là khoảng thời gian CA cam kết bảo chứng danh tính (Mục~\ref{sec:certificate-lifecycle}).
     \item \textbf{Thu hồi và tiêu hủy (Revocation \& Destruction):} Khi khóa bí mật nghi ngờ bị lộ, chủ sở hữu phải lập tức yêu cầu thu hồi chứng thư qua CRL/OCSP. Khi hết vòng đời, khóa bí mật phải bị xóa hủy an toàn (zeroize) để ngăn phục hồi dữ liệu.
@@ -40,6 +40,14 @@ Theo nguyên lý Kerckhoffs, độ an toàn của hệ thống mật mã phụ t
     \item \textbf{Chứng thư số (Digital Certificate):} Chữ ký số chỉ chứng minh thông điệp tạo bởi người giữ $SK$ tương ứng, không định danh thực thể ngoài đời thực. Chứng thư X.509 đóng gói khóa công khai $PK$ cùng định danh chủ thể (Subject) và được CA xác thực bằng chữ ký số với khóa bí mật $SK_{\mathrm{CA}}$, hoàn thiện mối liên kết tin cậy (binding) giữa danh tính và khóa công khai.
 \end{itemize}
 
+Từ góc độ kiểm tra an ninh, cần phân biệt rạch ròi ba cấp độ thẩm định:
+\begin{enumerate}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item \textbf{Chữ ký số hợp lệ:} Nội dung thông điệp khớp hoàn toàn với chữ ký và khóa công khai dùng xác minh về mặt toán học.
+    \item \textbf{Chứng thư số được chấp nhận:} Bên cạnh chữ ký hợp lệ, chứng thư còn phải thỏa mãn chuỗi tin cậy tới Trust Anchor, thời hạn hiệu lực, danh tính máy chủ (SAN), mục đích sử dụng (EKU) và chính sách client.
+    \item \textbf{Trạng thái thu hồi:} Chứng thư không nằm trong danh sách thu hồi (CRL) hoặc phản hồi OCSP tại thời điểm kiểm tra.
+\end{enumerate}
+Sự phân biệt này là nền tảng trực tiếp để kiểm chứng giả thuyết $H_1, H_2$ qua bộ ca kiểm thử tại Chương~\ref{chap:experiment}.
+
 Bản chất kỹ thuật và giới hạn của các thành phần mật mã được đối chiếu tại Bảng~\ref{tab:crypto_comparison}.
 
 \input{report/tables/crypto-comparison}
@@ -58,4 +66,4 @@ Sự phân định vai trò các thuật toán trong TLS 1.3 được tổng h�
 
 \input{report/tables/tls-algorithms}
 
-Trong phạm vi đề tài, các nội dung tiếp theo (Chương 3, Chương 4 và thực nghiệm tại Chương 6) tập trung làm rõ lớp chức năng đầu tiên: cấu trúc chứng thư X.509, quy trình thẩm định chuỗi tin cậy và cơ chế thu hồi của PKI.
+Trong báo cáo này, TLS là bối cảnh ứng dụng thực tế của chứng thư máy chủ; trọng tâm nghiên cứu và thực nghiệm của đề tài không nhằm so sánh hiệu năng của các thuật toán mật mã, mà tập trung kiểm chứng các điều kiện logic khiến chứng thư máy chủ được chấp nhận hoặc bị từ chối theo chuẩn RFC~5280 và RFC~8446.
