@@ -1,0 +1,24 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Tiêu chí} & \textbf{PKI dựa trên CA} & \textbf{Web of Trust} & \textbf{TOFU} \\
+\midrule
+Giả định tin cậy & CA trong trust store hoạt động đúng và giữ khóa an toàn; trust store của client toàn vẹn & Người dùng tin những người đã ký xác nhận khóa, và tin bắc cầu qua họ & Kẻ tấn công không có mặt ở lần kết nối đầu tiên \\
+\midrule
+Ai quyết định tin & CA và nhà quản lý Root Store; người dùng cuối thường không phải quyết định & Từng người dùng & Client ở lần đầu, sau đó khóa được ghi nhớ \\
+\midrule
+Khả năng mở rộng & Tốt (quy mô toàn cầu) & Kém khi vượt cộng đồng nhỏ & Tốt về kỹ thuật; mỗi cặp client--server tự thiết lập \\
+\midrule
+Điểm yếu chính & Một CA bị xâm nhập ký được cho mọi tên (DigiNotar, Mục~\ref{subsec:diginotar-case}) & Khó dùng; đánh giá tin cậy bắc cầu dễ sai & Cửa sổ MITM ở lần đầu; đổi khóa hợp lệ dễ gây cảnh báo giả \\
+\midrule
+Thu hồi, thay khóa & CRL, OCSP, loại CA khỏi trust store & Chủ khóa công bố chứng thư thu hồi, phụ thuộc phân phối & Người dùng tự xóa hoặc thay khóa đã ghi nhớ \\
+\midrule
+Ví dụ điển hình & Web PKI, PKI nội bộ & PGP & SSH (\texttt{known\_hosts}) \\
+\bottomrule
+\end{tabularx}
+\caption{So sánh ba mô hình tin cậy theo giả định tin cậy}
+\label{tab:trust-models}
+\end{table}

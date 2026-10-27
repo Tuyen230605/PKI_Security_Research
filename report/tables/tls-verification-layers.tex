@@ -1,0 +1,24 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{2.3cm}}
+\toprule
+\textbf{Kiểm tra} & \textbf{Bên thực hiện} & \textbf{Nguồn quy định} & \textbf{Trong lab} \\
+\midrule
+Cấu trúc thông điệp \texttt{Certificate}, kiểu chứng thư, khóa tương thích & Giao thức TLS & RFC~8446~\cite{rfc8446} & Không kiểm tra \\
+\midrule
+\texttt{CertificateVerify} (sở hữu khóa) và \texttt{Finished} & Giao thức TLS & RFC~8446~\cite{rfc8446} & Không kiểm tra \\
+\midrule
+Dựng và xác minh đường dẫn, thời hạn, Basic Constraints, Key Usage/EKU & Thư viện TLS, với trust anchor, thời điểm và mục đích sử dụng do ứng dụng cấu hình & RFC~5280~\cite{rfc5280} & TC01--TC03, TC05, TC06, TC08, TC10 \\
+\midrule
+Trạng thái thu hồi & Ứng dụng quyết định có kiểm tra không, dùng CRL hay OCSP, và hành vi khi lỗi; TLS chỉ cho phép đính kèm phản hồi OCSP (stapling) & RFC~5280~\cite{rfc5280}, RFC~6960~\cite{rfc6960} & TC07 (chỉ CRL) \\
+\midrule
+Khớp tên máy chủ với SAN & Ứng dụng, hoặc thư viện khi ứng dụng yêu cầu & RFC~9525~\cite{rfc9525} & TC04 \\
+\midrule
+Chính sách riêng của trình duyệt và Root Store: danh mục trust anchor, yêu cầu CT, pinning, giới hạn thời hạn chứng thư & Trình duyệt hoặc nhà cung cấp Root Store & Ngoài RFC~5280 và 8446; một phần theo BR~\cite{cabforum_br} & Không có \\
+\bottomrule
+\end{tabularx}
+\caption{Phân định các kiểm tra trong kết nối TLS 1.3}
+\label{tab:tls-checks}
+\end{table}

@@ -1,0 +1,26 @@
+\begin{table}[!htbp]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.02}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.0cm}}
+\toprule
+\textbf{Mối đe dọa} & \textbf{Tài sản liên quan} & \textbf{Cơ chế kiểm soát} & \textbf{Giới hạn} & \textbf{Trong lab} \\
+\midrule
+Lộ khóa bí mật máy chủ & Khóa máy chủ & Thu hồi chứng thư (CRL/OCSP, lý do \texttt{keyCompromise}); chứng thư thời hạn ngắn & Thu hồi có độ trễ và chỉ có tác dụng nếu client kiểm tra ($H_2$) & TC07 \\
+\midrule
+Lộ khóa CA & Khóa Root / Intermediate & Root để offline; thu hồi chứng thư CA con; loại CA khỏi trust store & Thu hồi Root đòi hỏi cập nhật trust store của mọi client & Chỉ phân tích lý thuyết \\
+\midrule
+CA cấp sai hoặc bị xâm nhập (rogue certificate) & Khóa CA, quy trình cấp phát & Giám sát (Certificate Transparency~\cite{rfc9162}), certificate pinning, loại CA khỏi trust store & Chữ ký và chuỗi vẫn hợp lệ nên xác minh đường dẫn không phát hiện được & Chỉ phân tích lý thuyết \\
+\midrule
+MITM bằng chứng thư tự tạo hoặc tự ký & Trust store & Xác minh đường dẫn tới trust anchor đã cấu hình & Vô hiệu nếu trust store bị can thiệp & TC02, TC05, TC10 \\
+\midrule
+Chứng thư hợp lệ nhưng dùng sai tên hoặc sai mục đích & Quy trình xác minh & Kiểm tra SAN, Key Usage/EKU & Phụ thuộc client có bật kiểm tra & TC04, TC08 \\
+\midrule
+Chứng thư hết hạn & Quy trình xác minh & Kiểm tra \texttt{[notBefore, notAfter]} & Phụ thuộc đồng hồ và chính sách của client & TC03 \\
+\midrule
+Kiểm tra thu hồi không đầy đủ & Thông tin thu hồi & Bật CRL/OCSP; stapling; chứng thư thời hạn ngắn & Client không kiểm tra, CRL cũ, hoặc responder trả lời sai & TC07 (chỉ CRL) \\
+\bottomrule
+\end{tabularx}
+\caption{Các mối đe dọa và cơ chế kiểm soát trong PKI}
+\label{tab:pki-threats}
+\end{table}

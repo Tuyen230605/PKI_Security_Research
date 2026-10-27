@@ -1,0 +1,24 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Tiêu chí} & \textbf{CRL} & \textbf{OCSP} \\
+\midrule
+\textbf{Đơn vị thông tin} & Danh sách số sê-ri bị thu hồi của một CA & Trạng thái của một chứng thư \\
+\midrule
+\textbf{Độ mới} & Giới hạn bởi chu kỳ phát hành (\texttt{nextUpdate}) & Mới hơn, tùy cách responder cập nhật \\
+\midrule
+\textbf{Băng thông} & Lớn khi danh sách dài & Nhỏ mỗi truy vấn nhưng nhiều truy vấn \\
+\midrule
+\textbf{Riêng tư} & Không lộ chứng thư cụ thể đang kiểm tra & Responder biết chứng thư đang được kiểm tra \\
+\midrule
+\textbf{Khả dụng} & Dùng được bản đã lưu đệm đến \texttt{nextUpdate} & Phụ thuộc responder trực tuyến (trừ khi có stapling) \\
+\midrule
+\textbf{Trong lab} & Triển khai và kiểm thử (TC07) & Chỉ phân tích lý thuyết \\
+\bottomrule
+\end{tabularx}
+\caption{So sánh CRL và OCSP}
+\label{tab:crl-vs-ocsp}
+\end{table}

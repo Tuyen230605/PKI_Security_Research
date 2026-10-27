@@ -1,0 +1,24 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.9cm}>{\raggedright\arraybackslash}p{2.0cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.4cm}}
+\toprule
+\textbf{Tài sản} & \textbf{Yêu cầu bảo vệ} & \textbf{Hậu quả khi bị xâm phạm} & \textbf{Trong lab} \\
+\midrule
+Khóa bí mật Root CA & Bí mật & Ký được chứng thư CA và chứng thư máy chủ bất kỳ; ảnh hưởng mọi client tin Root đó & Tệp khóa trên ổ đĩa (Bảng~\ref{tab:rfc3647-vs-lab}) \\
+\midrule
+Khóa bí mật Intermediate CA & Bí mật & Cấp được chứng thư máy chủ cho tên bất kỳ; có thể cô lập bằng cách thu hồi chứng thư của CA con & Tệp khóa trên ổ đĩa \\
+\midrule
+Khóa bí mật máy chủ & Bí mật & Mạo danh máy chủ cho đến khi chứng thư hết hạn hoặc bị thu hồi & Khóa của \texttt{server-a} \\
+\midrule
+Trust store của client & Toàn vẹn & Thêm trust anchor lạ thì mọi chứng thư do nó ký đều được tin cậy & Tệp \texttt{root.crt} qua \texttt{-CAfile} \\
+\midrule
+Quy trình và cấu hình xác minh & Toàn vẹn, đầy đủ & Bỏ kiểm tra tên, EKU hoặc thu hồi thì chứng thư không phù hợp vẫn được chấp nhận & Các cờ \texttt{-purpose}, \texttt{-verify\_hostname}, kiểm tra CRL \\
+\midrule
+Thông tin trạng thái thu hồi (CRL/OCSP) & Toàn vẹn, kịp thời, sẵn sàng & Chứng thư đã bị thu hồi vẫn được chấp nhận & Tệp CRL do Intermediate CA phát hành \\
+\bottomrule
+\end{tabularx}
+\caption{Tài sản cần bảo vệ trong mô hình PKI phân cấp}
+\label{tab:pki-assets}
+\end{table}

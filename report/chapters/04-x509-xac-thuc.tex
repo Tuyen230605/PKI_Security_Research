@@ -99,14 +99,14 @@ Lab dùng chuỗi ba mắt xích $\mathrm{Root\ CA} \rightarrow \mathrm{Intermed
     \item \textbf{Chứng thư máy chủ} (\texttt{server-a.test}): Được Intermediate CA ký phát với chữ ký $\sigma_{\mathrm{Server}} = \mathrm{Sign}_{SK_{\mathrm{Sub}}}(\mathrm{TBS}_{\mathrm{Server}})$, thiết lập \texttt{CA:FALSE}, SAN \texttt{DNS:server-a.test} và EKU \texttt{serverAuth}.
 \end{itemize}
 
+\clearpage
+
 \begin{figure}[!htbp]
 \centering
 \input{report/figures/trust-chain-validation}
 \caption{Chuỗi chứng thư Root CA $\rightarrow$ Intermediate CA $\rightarrow$ server trong lab: quan hệ ký phát và quan hệ thẩm định giữa các mắt xích.}
 \label{fig:trust-chain-validation}
 \end{figure}
-
-\clearpage
 
 \subsection{Quy trình xây dựng và xác minh}
 \label{subsec:path-building-validation}
@@ -128,22 +128,96 @@ Khi mọi điều kiện đều đạt, kết quả là PASS (TC01, TC09).
 
 Hình~\ref{fig:openssl-verify-terminal} trình bày hai lần chạy \texttt{openssl verify} với cùng chứng thư \texttt{server-a.crt}.
 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.90\textwidth]{report/figures/openssl-verify-terminal.png}
+\caption{Kết quả \texttt{openssl verify} với chuỗi đầy đủ (OK) và khi thiếu chứng thư Intermediate CA (lỗi 20, TC06).}
+\label{fig:openssl-verify-terminal}
+\end{figure}
+
 \noindent\textbf{Lần 1 (đủ chuỗi):} Khi cung cấp Root qua \texttt{-CAfile} và Intermediate qua \texttt{-untrusted}, kết quả là \texttt{OK}, kèm \texttt{-purpose sslserver} và \texttt{-verify\_hostname server-a.test} nên EKU và SAN cũng được kiểm. Chuỗi in ra gồm ba mức: depth~0 là server, depth~1 là Lab Intermediate CA, depth~2 là Lab Root CA. Nhãn \texttt{(untrusted)} ở depth~0 và 1 nghĩa là hai chứng thư này không nằm trong kho tin cậy; chỉ Root là trust anchor.
 
 \noindent\textbf{Lần 2 (thiếu Intermediate):} Khi bỏ \texttt{-untrusted}, OpenSSL báo \texttt{error 20 at 0 depth lookup: unable to get local issuer certificate}. Chữ ký trên chứng thư máy chủ vẫn đúng, nhưng không tìm được chứng thư của bên phát hành nên không dựng được đường dẫn tới trust anchor. Lỗi gắn với depth~0 vì đó là chứng thư không tìm được issuer. Đây là ca TC06.
 
 Cần lưu ý hai điểm. Thứ nhất, cả hai lệnh không bật kiểm tra thu hồi, nên \texttt{OK} chỉ cho biết các điều kiện trong Bảng~\ref{tab:path-validation-conditions} (trừ thu hồi) đã đạt; trạng thái thu hồi được xét riêng ở Mục~\ref{sec:revocation-mechanisms}. Thứ hai, kết quả của TC06 phụ thuộc vào client: OpenSSL không tự bổ sung chứng thư trung gian còn thiếu, trong khi một số client khác có cơ chế bù (qua AIA hoặc bộ nhớ đệm). Điều này phù hợp với giới hạn của lab đã nêu ở Mục~6.4.
 
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.95\textwidth]{report/figures/openssl-verify-terminal.png}
-\caption{Kết quả \texttt{openssl verify} với chuỗi đầy đủ (OK) và khi thiếu chứng thư Intermediate CA (lỗi 20, TC06).}
-\label{fig:openssl-verify-terminal}
-\end{figure}
-
 \section{Thu hồi và trạng thái chứng thư}
 \label{sec:revocation-mechanisms}
-Cần so sánh CRL và OCSP; trích RFC 5280 và RFC 6960~\cite{rfc5280,rfc6960}. Phân biệt trạng thái OCSP \emph{good} với việc chứng thư vượt qua mọi bước validation.
+
+Một chứng thư có chữ ký đúng và còn trong khoảng \texttt{[notBefore, notAfter]} vẫn có thể không còn đáng tin, ví dụ khi khóa bí mật bị lộ hoặc CA cấp sai (Mục~\ref{sec:certificate-lifecycle}, Bước~9). Relying party vì vậy cần một cách hỏi chứng thư đã bị thu hồi chưa. RFC~5280~\cite{rfc5280} định nghĩa danh sách thu hồi chứng thư (CRL), còn RFC~6960~\cite{rfc6960} định nghĩa giao thức trạng thái chứng thư trực tuyến (OCSP). Hai cơ chế trả lời cùng một câu hỏi nhưng khác nhau ở cách thông tin được phát hành và lấy về.
+
+\subsection{Danh sách thu hồi chứng thư (CRL)}
+\label{subsec:crl}
+
+CRL là danh sách có chữ ký do CA (hoặc CRL issuer được ủy quyền) phát hành định kỳ (RFC~5280~\cite{rfc5280}, mục~5). Mỗi CRL chứa số sê-ri các chứng thư bị thu hồi, thời điểm thu hồi và mã lý do tùy chọn (ví dụ \texttt{keyCompromise}), cùng hai trường \texttt{thisUpdate} và \texttt{nextUpdate} cho biết CRL được tạo khi nào và dự kiến được thay khi nào. Chứng thư chỉ nơi công bố CRL qua extension \texttt{CRL Distribution Points}. Khi xác minh, relying party tải CRL, kiểm tra chữ ký bằng khóa của bên phát hành, kiểm tra CRL còn hiệu lực rồi tra số sê-ri của chứng thư (RFC~5280~\cite{rfc5280}, mục~6.3).
+
+Điểm mạnh là client có thể dùng bản CRL đã lưu đệm đến hết \texttt{nextUpdate}, nên không cần liên lạc với CA ở mỗi kết nối. Điểm yếu là độ trễ: thu hồi chỉ có hiệu lực với client khi CRL mới được phát hành và tải về. Kích thước CRL cũng tăng theo số chứng thư bị thu hồi (RFC~5280 có cơ chế delta CRL để giảm bớt).
+
+\subsection{Giao thức trạng thái chứng thư trực tuyến (OCSP)}
+\label{subsec:ocsp}
+
+Với OCSP, client gửi tới OCSP responder một truy vấn chứa định danh của chứng thư (băm tên và khóa của bên phát hành cùng số sê-ri). Địa chỉ responder nằm trong extension \texttt{Authority Information Access} (RFC~6960~\cite{rfc6960}). Responder trả về phản hồi có chữ ký với một trong ba trạng thái \texttt{good}, \texttt{revoked} hoặc \texttt{unknown}, kèm khoảng thời gian phản hồi có hiệu lực. Phản hồi do CA hoặc một responder được CA ủy quyền ký, và truy vấn có thể kèm nonce để chống phát lại. Máy chủ cũng có thể đính kèm sẵn phản hồi OCSP trong bắt tay TLS (OCSP stapling) để client không phải tự truy vấn (xem Mục~\ref{sec:trust-models-comparison}).
+
+Điểm mạnh là thông tin theo từng chứng thư, nhỏ gọn và mới hơn CRL. Điểm yếu là cần responder trực tuyến (khả dụng), responder biết client đang kiểm tra chứng thư nào (riêng tư), và khi không liên lạc được responder thì client phải tự quyết định chấp nhận hay từ chối.
+
+Trong Web PKI, BR từ phiên bản 2.0.1 (hiệu lực 15/03/2024) đã chuyển OCSP thành tùy chọn và đặt yêu cầu công bố CRL~\cite{cabforum_br}. Phân tích sâu hơn ở Mục~\ref{sec:trust-models-comparison}.
+
+\newpage
+
+\subsection{So sánh CRL và OCSP}
+\label{subsec:crl-vs-ocsp}
+
+Bảng~\ref{tab:crl-vs-ocsp} tổng hợp so sánh giữa hai cơ chế CRL và OCSP.
+
+\input{report/tables/crl-vs-ocsp}
+
+\subsection{Trạng thái \texttt{good} không đồng nghĩa với chứng thư hợp lệ}
+\label{subsec:good-vs-valid}
+
+RFC~6960 nêu rõ: \texttt{good} chỉ cho biết tối thiểu là chứng thư chưa bị thu hồi, không nhất thiết có nghĩa là chứng thư từng được cấp hay thời điểm phản hồi nằm trong thời hạn của chứng thư (RFC~6960~\cite{rfc6960}, mục~2.2). OCSP chỉ trả lời một câu hỏi trong Bảng~\ref{tab:path-validation-conditions} (trạng thái thu hồi) và không thay thế các câu còn lại: chuỗi tới trust anchor, \texttt{[notBefore, notAfter]}, Basic Constraints, EKU và SAN. Một chứng thư hết hạn, sai tên máy chủ hoặc sai EKU vẫn có thể nhận \texttt{good}. Nguyên lý này áp dụng cả cho CRL: không thấy số sê-ri trong CRL chỉ có nghĩa là chưa bị liệt kê.
+
+Sự cố DigiNotar minh họa rủi ro này. Theo Fox-IT~\cite{prins2011diginotar}, hành vi thông thường theo RFC~2560 (tiền thân của RFC~6960) là trả \texttt{good} cho số sê-ri không có bản ghi. Vì vậy các chứng thư giả không có trong hồ sơ vẫn có thể qua bước kiểm tra thu hồi. Ngày 1/9/2011, responder được chuyển sang danh sách trắng, trả \texttt{revoked} cho mọi số sê-ri không xác định.
+
+\noindent\textbf{Liên hệ lab.} Lab chỉ kiểm tra CRL: Intermediate CA thu hồi chứng thư bằng \texttt{openssl ca -revoke}, phát hành CRL bằng \texttt{openssl ca -gencrl}, và client xác minh với CRL được chỉ định tường minh. TC07 kiểm tra rằng chứng thư đã bị liệt kê bị từ chối khi kiểm tra CRL được bật; kết quả cụ thể ở Mục~\ref{sec:exp-results}. Lệnh \texttt{openssl verify} mặc định không kiểm tra thu hồi, nên với client không bật CRL, chứng thư bị thu hồi vẫn có thể qua các bước còn lại. Điều này khớp với giả thuyết $H_2$.
 
 \section{Liên hệ TLS}
-Cần diễn giải vai trò của chứng thư và CertificateVerify trong TLS 1.3~\cite{rfc8446}; giải thích đâu là kiểm tra do ứng dụng thực hiện và đâu là chính sách riêng của trình duyệt.
+\label{sec:tls-relation}
+
+Các mục trước xét việc xác minh chứng thư một cách độc lập. Trong thực tế, chứng thư được trình bày trong bắt tay TLS 1.3~\cite{rfc8446}, và việc một chứng thư ``được chấp nhận'' là kết quả của nhiều kiểm tra do các bên khác nhau thực hiện. Mục này làm rõ vai trò của chứng thư và thông điệp \texttt{CertificateVerify} trong bắt tay, rồi phân định kiểm tra nào thuộc giao thức, thư viện, ứng dụng hay chính sách riêng của trình duyệt.
+
+\subsection{Chứng thư và \texttt{CertificateVerify} trong bắt tay TLS 1.3}
+\label{subsec:tls-cert-verify}
+
+Sau khi hai bên thỏa thuận khóa phiên (ClientHello và ServerHello mang \texttt{key\_share}), máy chủ gửi ba thông điệp xác thực (RFC~8446~\cite{rfc8446}, mục~4.4):
+\begin{itemize}
+    \item \textbf{\texttt{Certificate}:} Chuỗi chứng thư, chứng thư thực thể cuối đứng đầu, tiếp theo là các chứng thư trung gian. Chứng thư của trust anchor có thể được lược bỏ khi client đã có sẵn (RFC~8446~\cite{rfc8446}, mục~4.4.2). Đây là lý do thiếu Intermediate (TC06) khiến client không dựng được đường dẫn.
+    \item \textbf{\texttt{CertificateVerify}:} Chữ ký của máy chủ, tạo bằng khóa bí mật tương ứng với khóa công khai trong chứng thư thực thể cuối, tính trên giá trị băm của toàn bộ các thông điệp bắt tay trước đó (RFC~8446~\cite{rfc8446}, mục~4.4.3).
+    \item \textbf{\texttt{Finished}:} Mã xác thực (MAC) trên toàn bộ bắt tay, xác nhận hai bên cùng suy ra một bộ khóa và một bản ghi bắt tay (RFC~8446~\cite{rfc8446}, mục~4.4.4).
+\end{itemize}
+
+Hai chữ ký trong bắt tay có vai trò khác nhau và bổ sung cho nhau:
+\begin{itemize}
+    \item Chữ ký của CA trên chứng thư trả lời câu hỏi ``khóa này thuộc về tên này theo CA mà client tin cậy''.
+    \item \texttt{CertificateVerify} trả lời câu hỏi ``bên đang kết nối thật sự nắm khóa bí mật tương ứng, trong chính phiên này'', vì nội dung được ký bao gồm cả \texttt{key\_share} của phiên.
+\end{itemize}
+
+Thiếu \texttt{CertificateVerify}, kẻ tấn công có thể trình lại chứng thư công khai của máy chủ mà không có khóa bí mật. Thiếu xác minh đường dẫn, kẻ tấn công trình chứng thư tự tạo kèm chữ ký đúng, đúng như kịch bản thay thế khóa của Eve ở Mục~\ref{subsec:eve-mitm-attack}. Cần cả hai thì kết nối mới chống được kịch bản đó.
+
+Hai chữ ký này cũng khác nhau về thuật toán. Chữ ký \texttt{CertificateVerify} phải dùng các thuật toán client chấp nhận trong \texttt{signature\_algorithms}, và với RSA thì dùng RSA-PSS (RFC~8446~\cite{rfc8446}, mục~4.2.3). Chữ ký của CA trên chứng thư (ví dụ \texttt{sha256WithRSAEncryption} ở Hình~\ref{fig:openssl-x509-terminal-real}) có thể dùng PKCS\#1 v1.5.
+
+Giới hạn quan trọng là \texttt{CertificateVerify} chỉ chứng minh sở hữu khóa, không chứng minh chứng thư được cấp đúng. Với DigiNotar, kẻ tấn công vừa có chứng thư giả \texttt{*.google.com} do CA bị chiếm ký, vừa nắm khóa bí mật tương ứng, nên mọi kiểm tra mật mã trong bắt tay đều đạt. Theo Fox-IT~\cite{prins2011diginotar}, sự cố lộ ra vì Chrome có kiểm tra bổ sung (certificate pinning) cho chứng thư của Google. Đây là cơ sở cho Mục~\ref{sec:valid-signature-limits}.
+
+\subsection{Phân định các kiểm tra}
+\label{subsec:tls-checks}
+
+RFC~8446 chỉ quy định phần xác thực nằm trong giao thức. Việc xác minh chứng thư chi tiết được dẫn tới RFC~5280 (RFC~8446~\cite{rfc8446}, mục~4.4.2.4; \cite{rfc5280}). Việc đối chiếu tên máy chủ do RFC~9525~\cite{rfc9525} quy định, và RFC này chỉ xét tên trong chứng thư máy chủ cuối, không xét việc xác minh chuỗi. Bảng~\ref{tab:tls-checks} phân định ai chịu trách nhiệm kiểm tra gì.
+
+\input{report/tables/tls-verification-layers}
+
+Hai hệ quả cần nhấn mạnh:
+\begin{itemize}
+    \item Nhiều thư viện không tự bật kiểm tra tên máy chủ hay kiểm tra thu hồi; ứng dụng phải yêu cầu (trong lab là \texttt{-verify\_hostname} và kiểm tra CRL được bật tường minh). Vì vậy một kết nối TLS ``thành công'' chưa chắc đã qua đủ các kiểm tra ở Bảng~\ref{tab:path-validation-conditions}.
+    \item Cùng một chứng thư có thể được chấp nhận ở client này và bị từ chối ở client khác tùy cấu hình và chính sách. Các ca kiểm thử trong lab phản ánh tầng ``thư viện OpenSSL kèm cấu hình'' chứ không phải chính sách của trình duyệt (xem Mục~\ref{sec:exp-limitations}).
+\end{itemize}
+
+\noindent\textbf{Phạm vi của công cụ trong lab.} Lệnh \texttt{openssl verify} đọc các chứng thư được cung cấp và chạy thuật toán xác minh đường dẫn theo hồ sơ PKIX (RFC~5280~\cite{rfc5280}) tại một thời điểm xác định. Lệnh này không thiết lập bắt tay TLS, không trao đổi \texttt{key\_share}, không tính giá trị băm của bản ghi bắt tay và không kiểm tra việc nắm giữ khóa bí mật thông qua \texttt{CertificateVerify} (RFC~8446~\cite{rfc8446}). Vì vậy kết quả TC01--TC10 phản ánh tầng xác minh chứng thư, không phản ánh toàn bộ một kết nối TLS. Việc kiểm tra bằng \texttt{openssl s\_server} và \texttt{openssl s\_client} là hướng mở rộng.

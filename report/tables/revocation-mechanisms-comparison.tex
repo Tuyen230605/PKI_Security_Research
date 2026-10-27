@@ -1,0 +1,18 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.0cm}}
+\toprule
+\textbf{Cơ chế} & \textbf{Độ mới} & \textbf{Chi phí} & \textbf{Khả dụng} & \textbf{Giới hạn chính} \\
+\midrule
+CRL & Tối đa bằng chu kỳ phát hành (\texttt{nextUpdate}) & Tải cả danh sách; lớn khi nhiều chứng thư bị thu hồi & Dùng được bản lưu đệm đến \texttt{nextUpdate}, không cần liên lạc mỗi kết nối & Độ trễ thu hồi \\
+\midrule
+OCSP & Mới hơn, theo thời hạn hiệu lực của phản hồi & Một truy vấn cho mỗi chứng thư; responder phải ký và phục vụ & Phụ thuộc responder trực tuyến (stapling giảm phụ thuộc) & Lộ chứng thư đang kiểm tra cho responder; hành vi khi lỗi do client quyết định \\
+\midrule
+Chứng thư thời hạn ngắn & Giới hạn bởi thời hạn của chứng thư & Cấp phát tần suất cao, cần tự động hóa (ACME~\cite{rfc8555}) & Phụ thuộc CA luôn sẵn sàng khi gia hạn & Không thu hồi tức thời trong phần thời hạn còn lại \\
+\bottomrule
+\end{tabularx}
+\caption{So sánh CRL, OCSP và chứng thư thời hạn ngắn}
+\label{tab:revocation-vs-shortlived}
+\end{table}

@@ -12,13 +12,13 @@
 ]
 
     % --- KHỐI GỐC TIN CẬY (TRUST ANCHOR TRÊN CÙNG) ---
-    \node[storebox] (store) at (0, 10.6) {
+    \node[storebox] (store) at (0, 15.2) {
         \textbf{Kho chứng thư tin cậy (Root Trust Store)}\\[1pt]
         {\scriptsize Quản lý bởi Hệ điều hành / Trình duyệt (Relying Party)\\[1pt]Chứa bản sao khóa công khai $PK_{\mathrm{Root}}$ được tin cậy mặc định}
     };
 
     % --- KHỐI 1: Root CA ---
-    \node[rootbox] (root) at (0, 7.4) {
+    \node[rootbox] (root) at (0, 10.4) {
         \textbf{Mắt xích 1: Root CA (Trust Anchor)}\\[1pt]
         {\scriptsize \texttt{Subject: CN = Lab Root CA}}\\[1pt]
         {\scriptsize \texttt{Issuer:  CN = Lab Root CA} (Tự ký - Self-signed)}\\[1pt]
@@ -28,7 +28,7 @@
     };
 
     % --- KHỐI 2: Intermediate CA ---
-    \node[cabox] (subca) at (0, 3.7) {
+    \node[cabox] (subca) at (0, 5.2) {
         \textbf{Mắt xích 2: Intermediate CA (Sub-CA)}\\[1pt]
         {\scriptsize \texttt{Subject: CN = Lab Intermediate CA}}\\[1pt]
         {\scriptsize \texttt{Issuer:  CN = Lab Root CA}}\\[1pt]
@@ -43,23 +43,23 @@
         {\scriptsize \texttt{Subject: CN = server-a.test}}\\[1pt]
         {\scriptsize \texttt{Issuer:  CN = Lab Intermediate CA}}\\[1pt]
         {\scriptsize Khóa: Khóa công khai $PK_{\mathrm{Server}}$ ($SK_{\mathrm{Server}}$ lưu an toàn trên Server)}\\[1pt]
-        {\scriptsize \texttt{Basic Constraints: CA:FALSE} \textbar{} \texttt{SAN: DNS:server-a.test}}\\[1pt]
-        {\scriptsize \texttt{AKI:} Trỏ tới $\mathrm{SKI}_{\mathrm{Sub}}$ \textbar{} \texttt{EKU: serverAuth}}
+        {\scriptsize \texttt{Basic Constraints: CA:FALSE} \textbar{} \texttt{EKU: serverAuth}}\\[1pt]
+        {\scriptsize \texttt{SAN: DNS:server-a.test} \textbar{} \texttt{AKI:} Trỏ tới $\mathrm{SKI}_{\mathrm{Sub}}$}
     };
 
     % Neo Root CA vào Trust Store
     \draw[trustarrow] (root.north) -- (store.south)
-        node[midway, right=6pt, font=\scriptsize\bfseries] {Neo niềm tin (Trust Anchor)};
+        node[midway, right=8pt, align=left, font=\footnotesize\bfseries] {Neo niềm tin\\[1pt](Trust Anchor)};
 
     % ==============================================================
     % TIÊU ĐỀ HAI TIẾN TRÌNH Ở ĐỈNH (KHÔNG XUNG ĐỘT)
     % ==============================================================
-    \node[align=center, font=\footnotesize\bfseries, text=black] at (-5.8, 10.6) {
+    \node[align=center, font=\footnotesize\bfseries, text=black] at (-6.3, 15.2) {
         [TIẾN TRÌNH KÝ PHÁT]\\[2pt]
         {\scriptsize (Dùng khóa bí mật $SK$)}
     };
 
-    \node[align=center, font=\footnotesize\bfseries, text=black] at (6.0, 10.6) {
+    \node[align=center, font=\footnotesize\bfseries, text=black] at (6.5, 15.2) {
         [TIẾN TRÌNH THẨM ĐỊNH]\\[2pt]
         {\scriptsize (Dùng khóa công khai $PK$)}
     };
@@ -68,16 +68,16 @@
     % TIẾN TRÌNH KÝ PHÁT (BÊN TRÁI - TỪ TRÊN XUỐNG)
     % ==============================================================
     % Root CA ký Sub-CA
-    \draw[issuancearrow] (root.west) -- (-4.5, 7.4) -- (-4.5, 3.7) -- (subca.west);
-    \node[anchor=east, align=right, font=\footnotesize] at (-4.7, 5.55) {
+    \draw[issuancearrow] (root.west) -- (-4.5, 10.4) -- (-4.5, 5.2) -- (subca.west);
+    \node[anchor=east, align=right, font=\footnotesize] at (-4.7, 7.8) {
         \textbf{1. Ký phát Sub-CA:}\\[1pt]
         $\sigma_{\mathrm{Sub}} = \mathrm{Sign}_{SK_{\mathrm{Root}}}(\mathrm{TBS}_{\mathrm{Sub}})$\\[1pt]
         {\scriptsize $SK_{\mathrm{Root}}$ ký lên chứng thư Sub-CA}
     };
 
     % Sub-CA ký Server Certificate
-    \draw[issuancearrow] (subca.west) -- (-4.5, 3.7) -- (-4.5, 0.0) -- (server.west);
-    \node[anchor=east, align=right, font=\footnotesize] at (-4.7, 1.85) {
+    \draw[issuancearrow] (subca.west) -- (-4.5, 5.2) -- (-4.5, 0.0) -- (server.west);
+    \node[anchor=east, align=right, font=\footnotesize] at (-4.7, 2.6) {
         \textbf{2. Ký phát Server:}\\[1pt]
         $\sigma_{\mathrm{Server}} = \mathrm{Sign}_{SK_{\mathrm{Sub}}}(\mathrm{TBS}_{\mathrm{Server}})$\\[1pt]
         {\scriptsize $SK_{\mathrm{Sub}}$ ký lên chứng thư Server}
@@ -87,8 +87,8 @@
     % TIẾN TRÌNH THẨM ĐỊNH RFC 5280 (BÊN PHẢI - TỪ DƯỚI LÊN)
     % ==============================================================
     % Thẩm định Server Certificate
-    \draw[valarrow] (server.east) -- (4.7, 0.0) -- (4.7, 3.7) -- (subca.east);
-    \node[anchor=west, align=left, font=\footnotesize] at (4.9, 1.85) {
+    \draw[valarrow] (server.east) -- (4.7, 0.0) -- (4.7, 5.2) -- (subca.east);
+    \node[anchor=west, align=left, font=\footnotesize] at (4.9, 2.6) {
         \textbf{3. Thẩm định Server Certificate:}\\[1pt]
         $\mathrm{Verify}_{PK_{\mathrm{Sub}}}(\sigma_{\mathrm{Server}}) = \mathrm{True}$\\[1pt]
         {\scriptsize $\bullet$ Đối chiếu: $\mathrm{Issuer} \equiv \mathrm{Subject}_{\mathrm{Sub}}$}\\[1pt]
@@ -96,8 +96,8 @@
     };
 
     % Thẩm định Intermediate CA
-    \draw[valarrow] (subca.east) -- (4.7, 3.7) -- (4.7, 7.4) -- (root.east);
-    \node[anchor=west, align=left, font=\footnotesize] at (4.9, 5.55) {
+    \draw[valarrow] (subca.east) -- (4.7, 5.2) -- (4.7, 10.4) -- (root.east);
+    \node[anchor=west, align=left, font=\footnotesize] at (4.9, 7.8) {
         \textbf{4. Thẩm định Intermediate CA:}\\[1pt]
         $\mathrm{Verify}_{PK_{\mathrm{Root}}}(\sigma_{\mathrm{Sub}}) = \mathrm{True}$\\[1pt]
         {\scriptsize $\bullet$ Đối chiếu: $\mathrm{Issuer} \equiv \mathrm{Subject}_{\mathrm{Root}}$}\\[1pt]

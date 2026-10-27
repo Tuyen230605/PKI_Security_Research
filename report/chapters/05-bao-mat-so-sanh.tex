@@ -2,11 +2,107 @@
 \label{chap:threat-security}
 \section{Tài sản, đối thủ và rủi ro}
 \label{sec:threat-model}
-Cần lập bảng tài sản cần bảo vệ (khóa CA, khóa máy chủ, trust store, quy trình xác minh) và các mối đe dọa: lộ khóa, CA cấp sai / bị xâm nhập (rogue certificates, phân tích sâu trường hợp DigiNotar~\cite{prins2011diginotar}), MITM, chứng thư hết hạn, kiểm tra thu hồi không đầy đủ.
+\subsection{Tài sản cần bảo vệ}
+\label{subsec:pki-assets}
+
+An toàn của PKI phụ thuộc vào một số ít tài sản then chốt. Bảng~\ref{tab:pki-assets} liệt kê các tài sản đó, yêu cầu bảo vệ và hậu quả khi bị xâm phạm.
+
+\input{report/tables/pki-assets-protection}
+
+\subsection{Mô hình đối thủ và giả định}
+\label{subsec:threat-assumptions}
+
+Đối thủ cơ sở là Eve ở Mục~\ref{subsec:eve-mitm-attack}: kẻ tấn công chủ động trên đường truyền, có khả năng quan sát, chặn và sửa gói tin. Giả định xuyên suốt là các thuật toán mật mã an toàn, nên đối thủ không bẻ được chữ ký hay hàm băm. Ngoài Eve, báo cáo xét thêm ba loại đối thủ mạnh hơn:
+\begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item Kẻ nắm khóa bí mật máy chủ (do lộ khóa hoặc đánh cắp).
+    \item Kẻ kiểm soát một CA, tức là có thể khiến CA ký chứng thư theo ý mình (trường hợp DigiNotar, Mục~\ref{subsec:diginotar-case}).
+    \item Kẻ can thiệp trust store hoặc cấu hình của client, ví dụ cài thêm trust anchor hoặc tắt kiểm tra thu hồi.
+\end{itemize}
+
+\subsection{Các mối đe dọa và rủi ro}
+\label{subsec:threats-and-risks}
+
+Bảng~\ref{tab:pki-threats} phân loại các mối đe dọa, tài sản liên quan, cơ chế kiểm soát và giới hạn thực tế trong PKI.
+
+\input{report/tables/pki-threats-controls}
+
+\newpage
+
+Hai nhận xét rút ra từ Bảng~\ref{tab:pki-threats}:
+\begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item Thứ nhất, ba hàng đầu (lộ khóa máy chủ, lộ khóa CA, CA bị xâm nhập) vẫn cho ra chuỗi chứng thư và chữ ký hợp lệ, nên xác minh đường dẫn không phát hiện được chúng; chỉ có thu hồi hoặc giám sát từ bên ngoài mới giảm thiểu được.
+    \item Thứ hai, các hàng còn lại phụ thuộc vào việc client có bật kiểm tra hay không, nên lab quan sát được trực tiếp hành vi này.
+\end{itemize}
+
+\subsection{Phân tích trường hợp DigiNotar}
+\label{subsec:diginotar-case}
+
+DigiNotar là CA của Hà Lan có root nằm trong danh sách tin cậy của nhiều trình duyệt và hệ điều hành, đồng thời quản lý các CA phục vụ chứng thư SSL, chứng thư chữ ký điện tử có giá trị pháp lý và chứng thư chính phủ~\cite{prins2011diginotar}.
+
+\noindent\textbf{Diễn biến.} Theo Fox-IT~\cite{prins2011diginotar}:
+\begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item Ngày 17/6/2011, kẻ tấn công vào qua các máy chủ web ở vùng DMZ ngoài. Điều tra ban đầu cho rằng chúng khai thác phần mềm DotNetNuke lỗi thời.
+    \item Ngày 1/7/2011, chúng vào được vùng mạng chứa các máy chủ CA.
+    \item Ngày 10/7/2011, chứng thư giả đầu tiên được cấp thành công.
+    \item Cả tám máy chủ quản lý CA đều bị chiếm quyền, và ít nhất 531 chứng thư giả đã được phát hành (danh sách chưa đầy đủ), trong đó có chứng thư wildcard cho \texttt{*.google.com}.
+    \item DigiNotar tự phát hiện sự bất thường ngày 19/7/2011 qua một kiểm tra định kỳ và thu hồi các số sê-ri đã biết. Chứng thư wildcard của Google có số sê-ri không nằm trong hồ sơ của CA và chưa được thu hồi.
+    \item Ngày 28/8/2011, chứng thư giả đó mới bị lộ khi Chrome chặn nó nhờ certificate pinning. Nó đã được dùng trong một cuộc MITM nhằm vào khoảng 298.140 địa chỉ IP (ước tính thô số người dùng), xấp xỉ 95\% ở Iran.
+    \item Ngày 3/9/2011, chính phủ Hà Lan rút lòng tin với DigiNotar và hầu hết nhà sản xuất trình duyệt làm theo; công ty phá sản ngày 20/9/2011.
+\end{itemize}
+
+\noindent\textbf{Vì sao các cơ chế xác thực không phát hiện được.} Các chứng thư giả do chính CA công cộng ký, bằng khóa nằm trong HSM đang được kích hoạt, và nối chuỗi tới root đã nằm sẵn trong trust store. Vì vậy mọi bước ở Bảng~\ref{tab:path-validation-conditions} và mọi kiểm tra trong bắt tay TLS (Mục~\ref{sec:tls-relation}) đều đạt. Sự cố là minh chứng cho giả thuyết $H_1$ ở quy mô thực tế: chữ ký đúng chưa đủ để chứng thư đáng tin.
+
+\noindent\textbf{Điểm yếu của cơ chế thu hồi.} Chứng thư giả không có trong cơ sở dữ liệu của CA nên không thể thu hồi theo cách thông thường: DigiNotar phải tạo một chứng thư khác cùng số sê-ri rồi thu hồi nó. Đến ngày 01/09/2011, theo khuyến nghị của Fox-IT, responder OCSP của DigiNotar mới được chuyển sang cơ chế danh sách trắng, trả về \texttt{revoked} cho mọi số sê-ri không tồn tại trong hồ sơ phát hành hợp pháp~\cite{prins2011diginotar}. Nhật ký OCSP sau đó trở thành nguồn để ước lượng số người bị ảnh hưởng. Điều này cho thấy thu hồi chỉ xử lý được những chứng thư mà CA biết.
+
+\noindent\textbf{Điểm yếu vận hành.} Nhật ký của các máy chủ CA nằm ngay trên các máy bị chiếm quyền và đã bị can thiệp, nên sự vắng mặt của bản ghi đáng ngờ không chứng minh được là không có cấp phát trái phép. Các vùng mạng không được mô tả và thực thi chặt, firewall có nhiều ngoại lệ~\cite{prins2011diginotar}. HSM, chính sách và kiểm toán là điều kiện cần nhưng không đủ (xem thêm Mục~\ref{subsec:audit-log-compliance}).
+
+\noindent\textbf{Bài học đối chiếu với Bảng~\ref{tab:pki-assets} và~\ref{tab:pki-threats}:}
+\begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item Một CA công cộng ký được cho bất kỳ tên miền nào, nên khóa CA là tài sản có phạm vi ảnh hưởng toàn cầu.
+    \item Việc phát hiện đến từ bên ngoài (pinning của Chrome), không đến từ xác minh đường dẫn. Đây là động lực cho cơ chế giám sát như Certificate Transparency (RFC~9162~\cite{rfc9162}), vốn phát hiện cấp phát sai chứ không tự ngăn chặn (Mục~\ref{sec:certificate-transparency}).
+    \item Thu hồi không giải quyết được trường hợp CA không biết mình đã cấp chứng thư nào.
+\end{itemize}
 
 \section{So sánh các cơ chế tin cậy và thu hồi}
 \label{sec:trust-models-comparison}
-Cần so sánh CA PKI, Web of Trust, TOFU theo giả định tin cậy; sau đó so sánh CRL, OCSP và chứng thư thời hạn ngắn theo độ mới, chi phí, khả dụng. Không kết luận một mô hình luôn vượt trội trong mọi môi trường.
+
+Mục~\ref{sec:threat-model} cho thấy rủi ro của PKI đến từ hai phía: sự tin cậy tập trung vào CA và độ trễ của thu hồi. Mục này so sánh (i) ba mô hình tin cậy theo giả định mà chúng đặt ra, và (ii) ba cách giới hạn thời gian một chứng thư xấu còn được chấp nhận, theo độ mới, chi phí và khả dụng. Các so sánh mang tính định tính, dựa trên chuẩn và kết quả lab; mục đích không phải chọn ra một mô hình vượt trội trong mọi môi trường.
+
+\subsection{Ba mô hình tin cậy}
+\label{subsec:three-trust-models}
+
+Ba mô hình tin cậy tiêu biểu trong xác thực khóa công khai bao gồm:
+\begin{itemize}\setlength{\itemsep}{1pt}\setlength{\parskip}{0pt}
+    \item \textbf{PKI dựa trên CA:} Một tập CA được client tin cậy (trust store) bảo chứng liên kết giữa tên và khóa.
+    \item \textbf{Web of Trust (mạng lưới tin cậy):} Không có CA trung tâm; người dùng tự ký xác nhận khóa của nhau và tự quyết định mức tin cậy.
+    \item \textbf{TOFU (Trust On First Use):} Client chấp nhận khóa ở lần kết nối đầu tiên rồi ghi nhớ; các lần sau, khóa thay đổi sẽ gây cảnh báo.
+\end{itemize}
+
+Bảng~\ref{tab:trust-models} đối chiếu ba mô hình theo các giả định tin cậy và đặc tính kỹ thuật cốt lõi.
+
+\input{report/tables/trust-models-comparison}
+
+Bảng~\ref{tab:trust-models} cho thấy PKI không loại bỏ nhu cầu về một điểm tin cậy ban đầu xác thực, mà chỉ thu hẹp nó: từ khóa của từng bên (kịch bản Eve ở Mục~\ref{subsec:eve-mitm-attack}) xuống một số ít trust anchor. Lab thuộc nhóm PKI dựa trên CA, nhưng \texttt{root.crt} được cấu hình thủ công qua \texttt{-CAfile}, tức trust anchor được phân phối ngoài băng; nếu bị thay thế, mọi chứng thư do Root giả ký đều được chấp nhận (Bảng~\ref{tab:pki-assets}). Điều này giống TOFU ở khâu thiết lập ban đầu.
+
+Không mô hình nào vượt trội ở mọi môi trường. Với Web công cộng, nơi các bên chưa từng quen biết nhau, PKI dựa trên CA là lựa chọn khả thi, nhưng tin cậy tập trung buộc phải bổ sung giám sát như Certificate Transparency (RFC~9162~\cite{rfc9162}, Mục~\ref{sec:certificate-transparency}). Với nhóm nhỏ hoặc quản trị hệ thống, TOFU hoặc PKI nội bộ có chi phí vận hành thấp. Với cộng đồng cá nhân có quan hệ trực tiếp, Web of Trust tránh được CA trung tâm. Trong thực tế, các mô hình thường được kết hợp.
+
+\clearpage
+
+\subsection{Thu hồi và rút ngắn thời hạn}
+\label{subsec:revocation-vs-short-lived}
+
+Ba cách giới hạn khoảng thời gian một chứng thư xấu còn được chấp nhận là CRL, OCSP và chứng thư thời hạn ngắn. Chi tiết của CRL và OCSP nằm ở Mục~\ref{sec:revocation-mechanisms}. Bảng~\ref{tab:revocation-vs-shortlived} tổng hợp so sánh giữa ba phương thức này.
+
+\input{report/tables/revocation-mechanisms-comparison}
+
+Xu hướng của Web PKI nghiêng về rút ngắn thời hạn: Baseline Requirements~\cite{cabforum_br} đã ấn định thời hạn tối đa 200 ngày từ 15/03/2026, 100 ngày từ 15/03/2027 và 47 ngày từ 15/03/2029, đồng thời định nghĩa riêng loại chứng thư thời hạn rất ngắn (tối đa 7 ngày với chứng thư cấp từ 15/03/2026). Cách này không cần ai kiểm tra thu hồi, nhưng vẫn còn cửa sổ rủi ro bằng thời hạn còn lại, nên không thay thế hoàn toàn thu hồi.
+
+Cả ba cơ chế đều chỉ xử lý được những chứng thư mà CA biết hoặc những chứng thư hết hạn. Trường hợp DigiNotar (Mục~\ref{subsec:diginotar-case}) cho thấy chúng không giúp được khi CA bị chiếm quyền và cấp chứng thư ngoài hồ sơ, nên cần giám sát từ bên ngoài như Certificate Transparency (RFC~9162~\cite{rfc9162}, Mục~\ref{sec:certificate-transparency}). Cơ chế phù hợp phụ thuộc vào môi trường: PKI nội bộ nhỏ có thể dùng CRL đơn giản; hệ thống công cộng quy mô lớn ưu tiên thời hạn ngắn kèm tự động hóa.
+
+Lab chỉ kiểm thử CRL (TC07), nên phần so sánh OCSP và chứng thư thời hạn ngắn là phân tích lý thuyết. Giả thuyết $H_2$ (độ trễ và sự phụ thuộc của thu hồi) được kiểm chứng qua TC07. Giả thuyết $H_3$ về chi phí vẫn mang tính định tính trong Bảng~\ref{tab:revocation-vs-shortlived}; nếu muốn kiểm chứng thực nghiệm, một phép đo nhỏ (kích thước CRL và thời gian xác minh theo số chứng thư bị thu hồi) là đủ, còn nếu không làm thì ghi rõ $H_3$ chưa được kiểm chứng.
+
+\newpage
 
 \section{Giới hạn của chữ ký hợp lệ}
+\label{sec:valid-signature-limits}
 Cần liên hệ với kết quả ở Chương~\ref{chap:experiment}: một chữ ký đúng không tự chứng minh trust anchor, hostname, hiệu lực, EKU hoặc trạng thái thu hồi đều thỏa chính sách client.
