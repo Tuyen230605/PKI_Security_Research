@@ -4,7 +4,7 @@
 
 - [ ] Xác nhận format của giảng viên; kiểm tra trường/khoa nếu mẫu yêu cầu, tên và mã số ba thành viên, mã lớp, giảng viên, ngày nộp.
 - [ ] Bảy chương có nội dung thật; tóm tắt và kết luận phản ánh kết quả đã đo.
-- [ ] RQ1–RQ4 và H1–H2 được trả lời bằng lập luận/bằng chứng tương ứng; H3 có phép đo riêng hoặc ghi rõ chưa kiểm chứng.
+- [ ] RQ1–RQ5 và H1–H2 được trả lời bằng lập luận/bằng chứng tương ứng; H3 có phép đo riêng hoặc ghi rõ chưa kiểm chứng.
 - [ ] Có sơ đồ PKI, vòng đời chứng thư, luồng validation và mô hình lab; mọi hình/bảng có số, chú thích và nguồn.
 - [ ] Chương 6 có bảng TC gồm **kỳ vọng và quan sát riêng**, lệnh/tùy chọn xác minh, phiên bản phần mềm và giới hạn.
 - [ ] Tài liệu tham khảo dùng thống nhất một kiểu; mọi khẳng định chuẩn giao thức có nguồn chính thức.

@@ -38,10 +38,28 @@ server-a.test / server-b.test (CA:FALSE, serverAuth)
 
 RA nằm trước bước CA quyết định ký, không phải một mắt xích bắt buộc của chuỗi chứng thư. Repository và OCSP/CRL hỗ trợ phân phối dữ liệu, cũng không thay cho trust anchor. Một client nhận đủ chứng thư qua mạng vẫn cần tự kiểm tra chữ ký, ràng buộc và điểm neo; không thể xem việc server gửi Intermediate là bằng chứng Intermediate đáng tin.
 
-\section{Mô hình tin cậy và phạm vi áp dụng}
-Ở mô hình phân cấp, nhiều leaf có thể được xác minh từ một số ít Root CA đã cài trong trust store. CA trung gian giúp tách hoạt động cấp phát khỏi Root CA; giới hạn \texttt{pathlen:0} trên Intermediate lab cấm nó cấp thêm CA cấp dưới trong đường dẫn phù hợp. Một PKI dạng lưới hoặc bridge có thể liên kết các miền quản trị qua chứng thư chéo, nhưng việc tìm và đánh giá đường dẫn, chính sách chấp nhận và giới hạn tên phức tạp hơn. Tin cậy trực tiếp một khóa hoặc chứng thư cụ thể cũng có thể hợp lý cho một dịch vụ nhỏ, đổi lại cần quản lý việc cập nhật khóa ở các client. Bài này không triển khai chứng thư chéo hoặc so sánh định lượng các mô hình.
+\section{Các mô hình tổ chức PKI}
+Ở mô hình phân cấp, nhiều leaf có thể được xác minh từ một số ít Root CA đã cài trong trust store. CA trung gian giúp tách hoạt động cấp phát khỏi Root CA; giới hạn \texttt{pathlen:0} trên Intermediate lab cấm nó cấp thêm CA cấp dưới trong đường dẫn phù hợp. Khi nhiều tổ chức đã có PKI riêng và cần tin nhau, có thể dùng \emph{chứng thư chéo} (cross-certification): CA của miền này cấp chứng thư cho khóa CA của miền kia, kèm ràng buộc chính sách và tên. Nối chéo từng cặp tạo thành mô hình lưới (mesh); đặt một CA cầu nối trung gian để mỗi miền chỉ cần nối chéo một lần tạo thành mô hình bridge. Bảng~\ref{tab:pki-models} tóm tắt khác biệt giữa các mô hình~\cite{rfc5280,rfc3647}.
 
-Private PKI cho phép một tổ chức tự chọn trust anchor và quy tắc phát hành trong phạm vi quản trị của mình. Public Web PKI dựa vào các CA được phần mềm khách chấp nhận cùng các yêu cầu công khai tương ứng. Root CA trong lab là private CA: trình duyệt thông thường sẽ không tự tin nó, và việc thêm Root vào hệ thống thật là một quyết định tin cậy rất rộng. TC02 và TC10 minh họa rằng chứng thư được tự ký hoặc được CA khác ký đúng vẫn không tạo ra niềm tin nếu không dẫn đến điểm neo được cấu hình.
+\begin{table}[ht]
+\centering\small
+\caption{So sánh các mô hình tổ chức PKI}\label{tab:pki-models}
+\begin{tabular}{L{2.1cm}L{3.3cm}L{3.3cm}L{3.5cm}}
+\toprule
+Mô hình & Trust anchor và đường dẫn & Ưu điểm & Hạn chế, tình huống dùng \\
+\midrule
+Phân cấp & Một Root; đường dẫn đơn, đi từ leaf lên Root. & Dễ hiểu, dễ dựng chuỗi, áp chính sách thống nhất. & Root là điểm thất bại tập trung; hợp với một tổ chức, Web PKI. \\
+Lưới (mesh) & Mỗi bên tin CA của mình; các CA nối chéo nhau. & Không có điểm thất bại duy nhất; các miền độc lập. & Nhiều đường dẫn, dựng và kiểm tra chuỗi phức tạp; số liên kết tăng nhanh. \\
+Bridge & Mỗi miền nối chéo với một Bridge CA. & Giảm số liên kết chéo; hợp liên kết giữa các cơ quan. & Bridge CA thành điểm trọng yếu; ánh xạ chính sách giữa miền phức tạp. \\
+Tin cậy trực tiếp & Client lưu sẵn khóa hoặc chứng thư cụ thể. & Đơn giản cho hệ thống nhỏ, không phụ thuộc CA bên ngoài. & Khó mở rộng; thay khóa phải cập nhật mọi client. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Có thể phân loại thêm theo phạm vi tin cậy. \emph{Private PKI} do một tổ chức tự vận hành cho mạng nội bộ, VPN, thiết bị hoặc xác thực người dùng; tổ chức tự chọn trust anchor và quy tắc phát hành. \emph{Public Web PKI} dựa vào các Root CA được trình duyệt và hệ điều hành chấp nhận, đi kèm các yêu cầu công khai về kiểm toán và vận hành. Ngoài ra, nhiều quốc gia có PKI phục vụ chữ ký số có giá trị pháp lý với một Root CA quốc gia (xem Chương~\ref{chap:applications}). Bài này không triển khai chứng thư chéo hoặc so sánh định lượng các mô hình.
+
+\section{Phạm vi tin cậy của lab}
+Lab của đề tài là một private PKI phân cấp hai tầng. Root CA trong lab là private CA: trình duyệt thông thường sẽ không tự tin nó, và việc thêm Root vào hệ thống thật là một quyết định tin cậy rất rộng. TC02 và TC10 minh họa rằng chứng thư được tự ký hoặc được CA khác ký đúng vẫn không tạo ra niềm tin nếu không dẫn đến điểm neo được cấu hình.
 
 \section{Vòng đời chứng thư từ yêu cầu đến chấm dứt}
 Vòng đời bắt đầu bằng việc xác định danh tính cần chứng thực, mục đích sử dụng, thời hạn và ai được phép yêu cầu. Chủ thể sinh cặp khóa, bảo vệ khóa bí mật và gửi CSR. RA hoặc CA xác minh yêu cầu theo chính sách, rồi CA chọn serial, thời hạn và extension trước khi ký. Chứng thư được phân phối cho chủ thể; phía server cài chứng thư leaf, khóa bí mật tương ứng và thường cung cấp Intermediate cho client. Khi sử dụng, client xây dựng đường dẫn và kiểm tra theo ngữ cảnh. Trước khi hết hạn, chủ thể cần cấp lại; nếu có sự cố như lộ khóa hoặc sai thông tin, CA có thể thu hồi trước hạn. Cuối đời, khóa không còn được dùng để ký thêm và được lưu/hủy theo chính sách~\cite{rfc5280,rfc3647,nist80057}.
@@ -74,4 +92,4 @@ RFC 3647 phân biệt \emph{Certificate Policy} (CP), bộ quy tắc xác địn
 
 Trong một triển khai thật, khóa Root CA thường cần bảo vệ chặt hơn vì sự cố của nó ảnh hưởng cả miền tin cậy; Intermediate có thể dùng cho hoạt động cấp phát thường xuyên, theo phân quyền và giám sát riêng. Khóa của lab được tạo với \texttt{-nodes} và nằm dưới \texttt{demo/out/}, không được mã hóa bằng mật khẩu hay giữ trong HSM. Đây là lựa chọn cho thí nghiệm tái lập, không phải mẫu triển khai an toàn. Các bước cần thiết trước khi vận hành một PKI thật gồm phân quyền, bảo vệ khóa, sao lưu/khôi phục có kiểm soát, kiểm toán cấp phát và quy trình thu hồi khi nghi lộ khóa~\cite{nist80057,rfc3647}.
 
-Khi đưa chương này lên slide, dùng một sơ đồ Root--Intermediate--Server--Client và một vòng đời ngắn từ CSR đến thu hồi. Gắn nhãn có trong demo tại CA, leaf, CRL và client; gắn nhãn chưa triển khai tại RA, HSM, OCSP và tự động cấp lại. Nhờ vậy, người nghe phân biệt kiến trúc chuẩn với phạm vi thí nghiệm.
+Tóm lại, lab hiện thực CA phân cấp, leaf, CRL và bên xác minh; RA, HSM, OCSP và tự động cấp lại chỉ được phân tích ở mức tài liệu. Cần phân biệt kiến trúc chuẩn với phạm vi thí nghiệm khi đọc kết quả ở Chương~\ref{chap:experiment}.

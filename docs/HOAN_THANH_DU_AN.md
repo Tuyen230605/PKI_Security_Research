@@ -7,7 +7,7 @@ Bộ nộp tối thiểu: (1) PDF báo cáo, (2) slide 10–12 trang, (3) demo P
 | Giai đoạn | Việc làm | Kết quả có thể kiểm tra |
 |---|---|---|
 | 0. Chốt yêu cầu | Xác nhận mẫu báo cáo, số trang, hạn nộp, quy cách trích dẫn | Kiểm tra bìa và format cuối |
-| 1. Nền tảng | Đọc RFC 5280; đối chiếu RQ1–RQ4, giả thuyết H1–H3; phác sơ đồ Root → Intermediate → Server | Chương 1–4 và nguồn được đối chiếu với demo |
+| 1. Nền tảng | Đọc RFC 5280; đối chiếu RQ1–RQ5, giả thuyết H1–H3; phác sơ đồ Root → Intermediate → Server | Chương 1–4 và nguồn được đối chiếu với demo |
 | 2. Cơ chế | Viết chương 2–4: mật mã, kiến trúc, X.509, path validation, CRL/OCSP, TLS | Bản nháp kỹ thuật có trích dẫn và sơ đồ |
 | 3. Lab | Chạy `make demo-test`; đối chiếu từng TC với lệnh OpenSSL, lưu phiên bản công cụ và output | Bảng test thật, log, hình minh họa |
 | 4. Phân tích | Viết chương 5–6 từ kết quả, nêu điều kiện kiểm tra, giới hạn OpenSSL/private PKI | Kết luận cho từng giả thuyết, không suy diễn quá dữ liệu |
@@ -20,13 +20,13 @@ Thực hiện tuần tự theo các giai đoạn ở trên; không phân chia ch
 
 ## Nội dung từng chương
 
-1. **Vấn đề nghiên cứu:** bài toán thay khóa công khai, câu hỏi RQ1–RQ4, phạm vi CA phân cấp/TLS.
+1. **Vấn đề nghiên cứu:** bài toán thay khóa công khai, câu hỏi RQ1–RQ5; phạm vi hai tầng: tổng quan PKI và trường hợp CA phân cấp/TLS.
 2. **Cơ sở mật mã:** khóa công khai, chữ ký, hash; phân biệt ký chứng thư, bắt tay TLS và mã hóa dữ liệu.
-3. **Kiến trúc:** CA/RA/repository/relying party, vòng đời chứng thư, chính sách CP/CPS.
+3. **Kiến trúc:** CA/RA/repository/relying party, mô hình phân cấp/lưới/bridge/tin cậy trực tiếp, vòng đời chứng thư, chính sách CP/CPS.
 4. **X.509:** trường/extension, trust anchor, path validation, hostname, CRL/OCSP, giới hạn xác minh.
-5. **Bảo mật:** CA bị chiếm, cấp sai, lộ khóa, lỗi kiểm tra; so sánh mô hình tin cậy và thu hồi.
+5. **Bảo mật:** tài sản và đối thủ, kịch bản tấn công, sự cố thực tế (DigiNotar, Symantec, Debian OpenSSL, Heartbleed); so sánh CA/Web of Trust/TOFU/pinning và CRL/OCSP/stapling/chứng thư ngắn hạn.
 6. **Thực nghiệm:** môi trường, lệnh, test cases, kết quả thật, giải thích, giới hạn.
-7. **Ứng dụng/hướng phát triển:** CT, ACME, hậu lượng tử ở mức liên quan trực tiếp; kiểm tra lại các mốc/quy định trước khi viết bản cuối.
+7. **Ứng dụng/hướng phát triển:** TLS, mTLS/VPN, chữ ký số văn bản, ký mã, S/MIME, định danh điện tử, IoT; chữ ký số tại Việt Nam (Luật GDĐT 2023, NĐ 23/2025); CT, ACME và lộ trình 47 ngày, hậu lượng tử; hướng mở rộng lab. Kiểm tra lại các mốc/quy định trước khi nộp bản cuối.
 
 ## Cách ghi nhận thực nghiệm
 

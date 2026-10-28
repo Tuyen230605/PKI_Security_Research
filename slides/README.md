@@ -14,8 +14,8 @@ Slide là bản trình bày ngắn của báo cáo, không chép nguyên chươn
 | 8 | Thử những điều kiện nào? | Bảng rút gọn mười ca nhóm theo trust/chain, thời gian, tên, chữ ký, EKU, CRL. | run_tests.sh và chương 6. |
 | 9 | Demo trực tiếp | Chạy make demo-test; mở TC01, TC04, TC07, TC10 với tùy chọn và thông báo chính. | Kết quả lần chạy cuối, có exit code. |
 | 10 | Dữ liệu cho biết gì? | TC01 và TC07 khác nhau do CRL được bật; TC04 FAIL do hostname; TC10 FAIL do trust anchor. | results.tsv đã đối chiếu. |
-| 11 | Giới hạn và rủi ro | Lab private CA/OpenSSL CLI; không kiểm chứng chính sách trình duyệt, OCSP, RA hoặc độ an toàn vận hành khóa. | Chương 3–6. |
-| 12 | Kết luận | Chữ ký đúng là một phép kiểm; quyết định chấp nhận còn cần đường dẫn tin cậy, tên, thời gian, mục đích và trạng thái theo chính sách. | RQ1–RQ4, H1–H2; không tuyên bố H3 đã được đo. |
+| 11 | Rủi ro thực tế và PKI ngoài TLS | Một sự cố (DigiNotar); bảng ứng dụng rút gọn (chữ ký số tại Việt Nam, ký mã, S/MIME); xu hướng CT, chứng thư 47 ngày, hậu lượng tử. Giới hạn lab: private CA/OpenSSL CLI, chưa có OCSP, RA. | Chương 5, 7. |
+| 12 | Kết luận | Chữ ký đúng là một phép kiểm; quyết định chấp nhận còn cần đường dẫn tin cậy, tên, thời gian, mục đích và trạng thái theo chính sách. | RQ1–RQ5, H1–H2; không tuyên bố H3 đã được đo. |
 
 Thời lượng gợi ý: 1 phút cho trang 1–3, 2 phút cho trang 4–6, 2–3 phút cho trang 7–10, 1 phút cho trang 11–12. Nếu không chạy demo trực tiếp được, dùng ảnh/log dự phòng có ngày chạy, phiên bản OpenSSL và tùy chọn xác minh rõ ràng. Không đưa private key lên slide.
 

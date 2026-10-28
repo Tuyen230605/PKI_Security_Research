@@ -1,9 +1,105 @@
 \chapter{Phân tích bảo mật, mô hình tấn công và so sánh}
-\section{Tài sản, đối thủ và rủi ro}
-Cần lập bảng tài sản cần bảo vệ (khóa CA, khóa máy chủ, trust store, quy trình xác minh) và các mối đe dọa: lộ khóa, CA cấp sai, MITM, chứng thư hết hạn, kiểm tra thu hồi không đầy đủ.
+\label{chap:security}
 
-\section{So sánh các cơ chế tin cậy và thu hồi}
-Cần so sánh CA PKI, Web of Trust, TOFU theo giả định tin cậy; sau đó so sánh CRL, OCSP và chứng thư thời hạn ngắn theo độ mới, chi phí, khả dụng. Không kết luận một mô hình luôn vượt trội trong mọi môi trường.
+Các chương trước giả định từng thành phần hoạt động đúng. Chương này hỏi điều ngược lại: nếu một thành phần bị tấn công hoặc vận hành sai thì điều gì xảy ra, và cơ chế nào giúp phát hiện hay hạn chế thiệt hại. Phần cuối so sánh PKI dựa trên CA với các mô hình tin cậy khác, và so sánh các cơ chế công bố trạng thái thu hồi.
+
+\section{Tài sản cần bảo vệ và mô hình đối thủ}
+An toàn của PKI không chỉ phụ thuộc thuật toán chữ ký mà phụ thuộc toàn bộ các tài sản trong Bảng~\ref{tab:assets}. Mỗi tài sản bị xâm phạm phá vỡ một giả định khác nhau của quá trình xác minh.
+
+\begin{table}[ht]
+\centering\small
+\caption{Tài sản trong PKI và hậu quả khi bị xâm phạm}\label{tab:assets}
+\begin{tabular}{L{2.8cm}L{4.6cm}L{4.9cm}}
+\toprule
+Tài sản & Vai trò & Hậu quả khi bị xâm phạm \\
+\midrule
+Khóa bí mật Root/Intermediate CA & Ký chứng thư và CRL cho cả miền tin cậy. & Kẻ tấn công cấp được chứng thư hợp lệ cho bất kỳ tên nào; mọi client tin CA đó bị ảnh hưởng. \\
+Quy trình RA/xác minh danh tính & Quyết định ai được cấp chứng thư cho tên nào. & CA ký đúng về mặt mật mã nhưng sai về danh tính. \\
+Khóa bí mật máy chủ & Ký CertificateVerify trong TLS, chứng minh quyền sở hữu chứng thư. & Kẻ có khóa mạo danh được máy chủ cho tới khi chứng thư hết hạn hoặc bị thu hồi và client kiểm tra. \\
+Trust store của client & Xác định Root nào được tin. & Thêm một Root lạ (do mã độc hoặc cấu hình sai) cho phép MITM với mọi tên miền. \\
+Mã xác minh ở client & Thực thi các kiểm tra đường dẫn, tên, thời gian, mục đích, thu hồi. & Bỏ qua một bước khiến chứng thư sai vẫn được chấp nhận dù CA hoạt động đúng. \\
+Dịch vụ trạng thái (CRL/OCSP) & Công bố chứng thư đã bị thu hồi. & Client không biết chứng thư đã thu hồi; nếu chính sách cho phép tiếp tục khi thiếu trạng thái thì thu hồi mất tác dụng. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Báo cáo xét đối thủ ở mức mạng theo mô hình Dolev--Yao: kẻ tấn công đọc, chặn, sửa và chèn được thông điệp trên đường truyền nhưng không phá được thuật toán mật mã khi tham số đủ mạnh. Ngoài ra xét thêm đối thủ có khả năng xâm nhập hệ thống: lấy cắp khóa máy chủ, xâm nhập hạ tầng CA, hoặc lừa RA bằng thông tin giả. Với đối thủ thứ nhất, PKI vận hành đúng đủ để chặn MITM; với đối thủ thứ hai, mật mã không giúp được và cần đến kiểm soát vận hành, giám sát và thu hồi.
+
+\section{Kịch bản tấn công và biện pháp đối phó}
+Bảng~\ref{tab:attacks} liệt kê các kịch bản chính, cơ chế phòng chống và mối liên hệ với lab. Điểm chung của chúng là chữ ký trên chứng thư vẫn có thể hợp lệ; lỗ hổng nằm ở danh tính, khóa, chính sách hoặc mã xác minh.
+
+\begingroup\small
+\begin{longtable}{L{2.6cm}L{3.6cm}L{3.6cm}L{2.4cm}}
+\caption{Kịch bản tấn công, biện pháp và liên hệ thực nghiệm}\label{tab:attacks}\\
+\toprule
+Kịch bản & Cách thức & Biện pháp chính & Liên hệ lab \\
+\midrule
+\endfirsthead
+\toprule
+Kịch bản & Cách thức & Biện pháp chính & Liên hệ lab \\
+\midrule
+\endhead
+MITM thay khóa & Kẻ đứng giữa đưa chứng thư tự ký hoặc do CA không được tin. & Xác minh đường dẫn tới trust anchor. & TC02, TC10 \\
+Mạo danh tên miền & Dùng chứng thư hợp lệ của tên khác. & Kiểm tra SAN với tên truy cập (RFC 9525). & TC04 \\
+Sửa nội dung chứng thư & Đổi tên, khóa hoặc extension sau khi CA ký. & Kiểm tra chữ ký CA trên TBSCertificate. & TC05 \\
+Dùng sai mục đích & Dùng chứng thư \texttt{clientAuth} hoặc leaf để làm máy chủ, làm CA. & Kiểm tra EKU, KU, Basic Constraints. & TC08 \\
+Dùng chứng thư hết hạn & Tái sử dụng chứng thư cũ có khóa đã lộ. & Kiểm tra Validity tại thời điểm xác minh. & TC03 \\
+Lộ khóa máy chủ & Đánh cắp khóa qua lỗ hổng phần mềm hoặc sao lưu kém. & Thu hồi, cấp lại với khóa mới; client kiểm tra trạng thái; chứng thư ngắn hạn. & TC07, TC09 \\
+CA cấp sai & RA bị lừa hoặc CA bị xâm nhập, ký chứng thư cho tên không thuộc người yêu cầu. & Kiểm soát RA, HSM, kiểm toán; Certificate Transparency để phát hiện; gỡ CA khỏi trust store. & Không mô phỏng \\
+Client bỏ kiểm tra & Ứng dụng tắt kiểm tra hostname hoặc chấp nhận mọi chứng thư. & Dùng thư viện với cấu hình an toàn mặc định; kiểm thử như các ca của lab. & TC01 so với TC04, TC07 \\
+Chặn trạng thái thu hồi & Chặn truy cập CRL/OCSP để client bỏ qua (soft-fail). & OCSP stapling, CRL phát tán sẵn, chứng thư ngắn hạn. & Không mô phỏng \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+Hai hàng cuối cần nhấn mạnh. Georgiev và cộng sự cho thấy nhiều ứng dụng và thư viện ngoài trình duyệt từng gọi sai API TLS, không kiểm tra hostname hoặc chuỗi chứng thư, khiến kẻ tấn công MITM chỉ cần một chứng thư bất kỳ~\cite{georgiev2012}. Đây đúng là tình huống TC01 so với TC04: cùng một chứng thư ký đúng, kết quả chỉ khác nhau ở việc client có yêu cầu kiểm tra tên hay không. Tương tự, nếu client tiếp tục khi không lấy được trạng thái thu hồi thì kẻ tấn công đang giữ khóa bị lộ chỉ cần chặn kênh trạng thái.
+
+\section{Bài học từ sự cố thực tế}
+\textbf{DigiNotar (2011).} Kẻ tấn công xâm nhập hạ tầng của CA DigiNotar tại Hà Lan và phát hành hàng trăm chứng thư giả, trong đó có chứng thư cho \texttt{*.google.com}. Chứng thư này được dùng để nghe lén người dùng, chủ yếu tại Iran. Báo cáo điều tra ghi nhận các máy chủ CA thiếu phân tách mạng, thiếu giám sát và ghi log đầy đủ~\cite{diginotar}. Các trình duyệt gỡ Root của DigiNotar khỏi trust store và công ty phá sản ngay sau đó. Bài học: chữ ký của chứng thư giả hoàn toàn hợp lệ; an toàn phụ thuộc vào việc bảo vệ khóa CA và vận hành CA, đúng như phần CP/CPS và HSM ở Chương~\ref{chap:architecture}.
+
+\textbf{Symantec (2017--2018).} Sau nhiều lần phát hiện chứng thư được cấp sai quy trình, Google công bố kế hoạch ngừng tin dần các chứng thư do hạ tầng Symantec phát hành~\cite{symantecdistrust}. Sự kiện cho thấy niềm tin vào một CA là quyết định chính sách của bên quản lý trust store và có thể bị rút lại, không phải thuộc tính cố định của chứng thư.
+
+\textbf{Khóa yếu và lộ khóa.} Năm 2008, một thay đổi trong gói OpenSSL của Debian làm giảm nghiêm trọng độ ngẫu nhiên khi sinh khóa, khiến khóa có thể đoán được và phải thay hàng loạt~\cite{debianopenssl}. Năm 2014, lỗi Heartbleed cho phép đọc bộ nhớ máy chủ, trong đó có thể có khóa bí mật; nhiều quản trị viên phải thay khóa và thu hồi chứng thư cũ~\cite{heartbleed}. Cả hai trường hợp nhấn mạnh rằng vòng đời khóa (sinh, bảo vệ, thay thế) quan trọng ngang thuật toán, và thu hồi chỉ có tác dụng khi client thực sự kiểm tra trạng thái.
+
+\section{So sánh các mô hình tin cậy}
+PKI dựa trên CA không phải cách duy nhất để gắn khóa với danh tính. Bảng~\ref{tab:trust-models} so sánh bốn mô hình theo giả định tin cậy, khả năng mở rộng và cách xử lý khi khóa bị lộ.
+
+\begin{table}[ht]
+\centering\small
+\caption{So sánh các mô hình tin cậy}\label{tab:trust-models}
+\begin{tabular}{L{2.3cm}L{3.2cm}L{3.3cm}L{3.6cm}}
+\toprule
+Mô hình & Niềm tin đến từ & Ưu điểm & Hạn chế \\
+\midrule
+CA phân cấp (X.509) & Root CA trong trust store; CA xác minh danh tính thay người dùng. & Mở rộng tới hàng tỷ thiết bị; người dùng không phải tự quyết định; có thu hồi tập trung. & Phải tin mọi CA trong trust store; một CA sai ảnh hưởng mọi tên miền. \\
+Web of Trust (OpenPGP) & Người dùng ký xác nhận khóa của nhau; tin theo mạng quan hệ~\cite{rfc9580}. & Không cần tổ chức trung tâm; phù hợp cộng đồng nhỏ. & Khó dùng, khó mở rộng; thu hồi phụ thuộc người dùng tự phát tán. \\
+TOFU (SSH) & Lần kết nối đầu ghi nhớ khóa; các lần sau so khớp~\cite{rfc4251}. & Đơn giản, không cần hạ tầng. & Lần đầu không được bảo vệ; thay khóa hợp lệ gây cảnh báo giống tấn công. \\
+Ghim khóa (pinning) & Ứng dụng nhúng sẵn khóa hoặc CA mong đợi. & Chống CA cấp sai cho dịch vụ đó. & Thay khóa phải cập nhật ứng dụng; cấu hình sai làm mất truy cập. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Không có mô hình vượt trội trong mọi môi trường. CA phân cấp thắng về khả năng mở rộng và trải nghiệm người dùng, nên là nền tảng của Web PKI và chữ ký số pháp lý. TOFU và pinning phù hợp khi số bên tham gia nhỏ hoặc ứng dụng tự kiểm soát cả hai đầu. Trên thực tế các mô hình thường được kết hợp, ví dụ ứng dụng di động dùng chuỗi CA và ghim thêm khóa của dịch vụ quan trọng.
+
+\section{So sánh các cơ chế công bố trạng thái thu hồi}
+Thu hồi là điểm yếu kinh điển của PKI vì nó đòi hỏi client lấy thông tin mới, trong khi chứng thư thì được kiểm tra offline. Bảng~\ref{tab:revocation-compare} mở rộng so sánh ở Chương~\ref{chap:x509} với hai phương án đang được dùng nhiều.
+
+\begin{table}[ht]
+\centering\small
+\caption{So sánh cơ chế thu hồi theo độ mới, chi phí và riêng tư}\label{tab:revocation-compare}
+\begin{tabular}{L{2.4cm}L{3.3cm}L{3.2cm}L{3.5cm}}
+\toprule
+Cơ chế & Độ mới & Chi phí và khả dụng & Riêng tư, rủi ro \\
+\midrule
+CRL & Theo chu kỳ phát hành (\texttt{nextUpdate}). & Danh sách có thể lớn; tải một lần dùng nhiều lần, hợp với offline. & Không lộ trang đang truy cập; CRL cũ hoặc thiếu buộc client chọn hard-fail hay soft-fail. \\
+OCSP & Gần thời gian thực, theo từng chứng thư. & Responder phải luôn sẵn sàng; thêm một vòng truy vấn mạng. & Responder biết client đang truy cập trang nào; bị chặn thì client thường soft-fail. \\
+OCSP stapling & Phản hồi do máy chủ gắn kèm, còn hạn vài giờ đến vài ngày. & Không thêm truy vấn từ client; máy chủ phải cập nhật phản hồi. & Không lộ thông tin cho responder; chỉ hiệu quả khi client đòi hỏi stapling. \\
+Chứng thư ngắn hạn & Chứng thư tự hết hạn sau vài ngày đến vài tuần. & Cần tự động cấp lại (ACME). & Không cần kênh trạng thái; khóa lộ vẫn dùng được tới khi hết hạn. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Xu hướng gần đây đi theo hướng giảm phụ thuộc vào OCSP. Let's Encrypt, CA phát hành số lượng chứng thư lớn nhất, đã bỏ URL OCSP khỏi chứng thư và ngừng dịch vụ OCSP vào năm 2025, chuyển sang CRL với lý do riêng tư và chi phí vận hành~\cite{leocsp}. Đồng thời CA/Browser Forum đã thông qua lộ trình rút ngắn thời hạn tối đa của chứng thư TLS công cộng (Chương~\ref{chap:applications}). Hai thay đổi này phù hợp với nhận xét ở Bảng~\ref{tab:revocation-compare}: khi thu hồi trực tuyến kém tin cậy, rút ngắn thời hạn là cách giới hạn thiệt hại. Lab của đề tài chỉ kiểm chứng CRL bằng file; các so sánh về OCSP và chứng thư ngắn hạn ở đây dựa trên tài liệu, chưa được đo thực nghiệm, nên giả thuyết H3 mới được thảo luận chứ chưa được kiểm chứng.
 
 \section{Giới hạn của chữ ký hợp lệ}
-Cần liên hệ với kết quả ở Chương~\ref{chap:experiment}: một chữ ký đúng không tự chứng minh trust anchor, hostname, hiệu lực, EKU hoặc trạng thái thu hồi đều thỏa chính sách client.
+Tổng hợp các phần trên, chữ ký hợp lệ trên chứng thư chỉ chứng minh rằng CA phát hành đã ký nội dung đó. Nó không chứng minh: CA ấy được client tin (TC02, TC10); tên trong chứng thư là tên đang truy cập (TC04); chứng thư được dùng đúng mục đích (TC08); chứng thư còn hạn (TC03) hay chưa bị thu hồi (TC07); và cũng không chứng minh CA đã xác minh danh tính đúng hoặc khóa bí mật chưa bị lộ, như các sự cố DigiNotar và Heartbleed cho thấy. Năm điều kiện đầu được kiểm chứng trong Chương~\ref{chap:experiment}; hai điều cuối nằm ngoài khả năng của client và chỉ được giảm thiểu bằng vận hành CA, Certificate Transparency và quản lý vòng đời khóa.

@@ -1,6 +1,61 @@
-\chapter{Ứng dụng và hướng phát triển PKI}
-\section{Ứng dụng và Certificate Transparency}
-Cần liên hệ HTTPS/TLS, ký tài liệu, code signing và thiết bị. Giải thích Certificate Transparency giúp phát hiện việc cấp phát sai qua cơ chế nhật ký/giám sát, không tự ngăn chặn CA cấp sai~\cite{rfc9162}.
+\chapter{Ứng dụng, xu hướng và hướng phát triển PKI}
+\label{chap:applications}
 
-\section{Tự động hóa và hậu lượng tử}
-Giới thiệu ACME theo RFC 8555~\cite{rfc8555}; phân biệt các hướng ký hậu lượng tử với cơ chế thiết lập khóa. Kiểm chứng lại mọi mốc quy định hiện hành từ nguồn chính thức trước khi đưa vào báo cáo cuối.
+Các chương trước đi sâu vào trường hợp xác thực máy chủ TLS. Chương này mở rộng ra các lĩnh vực khác dùng PKI, trình bày cách PKI được áp dụng cho chữ ký số tại Việt Nam, rồi điểm qua các xu hướng đang thay đổi cách vận hành PKI: Certificate Transparency, tự động hóa và chứng thư ngắn hạn, mật mã hậu lượng tử. Phần cuối đề xuất hướng mở rộng cho đề tài.
+
+\section{Các lĩnh vực ứng dụng PKI}
+Mọi ứng dụng trong Bảng~\ref{tab:applications} dùng chung cấu trúc X.509, chuỗi tin cậy và thu hồi đã phân tích ở Chương~\ref{chap:x509}. Khác biệt nằm ở loại danh tính được chứng thực, mục đích sử dụng khóa (EKU) và thời điểm cần xét hiệu lực.
+
+\begingroup\small
+\begin{longtable}{L{2.6cm}L{2.9cm}L{2.6cm}L{4.0cm}}
+\caption{Ứng dụng của PKI và đặc điểm xác minh}\label{tab:applications}\\
+\toprule
+Ứng dụng & Danh tính chứng thực & Mục đích (EKU) & Đặc điểm cần lưu ý \\
+\midrule
+\endfirsthead
+\toprule
+Ứng dụng & Danh tính chứng thực & Mục đích (EKU) & Đặc điểm cần lưu ý \\
+\midrule
+\endhead
+HTTPS/TLS & Tên miền (SAN dNSName) & \texttt{serverAuth} & Web PKI công cộng; kiểm tra hostname; trường hợp nghiên cứu của báo cáo. \\
+Xác thực client, VPN, Wi-Fi doanh nghiệp & Người dùng hoặc thiết bị & \texttt{clientAuth} & Thường dùng private PKI; thay mật khẩu bằng chứng thư (mTLS, 802.1X). TC08 cho thấy chứng thư loại này không dùng được cho máy chủ. \\
+Chữ ký số văn bản, giao dịch điện tử & Cá nhân, tổ chức & Chống chối bỏ (\texttt{contentCommitment}) & Hiệu lực xét tại thời điểm ký nên cần dấu thời gian tin cậy~\cite{rfc3161}; cần lưu trữ dài hạn chuỗi và trạng thái thu hồi; khóa trên USB token, HSM hoặc ký từ xa. \\
+Ký mã phần mềm & Nhà phát triển, tổ chức & \texttt{codeSigning} & Hệ điều hành kiểm tra trước khi cài hoặc chạy; dấu thời gian giúp chữ ký còn kiểm tra được sau khi chứng thư hết hạn; khóa ký bị lộ cho phép phát tán mã độc có chữ ký hợp lệ. \\
+Thư điện tử (S/MIME) & Địa chỉ email & \texttt{emailProtection} & Ký và mã hóa thư đầu cuối~\cite{rfc8551}; người nhận cần chứng thư của người gửi để mã hóa. \\
+Hộ chiếu, giấy tờ định danh điện tử & Cơ quan cấp giấy tờ & Riêng theo chuẩn & Chip lưu dữ liệu do cơ quan cấp ký; bên kiểm tra xác minh chữ ký để phát hiện giả mạo dữ liệu~\cite{icao9303}. \\
+Thiết bị IoT & Thiết bị, nhà sản xuất & Tùy hệ thống & Chứng thư cài từ lúc sản xuất; vòng đời thiết bị dài, khó cập nhật trust anchor hoặc thay khóa. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+Điểm khác biệt quan trọng nhất là \emph{thời điểm xác minh}. Với TLS, client chỉ quan tâm chứng thư có hợp lệ ngay lúc kết nối hay không, như TC03 đã minh họa. Với chữ ký văn bản hoặc ký mã, câu hỏi là chứng thư có hợp lệ \emph{tại lúc ký} không, trong khi việc kiểm tra có thể diễn ra nhiều năm sau, khi chứng thư đã hết hạn. Dấu thời gian do một bên tin cậy ký (RFC 3161) gắn chữ ký với một thời điểm đã được chứng thực, nhờ đó vẫn kiểm tra được sau khi chứng thư hết hạn~\cite{rfc3161}.
+
+\section{PKI và chữ ký số tại Việt Nam}
+Tại Việt Nam, chữ ký số được dùng rộng rãi trong kê khai thuế, hải quan, bảo hiểm xã hội, hóa đơn điện tử, ngân hàng và dịch vụ công trực tuyến. Khung pháp lý hiện hành gồm Luật Giao dịch điện tử số 20/2023/QH15, có hiệu lực từ 01/7/2024~\cite{luatgdtd2023}, và Nghị định 23/2025/NĐ-CP quy định về chữ ký điện tử và dịch vụ tin cậy, ban hành ngày 21/02/2025, có hiệu lực từ 10/4/2025 và thay thế Nghị định 130/2018/NĐ-CP~\cite{nd232025}.
+
+Về kiến trúc, hệ thống này là một PKI phân cấp đúng như mô hình ở Chương~\ref{chap:architecture}. Tổ chức cung cấp dịch vụ chứng thực chữ ký số quốc gia đóng vai trò Root CA và cấp chứng thư cho các tổ chức cung cấp dịch vụ chứng thực chữ ký số công cộng; các tổ chức này lại cấp chứng thư cho cá nhân và doanh nghiệp. Khác với Web PKI, trust anchor ở đây là Root CA quốc gia, được phần mềm ký và kiểm tra chữ ký của các cơ quan cài đặt theo quy định, chứ không dựa vào trust store mặc định của trình duyệt. Khóa bí mật của người dùng thường nằm trong USB token hoặc được giữ tại nhà cung cấp theo hình thức ký số từ xa. Các khái niệm của báo cáo áp dụng trực tiếp: người kiểm tra cần dựng được chuỗi tới Root CA quốc gia, kiểm tra thời hạn và trạng thái thu hồi của chứng thư người ký tại thời điểm ký, và dựa vào dấu thời gian khi kiểm tra lại về sau.
+
+\section{Certificate Transparency}
+Sự cố DigiNotar cho thấy chủ tên miền không có cách nào biết một CA đã cấp chứng thư cho tên của mình. Certificate Transparency (CT) giải quyết vấn đề này bằng các nhật ký công khai chỉ cho phép ghi thêm, tổ chức dưới dạng cây Merkle để ai cũng kiểm tra được log không bị sửa hay xóa~\cite{rfc6962,rfc9162}. CA gửi chứng thư (hoặc tiền chứng thư) vào log và nhận lại bằng chứng ghi log (SCT) để gắn kèm; các trình duyệt lớn yêu cầu chứng thư công cộng phải có SCT. Chủ tên miền và bên giám sát theo dõi log để phát hiện chứng thư lạ.
+
+CT là cơ chế \emph{phát hiện}, không phải \emph{ngăn chặn}: một CA vẫn có thể ký chứng thư sai, nhưng hành vi đó để lại dấu vết công khai và CA phải chịu trách nhiệm. CT do đó bổ sung cho kiểm tra phía client ở Chương~\ref{chap:x509}, chứ không thay thế. Lab của đề tài là private PKI nên không dùng CT.
+
+\section{Tự động hóa và chứng thư ngắn hạn}
+Giao thức ACME (RFC 8555) cho phép máy chủ tự động chứng minh quyền kiểm soát tên miền, ví dụ đặt một tệp tại đường dẫn định trước (HTTP-01) hoặc một bản ghi DNS (DNS-01), rồi nhận và gia hạn chứng thư mà không cần thao tác thủ công~\cite{rfc8555}. ACME đóng vai trò RA tự động cho chứng thư xác minh tên miền và là nền tảng của Let's Encrypt.
+
+Tự động hóa cho phép rút ngắn thời hạn chứng thư, và đây là cách giảm phụ thuộc vào thu hồi như đã phân tích ở Chương~\ref{chap:security}. Năm 2025, CA/Browser Forum thông qua Ballot SC-081v3 giảm dần thời hạn tối đa của chứng thư TLS công cộng từ 398 ngày xuống 200 ngày (từ 15/3/2026), 100 ngày (từ 15/3/2027) và 47 ngày (từ 15/3/2029), đồng thời rút ngắn thời gian được tái sử dụng kết quả xác minh tên miền~\cite{cabfsc081}. Với thời hạn ngắn như vậy, gia hạn thủ công không còn khả thi; các tổ chức cần quản lý vòng đời chứng thư tự động.
+
+\section{Mật mã hậu lượng tử và PKI}
+Thuật toán Shor trên một máy tính lượng tử đủ lớn sẽ phá được RSA và các lược đồ dựa trên logarit rời rạc, trong đó có ECDSA và ECDHE. Năm 2024, NIST công bố ba chuẩn đầu tiên: ML-KEM (FIPS 203) cho thiết lập khóa, ML-DSA (FIPS 204) và SLH-DSA (FIPS 205) cho chữ ký số~\cite{fips203,fips204,fips205}.
+
+Hai phần của PKI và TLS chịu ảnh hưởng khác nhau, đúng như sự phân tách ở Chương~\ref{chap:crypto}. Phần \emph{thiết lập khóa phiên} cần chuyển sớm vì kẻ tấn công có thể ghi lại lưu lượng hôm nay để giải mã khi có máy tính lượng tử; các trình duyệt và máy chủ lớn đã triển khai trao đổi khóa lai kết hợp ECDHE với ML-KEM. Phần \emph{chữ ký trên chứng thư} chỉ cần an toàn tại thời điểm xác minh, nên ít gấp hơn, nhưng khó chuyển hơn: chữ ký và khóa công khai ML-DSA lớn hơn nhiều so với ECDSA, làm chuỗi chứng thư nặng hơn, và mọi CA, trust store, phần mềm kiểm tra đều phải cập nhật. Với chữ ký văn bản cần giá trị dài hạn, vấn đề còn quan trọng hơn vì chữ ký phải còn kiểm tra được sau nhiều năm.
+
+\section{Hướng phát triển của đề tài}
+Từ những giới hạn đã nêu, có thể mở rộng đề tài theo các hướng sau, sắp theo mức độ khả thi:
+\begin{enumerate}
+\item \textbf{OCSP trong lab:} chạy responder bằng \texttt{openssl ocsp} để so sánh với CRL về trạng thái \emph{good}, \emph{revoked}, \emph{unknown} và hành vi khi responder không phản hồi.
+\item \textbf{Đo chi phí để kiểm chứng H3:} dùng \texttt{openssl speed} so sánh tốc độ ký và xác minh của RSA với ECDSA, kích thước CRL theo số chứng thư bị thu hồi.
+\item \textbf{Xác thực hai chiều (mTLS):} cấp chứng thư \texttt{clientAuth} và yêu cầu client trình chứng thư khi kết nối.
+\item \textbf{Ký văn bản có dấu thời gian:} dùng \texttt{openssl cms} và \texttt{openssl ts} để minh họa kiểm tra chữ ký sau khi chứng thư hết hạn.
+\item \textbf{Chứng thư hậu lượng tử:} các bản OpenSSL từ 3.5 hỗ trợ ML-DSA, có thể dựng một chuỗi CA dùng ML-DSA và so sánh kích thước với RSA/ECDSA.
+\end{enumerate}

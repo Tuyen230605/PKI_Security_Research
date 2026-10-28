@@ -36,7 +36,7 @@ openssl x509 -in demo/out/servers/server-a.crt \
   -noout -text
 \end{verbatim}
 \end{quote}
-Khi trình bày chỉ cần đánh dấu Issuer, Subject, Validity, SAN, KU, EKU và Basic Constraints; toàn bộ dump dài không hữu ích trên slide.
+Trong kết quả của lệnh, các trường quyết định việc chấp nhận là Issuer, Subject, Validity, SAN, KU, EKU và Basic Constraints.
 
 \section{CA ký và client xây dựng đường dẫn ra sao}
 CA phát hành tính chữ ký trên TBSCertificate của chứng thư con bằng khóa bí mật CA. Client lấy khóa công khai từ chứng thư CA ứng viên để xác minh chữ ký, rồi tiếp tục với chứng thư của chính CA đó. Với lab, thứ tự phát hành là Root $\rightarrow$ Intermediate $\rightarrow$ server; thứ tự kiểm tra đi từ server về Root. Kết quả của một chữ ký chỉ có nghĩa khi đúng chứng thư của bên phát hành được chọn và đường dẫn cuối cùng tới trust anchor chấp nhận được~\cite{rfc5280}.
@@ -116,4 +116,4 @@ Trong TLS 1.3 dùng chứng thư, máy chủ gửi thông điệp Certificate ch
 
 Các ca \texttt{openssl verify} của dự án mô phỏng quyết định xác minh chứng thư với chính sách được viết thành tùy chọn. Chúng không tái hiện mọi bước handshake TLS, hành vi tự động của trình duyệt hoặc chính sách Web PKI công cộng. Nếu chạy bước HTTPS tùy chọn bằng \texttt{openssl s\_server} và \texttt{curl}, cần mô tả đó là một phép thử kết nối riêng; \texttt{curl --cacert} chỉ cấu hình Root CA lab cho kết nối ấy và không chứng minh CRL/OCSP đã được kiểm tra.
 
-Khi chuyển chương này thành slide, nên giữ một sơ đồ luồng gồm: nhận leaf và Intermediate $\rightarrow$ dựng đường dẫn tới Root đã tin $\rightarrow$ kiểm tra chữ ký, thời gian, ràng buộc CA/KU/EKU $\rightarrow$ so SAN với tên truy cập $\rightarrow$ kiểm tra trạng thái theo chính sách $\rightarrow$ chấp nhận hoặc từ chối. Bảng~\ref{tab:validation-map} là cầu nối trực tiếp tới các ca thử ở Chương~\ref{chap:experiment}; trên slide chỉ nên chọn vài hàng tiêu biểu và cho thấy tùy chọn nào đã bật.
+Các ngữ cảnh khác của PKI dùng cùng thuật toán xác minh đường dẫn nhưng đổi điều kiện ứng dụng. Với ký mã hoặc ký tài liệu, EKU tương ứng là \texttt{codeSigning} hoặc mục đích bảo vệ tài liệu thay cho \texttt{serverAuth}; danh tính là tổ chức hoặc cá nhân thay cho tên DNS; và thời điểm cần xét là lúc ký chứ không phải lúc kiểm tra, nên thường cần dấu thời gian tin cậy~\cite{rfc3161}. Chương~\ref{chap:applications} trở lại các khác biệt này. Bảng~\ref{tab:validation-map} là cầu nối trực tiếp tới các ca thử ở Chương~\ref{chap:experiment}.
