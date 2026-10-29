@@ -1,0 +1,107 @@
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[
+    box/.style={draw=black, thick, fill=white, rounded corners=5pt, text width=4.6cm, align=center, inner sep=6pt, font=\small},
+    cabox/.style={draw=black, very thick, fill=gray!12, rounded corners=5pt, text width=4.6cm, align=center, inner sep=6pt, font=\small},
+    logbox/.style={draw=black, very thick, double, fill=gray!20, rounded corners=5pt, text width=5.0cm, align=center, inner sep=6pt, font=\small},
+    clientbox/.style={draw=black, thick, fill=gray!6, rounded corners=5pt, text width=4.6cm, align=center, inner sep=6pt, font=\small},
+    arrow/.style={-{Stealth[scale=1.1]}, thick, black},
+    dashedarrow/.style={-{Stealth[scale=1.05]}, thick, dashed, black}
+]
+
+    % --- CÁC THỰC THỂ CHÍNH ---
+    % 1. Certificate Authority
+    \node[cabox] (ca) at (0, 7.0) {
+        \textbf{Tổ chức chứng thực (CA)}\\[3pt]
+        {\scriptsize 1. Tạo Tiền chứng thư (\textit{Precertificate})}\\[2pt]
+        {\scriptsize 3. Nhận SCT và ký Chứng thư X.509 hoàn chỉnh có nhúng SCT}
+    };
+
+    % 2. CT Log Server
+    \node[logbox] (log) at (9.8, 7.0) {
+        \textbf{Máy chủ Nhật ký (CT Log Server)}\\[3pt]
+        {\scriptsize Lưu trữ cây Merkle chỉ ghi thêm (\textit{Append-only})}\\[2pt]
+        {\scriptsize 2. Trả về dấu thời gian đã ký (\textbf{SCT})}\\[2pt]
+        {\scriptsize Công khai định kỳ Root Hash (\textit{STH})}
+    };
+
+    % 3. Web Server
+    \node[box] (server) at (0, 1.8) {
+        \textbf{Máy chủ Web (Server)}\\[3pt]
+        {\scriptsize Cài đặt chứng thư TLS đã nhúng SCT}\\[2pt]
+        {\scriptsize Gửi chứng thư kèm SCT trong bắt tay TLS}
+    };
+
+    % 4. Relying Party (Browser / Client)
+    \node[clientbox] (client) at (0, -4.2) {
+        \textbf{Trình duyệt / Ứng dụng (Client)}\\[3pt]
+        {\scriptsize 4. Bắt tay TLS và thẩm định chuỗi chứng thư}\\[2pt]
+        {\scriptsize 5. \textbf{Kiểm tra tính hợp lệ của chữ ký SCT}}\\[2pt]
+        {\scriptsize \textit{(Từ chối kết nối nếu thiếu SCT từ Log uy tín)}}
+    };
+
+    % 5. Monitor (Giám sát viên / Chủ tên miền)
+    \node[box] (monitor) at (9.8, 1.8) {
+        \textbf{Hệ thống giám sát (CT Monitor)}\\[3pt]
+        {\scriptsize Quét định kỳ toàn bộ log Merkle Tree}\\[2pt]
+        {\scriptsize \textbf{Phát hiện chứng thư cấp sai / giả mạo}}\\[2pt]
+        {\scriptsize Cảnh báo ngay cho chủ sở hữu tên miền}
+    };
+
+    % 6. Auditor (Kiểm toán viên)
+    \node[box] (auditor) at (9.8, -4.2) {
+        \textbf{Kiểm toán viên (CT Auditor)}\\[3pt]
+        {\scriptsize Kiểm tra bằng chứng hiện diện (\textit{Inclusion Proof})}\\[2pt]
+        {\scriptsize Kiểm tra tính nhất quán log (\textit{Consistency Proof})}\\[2pt]
+        {\scriptsize Phát hiện hành vi sửa đổi / giả mạo log}
+    };
+
+    % --- CÁC LUỒNG TƯƠNG TÁC ---
+    % Luồng CA <-> CT Log (Song song ngang nhau, tách biệt trên dưới)
+    \draw[arrow] ([yshift=14pt]ca.east) -- ([yshift=14pt]log.west)
+        node[midway, above=3pt, font=\scriptsize\bfseries] {(1) Nộp Precertificate};
+    \draw[arrow] ([yshift=-2pt]log.west) -- ([yshift=-2pt]ca.east)
+        node[midway, below=3pt, font=\scriptsize, align=center] {
+            \textbf{(2) Trả về SCT}\\[1.5pt]
+            \textit{(Signed Certificate Timestamp)}
+        };
+
+    % Luồng CA -> Server
+    \draw[arrow] (ca.south) -- (server.north)
+        node[midway, right=6pt, font=\scriptsize, align=left] {
+            \textbf{(3) Cấp X.509 cert}\\[1.5pt]
+            \textit{(Đã nhúng SCT)}
+        };
+
+    % Luồng Server -> Client
+    \draw[arrow] (server.south) -- (client.north)
+        node[midway, right=6pt, font=\scriptsize, align=left] {
+            \textbf{(4) Gửi chuỗi cert + SCT}\\[1.5pt]
+            \textit{(Bắt tay TLS Handshake)}
+        };
+
+    % Luồng Log -> Monitor & Auditor
+    \draw[dashedarrow] (log.south) -- (monitor.north)
+        node[midway, right=6pt, font=\scriptsize, align=left] {
+            \textbf{Đồng bộ log định kỳ}\\[1.5pt]
+            \textit{(Merkle Tree)}
+        };
+
+    \draw[dashedarrow] (monitor.south) -- (auditor.north)
+        node[midway, right=6pt, font=\scriptsize, align=left] {
+            \textbf{Trao đổi STH}\\[1.5pt]
+            \textit{(Kiểm tra nhất quán)}
+        };
+
+    % Luồng Monitor -> Server (Cảnh báo cấp sai)
+    \draw[dashedarrow] (monitor.west) -- (server.east)
+        node[midway, above=3pt, font=\scriptsize\bfseries, text=red!80!black] {(Cảnh báo cấp sai!)}
+        node[midway, below=3pt, font=\scriptsize, align=center] {(Ví dụ: Phát hiện cert\\lạ cho tên miền)};
+
+    % Luồng Client -> Auditor
+    \draw[dashedarrow] (client.east) -- (auditor.west)
+        node[midway, above=3pt, font=\scriptsize\bfseries] {Gửi SCT / STH}
+        node[midway, below=3pt, font=\scriptsize, align=center] {Yêu cầu kiểm toán};
+
+\end{tikzpicture}%
+}
+

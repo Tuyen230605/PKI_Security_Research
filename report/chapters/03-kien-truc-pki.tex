@@ -34,11 +34,11 @@ Hình~\ref{fig:pki-architecture-components} minh họa tổng thể mối quan h
 
 \begin{figure}[!htbp]
 \centering
-\input{report/figures/pki-architecture-components}
+\input{report/figures/chap03/pki-architecture-components}
 \caption{Kiến trúc các thành phần và luồng dữ liệu cấp phát, xác thực trong mô hình PKI phân cấp.}
 \label{fig:pki-architecture-components}
 \end{figure}
-
+ 
 \section{Vòng đời chứng thư}
 \label{sec:certificate-lifecycle}
 Trong khi Mục~\ref{subsec:key-lifecycle} trình bày vòng đời khóa mật mã, Mục~\ref{sec:certificate-lifecycle} tập trung vào vòng đời chứng thư số (quản lý trạng thái, cấu trúc dữ liệu và chuỗi tin cậy). Hai vòng đời này tách biệt: chứng thư có thể hết hạn hoặc bị thu hồi trước khi khóa bị tiêu hủy, và khóa có thể tiếp tục dùng qua các thế hệ chứng thư (renewal). Đồng thời, bản thân CA cũng có vòng đời riêng: thay thế khóa (CA Rekey - mục 5.6 của dàn bài RFC~3647~\cite{rfc3647}) và ngừng hoạt động (CA Termination - mục 5.8 của dàn bài RFC~3647) theo chính sách vận hành (Mục~\ref{sec:operating-policy}).
@@ -49,7 +49,7 @@ Vòng đời chứng thư X.509 gồm 10 giai đoạn có các nhánh rẽ và v
 
 \begin{figure}[!htbp]
 \centering
-\input{report/figures/certificate-lifecycle}
+\input{report/figures/chap03/certificate-lifecycle}
 \caption[Các giai đoạn và nhánh rẽ trong vòng đời chứng thư X.509]{Mô hình các giai đoạn, nhánh rẽ và vòng lặp trong vòng đời chứng thư X.509.}
 \label{fig:certificate-lifecycle}
 \end{figure}

@@ -67,7 +67,7 @@ $ openssl x509 -in demo/out/servers/server-a.crt -text -noout
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.85\textwidth, height=0.78\textheight, keepaspectratio]{report/figures/openssl-x509-terminal-real.png}
+    \includegraphics[width=0.85\textwidth, height=0.78\textheight, keepaspectratio]{openssl-x509-terminal-real.png}
     \caption{Kết quả thực thi lệnh trích xuất cấu trúc chứng thư X.509 v3 của máy chủ TLS (\texttt{server-a.crt}) trong môi trường thực nghiệm.}
     \label{fig:openssl-x509-terminal-real}
 \end{figure}
@@ -103,7 +103,7 @@ Lab dùng chuỗi ba mắt xích $\mathrm{Root\ CA} \rightarrow \mathrm{Intermed
 
 \begin{figure}[!htbp]
 \centering
-\input{report/figures/trust-chain-validation}
+\input{report/figures/chap04/trust-chain-validation}
 \caption{Chuỗi chứng thư Root CA $\rightarrow$ Intermediate CA $\rightarrow$ server trong lab: quan hệ ký phát và quan hệ thẩm định giữa các mắt xích.}
 \label{fig:trust-chain-validation}
 \end{figure}
@@ -140,7 +140,7 @@ Hình~\ref{fig:openssl-verify-terminal} trình bày hai lần chạy \texttt{ope
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.90\textwidth]{report/figures/openssl-verify-terminal.png}
+\includegraphics[width=0.90\textwidth]{openssl-verify-terminal.png}
 \caption{Kết quả \texttt{openssl verify} với chuỗi đầy đủ (OK) và khi thiếu chứng thư Intermediate CA (lỗi 20, TC06).}
 \label{fig:openssl-verify-terminal}
 \end{figure}

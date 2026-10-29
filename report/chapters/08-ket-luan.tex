@@ -1,4 +1,58 @@
 \chapter*{Kết luận và hướng phát triển}
 \label{chap:ket-luan}
 \addcontentsline{toc}{chapter}{Kết luận và hướng phát triển}
-\textbf{Cần viết sau khi có số liệu:} trả lời câu hỏi trung tâm và RQ1--RQ4, đối chiếu H1--H2 với kết quả quan sát; chỉ kết luận về H3 nếu có bằng chứng riêng. Nêu giới hạn của lab và hướng phát triển khả thi. Không tuyên bố đóng góp mới vượt quá phạm vi thử nghiệm.
+
+\section*{1. Tổng kết và lời giải cho các câu hỏi nghiên cứu}
+
+Báo cáo nghiên cứu đã giải quyết trọn vẹn bài toán nghiên cứu trọng tâm: \textit{Làm thế nào để phân phối và xác thực khóa công khai một cách đáng tin cậy, hạn chế tối đa nguy cơ giả mạo và tấn công thay thế khóa của kẻ đứng giữa (Eve), đồng thời đánh giá được các điều kiện chấp nhận và giới hạn an ninh của hệ thống trong thực tế?} Thông qua việc kết hợp chặt chẽ giữa nghiên cứu lý thuyết chuẩn mực quốc tế và thực nghiệm kỹ thuật trên môi trường lab OpenSSL, đề tài đưa ra lời giải đáp thỏa đáng cho 4 câu hỏi nghiên cứu (RQ1--RQ4):
+
+\begin{itemize}
+    \item \textbf{Trả lời RQ1 (Cơ chế liên kết danh tính và khóa công khai):} PKI giải quyết bài toán niềm tin phân tán trên mạng mở bằng cách chuyển dịch niềm tin sang các bên thứ ba có thẩm quyền (CA). Thông qua cấu trúc dữ liệu chuẩn hóa ASN.1 DER của khối \texttt{TBSCertificate} (RFC~5280~\cite{rfc5280}), CA đóng gói khóa công khai ($PK$) cùng thông tin định danh của chủ thể (trường SAN và DN) và ký xác thực bằng khóa bí mật của mình ($SK_{\mathrm{CA}}$). Chủ thể chứng minh quyền sở hữu khóa thông qua chữ ký tự thân trên yêu cầu ký chứng thư CSR (RFC~2986~\cite{rfc2986}), trong khi CA/RA thực thi quy trình thẩm tra hồ sơ độc lập theo các cấp độ xác thực (DV, OV, EV) quy định trong Baseline Requirements~\cite{cabforum_br}. Liên kết này bảo đảm trọn vẹn tính toàn vẹn và chống chối bỏ nhờ đặc tính mật mã của chữ ký số.
+
+    \item \textbf{Trả lời RQ2 (Các điều kiện chấp nhận và từ chối chứng thư X.509):} Một chứng thư số chỉ được relying party chấp thuận khi và chỉ khi thỏa mãn đồng thời 6 điều kiện ngữ cảnh theo thuật toán thẩm định đường dẫn RFC~5280: (1) Xây dựng thành công chuỗi tin cậy liên tục dẫn về một Trust Anchor nằm trong Trust Store cục bộ; (2) Tính toàn vẹn mật mã của chữ ký số trên từng mắt xích; (3) Tuân thủ ràng buộc cơ bản Basic Constraints (\texttt{cA:TRUE} cho CA và \texttt{cA:FALSE} cho thực thể cuối); (4) Khớp mục đích sử dụng trong Key Usage và Extended Key Usage (như cờ \texttt{serverAuth} cho máy chủ TLS); (5) Định danh máy chủ truy cập trùng khớp với danh sách Subject Alternative Name (SAN theo RFC~9525~\cite{rfc9525}); và (6) Thời điểm xác minh nằm trong khung hiệu lực \texttt{[notBefore, notAfter]} đồng thời chứng thư chưa bị hủy bỏ trên danh sách thu hồi CRL hoặc OCSP. Việc vi phạm bất kỳ điều kiện nào đều dẫn tới việc từ chối ngay lập tức (được chứng minh qua các mã lỗi tương ứng tại TC02--TC08, TC10).
+
+    \item \textbf{Trả lời RQ3 (Vai trò và sự đánh đổi của cơ chế thu hồi CRL/OCSP):} Cơ chế thu hồi là nhánh rẽ khẩn cấp thiết yếu để vô hiệu hóa chứng thư khi khóa bí mật bị lộ hoặc quy trình cấp phát có sai sót trước khi chứng thư hết hạn tự nhiên. Tuy nhiên, cơ chế này bộc lộ sự đánh đổi kỹ thuật rõ rệt: CRL (RFC~5280) gặp phải độ trễ truyền bá theo chu kỳ phát hành (\texttt{nextUpdate}) và kích thước tệp danh sách tăng tuyến tính theo số lượng mục thu hồi, gây lãng phí băng thông và tăng thời gian thẩm định của client; trong khi OCSP (RFC~6960~\cite{rfc6960}) đòi hỏi máy chủ responder trực tuyến liên tục, đối mặt với rủi ro lộ quyền riêng tư truy vấn và tính khả dụng của mạng. Đáng chú ý, trạng thái \texttt{good} của OCSP chỉ mang ý nghĩa số sê-ri chưa bị thu hồi, hoàn toàn không thay thế cho quy trình thẩm định chuỗi và ngữ cảnh toàn diện.
+
+    \item \textbf{Trả lời RQ4 (Các điểm yếu và giới hạn an ninh cố hữu của PKI):} Nghiên cứu chỉ ra rằng an ninh của PKI phụ thuộc cốt lõi vào sự toàn vẹn của mô hình tin cậy và chính sách vận hành của các CA gốc. Minh chứng từ thảm họa DigiNotar (Fox-IT, 2012~\cite{prins2011diginotar}) cho thấy khi một CA bị thỏa hiệp, kẻ tấn công có thể phát hành các chứng thư giả mạo có chữ ký mật mã hoàn toàn hợp lệ, khiến mọi cơ chế xác minh cục bộ của client đều hoàn toàn bất lực. Bên cạnh đó, chữ ký số hợp lệ không đồng nghĩa với phần mềm an toàn (rủi ro mã độc ký số do lộ khóa riêng) hay chủ thể lương thiện (trang web lừa đảo sử dụng HTTPS hợp lệ). Cuối cùng, sự phát triển của máy tính lượng tử với thuật toán Shor (1994)~\cite{shor1994} đặt ra mối đe dọa sinh tử, có khả năng phá vỡ toàn bộ nền tảng toán học của RSA và ECDSA đang bảo vệ hệ thống PKI toàn cầu.
+\end{itemize}
+
+\section*{2. Đánh giá và kiểm chứng các giả thuyết nghiên cứu}
+
+Dựa trên dữ liệu thực nghiệm tại Chương~\ref{chap:experiment}, đề tài đưa ra kết luận đánh giá cụ thể đối với ba giả thuyết nghiên cứu đã đặt ra:
+
+\begin{itemize}
+    \item \textbf{Giả thuyết $H_1$ (Điều kiện cần của chữ ký số và vai trò chính sách client):} \textit{Được ủng hộ hoàn toàn}. Dữ liệu thực nghiệm từ Bảng~\ref{tab:exp-results} chỉ ra rằng: ngoại trừ TC05 bị lỗi chữ ký và TC02 là chứng thư tự ký, toàn bộ 6 ca kiểm thử bị từ chối còn lại (TC03, TC04, TC06, TC07, TC08, TC10) đều sở hữu chữ ký số hoàn toàn nguyên vẹn về mặt toán học do CA ký phát. Tuy nhiên, chúng đều bị OpenSSL trả về mã lỗi và từ chối chấp nhận do vi phạm các ràng buộc chính sách ngữ cảnh. Đặc biệt, tại mốc chuẩn TC01, chứng thư thực chất đã bị thu hồi trên CA nhưng vẫn được OpenSSL chấp nhận (\texttt{OK}) khi client không bật kiểm tra CRL; trong khi ở TC09, chứng thư thỏa mãn đồng thời cả chuỗi tin cậy, ngữ cảnh và trạng thái chưa thu hồi trên CRL thì đạt \texttt{OK}. Kết quả khẳng định chắc chắn: chữ ký số hợp lệ chỉ là điều kiện cần chứ chưa đủ để một chứng thư được client tin cậy.
+
+    \item \textbf{Giả thuyết $H_2$ (Tính phụ thuộc ngữ cảnh và sự đảo ngược quyết định):} \textit{Được ủng hộ hoàn toàn}. Quyết định thẩm định của client mang tính động và phụ thuộc trực tiếp vào các tham số ngữ cảnh. Khi giữ nguyên chứng thư số và chữ ký không đổi, việc điều chỉnh thời điểm kiểm tra (\texttt{-attime} ở TC03), tên miền truy vấn (TC04), kích hoạt kiểm tra thu hồi (\texttt{-crl\_check} ở TC07), thay đổi Trust Anchor chỉ định (đối chứng \texttt{other-ca/root.crt}) hoặc thay đổi mục đích sử dụng kiểm tra (\texttt{-purpose sslclient} trên \texttt{client-only.crt}) đều trực tiếp làm đảo ngược kết quả thẩm định từ chấp thuận (\texttt{OK}) sang từ chối (\texttt{FAIL}) và ngược lại.
+
+    \item \textbf{Giả thuyết $H_3$ (Đánh đổi về chi phí vận hành của cơ chế thu hồi):} \textit{Được kiểm chứng một phần}. Thông qua phân tích chuẩn RFC~5280 kết hợp phép đo lường định lượng cục bộ với OpenSSL 3.5.9, kết quả thực nghiệm chứng minh rằng: khi số lượng mục thu hồi tăng từ $N=0$ lên $N=10.000$, kích thước tệp danh sách CRL tăng tuyến tính từ 564 bytes lên 474.532 bytes ($\approx 47$~bytes/mục thu hồi, tăng gấp 841 lần), đồng thời thời gian thẩm định trung vị của client tăng từ 37{,}46~ms lên 86{,}46~ms (tăng gấp hơn 2{,}3 lần). Dữ liệu ủng hộ nhận định về sự đánh đổi tài nguyên và giới hạn mở rộng của cơ chế CRL truyền thống.
+\end{itemize}
+
+\section*{3. Các đóng góp chính của đề tài}
+
+Đề tài đã hoàn thành các mục tiêu nghiên cứu đề ra với ba đóng góp thiết thực:
+\begin{enumerate}
+    \item \textbf{Hệ thống hóa toàn diện cơ sở lý thuyết và tiêu chuẩn PKI:} Cung cấp bức tranh toàn cảnh, mạch lạc về cơ sở toán học mật mã, kiến trúc phân cấp, vòng đời chứng thư X.509 v3 và quy chuẩn quản trị CP/CPS theo các văn bản chuẩn mực quốc tế của IETF, ITU-T, NIST và CA/Browser Forum.
+    \item \textbf{Xây dựng mô hình thực nghiệm và bộ kiểm thử tự động hóa:} Thiết lập thành công môi trường lab PKI phân cấp hai tầng độc lập bằng OpenSSL 3.5.9, tự động hóa quy trình qua Makefile và Bash script, kiểm chứng tường minh 10 ca kiểm thử điển hình đại diện cho các điều kiện biên của RFC~5280 và thực hiện phép đo đạc định lượng đối với cơ chế CRL.
+    \item \textbf{Đề xuất mô hình phòng thủ chiều sâu và phân tích xu hướng công nghệ tương lai:} Tổng hợp mô hình an ninh 6 lớp cho PKI hiện đại, phân tích sâu sắc nguyên lý và giới hạn của cơ chế Certificate Transparency (RFC~9162), giải pháp tự động hóa ACME (RFC~8555) và vạch ra lộ trình di trú sang các chuẩn mật mã hậu lượng tử của NIST (FIPS 203, 204, 205).
+\end{enumerate}
+
+\section*{4. Hạn chế của nghiên cứu}
+
+Bên cạnh các kết quả đạt được, nghiên cứu tồn tại một số hạn chế kỹ thuật cần được ghi nhận:
+\begin{itemize}
+    \item \textbf{Phạm vi kiểm thử cục bộ ở tầng OpenSSL CLI:} Thực nghiệm sử dụng lệnh \texttt{openssl verify} để kiểm tra thuật toán thẩm định đường dẫn tĩnh trên các tệp tin cục bộ, chưa thiết lập tiến trình bắt tay mạng TLS 1.3 hoàn chỉnh để kiểm tra sự phối hợp giữa chữ ký CA trên chứng thư và chữ ký bắt tay thời gian thực (\texttt{CertificateVerify}).
+    \item \textbf{Giới hạn cơ chế thu hồi ngoại tuyến:} Nghiên cứu mới dừng lại ở việc kiểm thử danh sách thu hồi CRL tĩnh, chưa dựng máy chủ dịch vụ trạng thái chứng thư trực tuyến (OCSP Responder) hay kiểm nghiệm cơ chế đính kèm phản hồi OCSP (OCSP Stapling) trong giao tiếp mạng thực tế.
+    \item \textbf{Chưa khảo sát đa dạng môi trường và thư viện:} Thực nghiệm chỉ triển khai trên thư viện OpenSSL 3.5.9 trong môi trường Linux Container, chưa mở rộng đối sánh hành vi xác minh trên các thư viện mật mã khác (như GnuTLS, NSS, BoringSSL) cũng như các cơ chế tối ưu riêng của trình duyệt web (AIA fetching, OneCRL, CRLSet).
+    \item \textbf{Giới hạn về triển khai các công nghệ tiên tiến:} Các nội dung chuyên sâu về Certificate Transparency (CT Log, Monitor), giao thức tự động hóa ACME và các thuật toán mật mã hậu lượng tử (PQC) mới dừng lại ở mức độ phân tích kiến trúc lý thuyết và đối chiếu tiêu chuẩn, chưa được tích hợp và kiểm thử thực nghiệm trong môi trường lab của đề tài.
+\end{itemize}
+
+\section*{5. Hướng phát triển tiếp theo}
+
+Từ các kết quả và hạn chế nêu trên, nhóm nghiên cứu đề xuất bốn hướng phát triển khả thi cho các công trình tiếp theo:
+\begin{enumerate}
+    \item \textbf{Mở rộng thực nghiệm sang bắt tay mạng TLS 1.3 và mTLS:} Cài đặt chuỗi chứng thư lên các máy chủ web dịch vụ thực tế (như Nginx, Caddy hoặc Envoy Proxy), triển khai xác thực hai chiều (Mutual TLS -- mTLS) và sử dụng công cụ phân tích gói tin (Wireshark/tcpdump) để khảo sát trực tiếp các thông điệp \texttt{Certificate}, \texttt{CertificateVerify} và \texttt{Finished}.
+    \item \textbf{Xây dựng hạ tầng OCSP Responder và thử nghiệm OCSP Stapling:} Thiết lập dịch vụ OCSP trực tuyến độc lập bằng OpenSSL OCSP server hoặc Boulder, cấu hình máy chủ web hỗ trợ OCSP Stapling, đo lường độ trễ bắt tay mạng và đánh giá tính sẵn sàng của dịch vụ thu hồi.
+    \item \textbf{Tự động hóa vòng đời chứng thư với giao thức ACME:} Triển khai một máy chủ ACME nội bộ (như Smallstep CA hoặc Boulder trong mạng thử nghiệm), cấu hình ACME Client (Certbot/Caddy) tự động thực hiện các thử thách HTTP-01 và DNS-01 để quản trị tự động việc cấp phát, cài đặt và gia hạn chứng thư.
+    \item \textbf{Nghiên cứu thực nghiệm mật mã hậu lượng tử (PQC Migration):} Tích hợp thư viện Open Quantum Safe (OQS Provider) vào OpenSSL 3.x, sinh cặp khóa và cấp phát chứng thư số X.509 hậu lượng tử sử dụng các thuật toán chuẩn hóa mới của NIST gồm **ML-DSA** (FIPS 204) và **SLH-DSA** (FIPS 205). Tiến hành đo lường định lượng kích thước gói tin, độ trễ bắt tay TLS và đánh giá hiện tượng phân mảnh gói tin TCP/IP trong môi trường mạng thực tế nhằm chuẩn bị sẵn sàng cho kỷ nguyên hậu lượng tử.
+\end{enumerate}

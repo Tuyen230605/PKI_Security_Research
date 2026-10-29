@@ -1,0 +1,25 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.5cm}>{\centering\arraybackslash}p{1.8cm}>{\centering\arraybackslash}p{1.8cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Thuật toán} & \textbf{Tiêu chuẩn} & \textbf{Nền tảng toán học} & \textbf{Khóa công khai} & \textbf{Chữ ký số} & \textbf{Vai trò trong PKI / TLS} \\
+\midrule
+\textbf{RSA-2048} & PKCS\#1 / RFC~8017 & Phân tích thừa số nguyên & 270 B & 256 B & Ký chứng thư X.509, bắt tay TLS (cổ điển, dễ bị Shor phá vỡ). \\
+\midrule
+\textbf{ECDSA P-256} & FIPS 186-5 & Logarit rời rạc đường cong elliptic & 65 B & 64 B & Ký chứng thư và bắt tay TLS hiện đại (gọn nhẹ, dễ bị Shor phá vỡ). \\
+\midrule
+\textbf{ML-KEM (Kyber)} & NIST FIPS 203 (2024) & Mạng tinh thể (Module-LWE) & 800--1.568 B & \textit{Không áp dụng} & \textbf{Đóng gói khóa (KEM)} trong bắt tay TLS; \textbf{không dùng để ký chứng thư}. \\
+\midrule
+\textbf{ML-DSA (Dilithium)} & NIST FIPS 204 (2024) & Mạng tinh thể (Module-LWE / SIS) & 1.312--2.592 B & 2.420--4.627 B & \textbf{Chữ ký số chính} cho chứng thư X.509 hậu lượng tử; cân bằng tốc độ và kích thước. \\
+\midrule
+\textbf{SLH-DSA (SPHINCS+)} & NIST FIPS 205 (2024) & Hàm băm phi trạng thái (Stateless Hash) & 32--64 B & 7.856--29.792 B & Ký chứng thư dự phòng an toàn cao; khóa công khai cực nhỏ nhưng chữ ký rất lớn. \\
+\midrule
+\textbf{FN-DSA (Falcon)} & NIST FIPS 206 (Dự thảo) & Mạng tinh thể (NTRU lattice) & 897--1.793 B & 666--1.280 B & Chữ ký PQC nhỏ gọn; phù hợp hạn chế băng thông nhưng xử lý dấu phẩy động phức tạp. \\
+\bottomrule
+\end{tabularx}
+\caption{So sánh các thuật toán mật mã cổ điển và chuẩn mật mã hậu lượng tử NIST (PQC).}
+\label{tab:pqc-algorithms}
+\end{table}
+

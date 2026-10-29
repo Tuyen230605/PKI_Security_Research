@@ -1,9 +1,256 @@
 \chapter{Ứng dụng và hướng phát triển PKI}
 \label{chap:ung-dung}
+
+Hạ tầng khóa công khai (PKI) đã trải qua quá trình phát triển bền bỉ từ nền tảng lý thuyết mật mã bất đối xứng của Diffie-Hellman và RSA (Chương~\ref{chap:gioi-thieu}) nhằm giải quyết căn cơ bài toán xác thực nguồn gốc khóa công khai trước nguy cơ tấn công thay thế khóa của kẻ đứng giữa (Eve). Thông qua kiến trúc phân cấp dựa trên các tổ chức chứng thực tin cậy (CA) cùng quy trình quản trị vòng đời chứng thư X.509 chặt chẽ (Chương~\ref{chap:kien-truc-pki}), PKI thiết lập một cơ chế liên kết danh tính pháp lý hoặc kỹ thuật với khóa công khai trên quy mô toàn cầu. Quá trình thẩm định đường dẫn chứng thư theo chuẩn RFC~5280 và các cơ chế kiểm tra thu hồi như CRL hay OCSP (Chương~\ref{chap:x509-xac-thuc}) cung cấp các quy tắc nghiêm ngặt để phía relying party đưa ra quyết định chấp nhận hay từ chối một chứng thư.
+
+Tuy nhiên, như đã phân tích qua các sự cố thực tế kinh điển như DigiNotar (Chương~\ref{chap:threat-security}) và được kiểm chứng thông qua 10 ca kiểm thử thực nghiệm trên OpenSSL (Chương~\ref{chap:experiment}), an toàn của PKI không phải là một thuộc tính bất biến chỉ dựa vào tính đúng đắn toán học của chữ ký số. Chữ ký số hợp lệ chỉ là điều kiện cần; quyết định tin cậy thực tế phụ thuộc sâu sắc vào chính sách kiểm tra ngữ cảnh tại client, trong khi việc thẩm định cục bộ hoàn toàn bất lực nếu chính CA tin cậy bị xâm nhập hoặc cấp phát sai lệch. Đồng thời, cơ chế thu hồi truyền thống (CRL) bộc lộ sự đánh đổi rõ rệt về tài nguyên và độ trễ truyền bá khi quy mô hệ thống mở rộng.
+
+Trước những thách thức vận hành và mối đe dọa an ninh ngày càng phức tạp, PKI hiện đại không còn dừng lại ở mô hình tĩnh truyền thống mà đang chuyển mình mạnh mẽ theo hai hướng chiến lược: (i) Tăng cường tính minh bạch, khả năng giám sát độc lập và tự động hóa toàn diện vòng đời chứng thư; (ii) Chuẩn bị lộ trình chuyển đổi và di trú sang các chuẩn mật mã hậu lượng tử an toàn trước năng lực tính toán của máy tính lượng tử trong tương lai. Chương này tập trung phân tích các ứng dụng hạ tầng thiết yếu của PKI, giải pháp giám sát qua Certificate Transparency (RFC~9162), giao thức tự động hóa ACME (RFC~8555), và các thách thức kỹ thuật trong việc tích hợp các thuật toán chữ ký số hậu lượng tử theo chuẩn mới nhất của NIST.
+
 \section{Ứng dụng và Certificate Transparency}
 \label{sec:certificate-transparency}
-Cần liên hệ HTTPS/TLS, ký tài liệu, code signing và thiết bị. Giải thích Certificate Transparency giúp phát hiện việc cấp phát sai qua cơ chế nhật ký/giám sát, không tự ngăn chặn CA cấp sai~\cite{rfc9162}.
 
-\section{Tự động hóa và hậu lượng tử}
+\subsection{Các ứng dụng tiêu biểu của PKI trong hạ tầng số}
+\label{subsec:pki-applications}
+
+Trong kỷ nguyên số hóa, PKI đóng vai trò là xương sống niềm tin bảo vệ đa dạng các dịch vụ mạng và giao dịch thông tin. Bốn lĩnh vực ứng dụng cốt lõi tiêu biểu bao gồm:
+
+\paragraph{1. Xác thực máy chủ trong giao thức HTTPS/TLS:}
+Đây là ứng dụng phổ biến và có tầm ảnh hưởng sâu rộng nhất của PKI trên không gian mạng. Trong quá trình thiết lập kết nối Web an toàn, máy chủ trình bày chứng thư số X.509 nhằm xác minh quyền sở hữu tên miền (thông qua trường mở rộng \texttt{subjectAltName} theo RFC~9525~\cite{rfc9525}) và truyền tải khóa công khai phục vụ đàm phán khóa phiên trong bắt tay TLS 1.3~\cite{rfc8446}. Quy trình này bảo vệ hàng tỷ người dùng Internet trước các nguy cơ nghe lén, đánh cắp phiên và giả mạo máy chủ (MITM) trên các kênh truyền công cộng.
+
+\paragraph{2. Chữ ký số tài liệu điện tử (Document Signing):}
+Được ứng dụng rộng rãi trong các dịch vụ công, giao dịch tài chính, thương mại điện tử và hợp đồng số. Chứng thư số cá nhân hoặc tổ chức được liên kết với khóa bí mật lưu trữ an toàn (thường trong token USB hoặc giải pháp ký số từ xa HSM) để ký lên các định dạng tài liệu chuẩn hóa như PDF (chuẩn PAdES), XML (XAdES) hay nhị phân (CAdES). Chữ ký số bảo đảm trọn vẹn ba thuộc tính an toàn: tính xác thực nguồn gốc tác giả, tính toàn vẹn của nội dung tài liệu (bất kỳ sửa đổi nào sau khi ký đều làm hỏng chữ ký mật mã), và tính chống chối bỏ có giá trị pháp lý tương đương chữ ký tay và con dấu truyền thống.
+
+\paragraph{3. Ký mã phần mềm (Code Signing):}
+Đóng vai trò then chốt trong chuỗi cung ứng phần mềm và bảo mật hệ điều hành. Các nhà phát triển phần mềm sử dụng chứng thư ký mã (được định danh chuyên biệt qua phần mở rộng EKU \texttt{codeSigning}) để ký số lên các gói cài đặt, tệp tin thực thi binary, driver điều khiển phần cứng hoặc bản cập nhật firmware. Trước khi cho phép phần mềm thực thi, hệ điều hành (như Windows SmartScreen, macOS Gatekeeper) và các thiết bị phần cứng sẽ thẩm định chuỗi chứng thư và tính toàn vẹn của chữ ký, ngăn chặn kẻ tấn công chèn mã độc, trojan hoặc sửa đổi phần mềm gốc trên đường phân phối.
+
+\paragraph{4. Xác thực thiết bị trong mạng Internet vạn vật (IoT Device Authentication):}
+Trong các hạ tầng công nghiệp thông minh, lưới điện thông minh, y tế kết nối và phương tiện tự hành, hàng triệu thiết bị đầu cuối cần giao tiếp tự động và an toàn. PKI cung cấp giải pháp cấp phát danh tính thiết bị an toàn ngay từ giai đoạn sản xuất tại nhà máy (tiêu biểu như chuẩn IEEE 802.1AR Secure Device Identifier), nhúng chứng thư số vào phần cứng an toàn (Secure Element hoặc TPM). Thiết bị sử dụng chứng thư này để thực hiện cơ chế xác thực hai chiều (Mutual TLS -- mTLS) khi kết nối với máy chủ điều khiển, ngăn chặn hoàn toàn việc kết nối của các thiết bị mạo danh hoặc thiết bị lạ vào hệ sinh thái IoT.
+
+\paragraph{Nguyên lý an ninh: Chữ ký hợp lệ không đồng nghĩa với an toàn tuyệt đối.}
+Từ các phân tích lý thuyết ở Chương~\ref{chap:threat-security} và kết quả quan sát thực nghiệm tại Chương~\ref{chap:experiment}, một luận điểm bảo mật cốt tử cần được tái khẳng định: \textbf{Một chữ ký số hợp lệ về mặt toán học không đồng nghĩa với việc nội dung bên trong chắc chắn an toàn hoặc chủ thể ký chắc chắn đáng tin cậy trong mọi hoàn cảnh}. Cụ thể:
+\begin{itemize}
+    \item \textit{Trong Ký mã phần mềm:} Một tệp nhị phân có chữ ký code signing hợp lệ từ một CA tin cậy chỉ bảo đảm rằng mã nguồn không bị biến đổi so với thời điểm ký và người ký sở hữu khóa bí mật tương ứng. Tuy nhiên, điều này hoàn toàn không bảo đảm phần mềm không chứa mã độc hoặc cửa sau (backdoor). Kẻ tấn công có thể đánh cắp khóa ký mã của nhà phát triển hợp pháp (như trong vụ sâu mạng Stuxnet hay sự cố chuỗi cung ứng SolarWinds) hoặc tự đăng ký một thực thể kinh doanh để mua chứng thư ký mã hợp lệ rồi phát tán phần mềm độc hại.
+    \item \textit{Trong xác thực HTTPS:} Một trang web lừa đảo trực tuyến (phishing) hoàn toàn có thể xin cấp phát một chứng thư số DV hợp lệ từ các CA tự động hóa miễn phí (như Let's Encrypt) cho một tên miền mạo danh (ví dụ: \texttt{paypa1-security.com}). Trình duyệt web khi đó vẫn hiển thị biểu tượng kết nối an toàn (ổ khóa bảo mật) vì kênh truyền được mã hóa đúng kỹ thuật và tên miền khớp với trường SAN. Tuy nhiên, kết nối này an toàn tới một đối tượng lừa đảo; chữ ký số không bảo chứng cho tư cách đạo đức hay mục đích vận hành của chủ sở hữu trang web.
+    \item \textit{Trong quản trị CA:} Như minh chứng từ sự cố DigiNotar (Mục~\ref{subsec:diginotar-case}), khi hạ tầng CA bị xâm nhập, kẻ tấn công ký phát các chứng thư giả mạo có chữ ký mật mã hoàn toàn hợp lệ. Đối với mọi ứng dụng và client kiểm tra cục bộ, các chứng thư này đều vượt qua toàn bộ các bước thẩm định toán học và ngữ cảnh, nhưng thực tế chúng được sử dụng để tiến hành nghe lén quy mô lớn.
+\end{itemize}
+Chính vì vậy, an ninh của hệ thống thông tin đòi hỏi một chiến lược phòng thủ đa tầng (Defense-in-Depth), không thể phó mặc hoàn toàn cho tính đúng đắn mật mã của một chữ ký số đơn lẻ.
+
+\subsection{Minh bạch chứng thư (Certificate Transparency -- RFC 9162)}
+\label{subsec:ct-architecture-analysis}
+
+Để khắc phục lỗ hổng cấu trúc của Web PKI --- nơi bất kỳ CA nào trong hàng trăm Root CA được tin cậy đều có khả năng ký phát chứng thư cho bất kỳ tên miền nào trên thế giới mà chủ sở hữu không hề hay biết --- cơ chế \textbf{Minh bạch chứng thư (Certificate Transparency -- CT)} đã được Google đề xuất và chuẩn hóa bởi IETF trong RFC~6962, sau đó hoàn thiện tại RFC~9162 (phiên bản CT 2.0)~\cite{rfc9162}.
+
+\subsubsection{Cấu trúc nhật ký chứng thư và Cây Merkle (Merkle Tree)}
+Trọng tâm của kiến trúc CT là các máy chủ nhật ký công khai (\textit{CT Log Servers}). CT Log là một hệ thống cơ sở dữ liệu phân tán có thuộc tính \textbf{chỉ ghi thêm (Append-only)} và có thể kiểm toán công khai, được xây dựng dựa trên cấu trúc dữ liệu hình cây băm nhị phân (\textit{Merkle Tree}) sử dụng hàm băm mật mã an toàn (SHA-256):
+\begin{itemize}
+    \item \textbf{Cấu trúc dữ liệu và Tính bất biến:} Mọi chứng thư khi nộp vào Log sẽ trở thành một nút lá (leaf node) mang giá trị băm của chứng thư đó. Các nút trung gian lưu trữ giá trị băm kết hợp của hai nút con, và nút ở đỉnh cây là mã băm gốc của cây (\textit{Root Hash} hay \textit{Tree Head}). Do tính chất kháng tiền ảnh và kháng va chạm của hàm băm mật mã, việc sửa đổi, chèn lén hoặc xóa bỏ bất kỳ chứng thư nào trong lịch sử đều làm thay đổi hoàn toàn Root Hash, khiến hành vi gian lận bị phát hiện ngay lập tức.
+    \item \textbf{Bằng chứng hiện diện (Inclusion Proof):} Khi một chứng thư được đưa vào log, máy chủ CT Log có thể cung cấp một bằng chứng hiện diện với kích thước cực kỳ nhỏ gọn, tỉ lệ thuận với chiều cao của cây ($O(\log N)$, trong đó $N$ là tổng số chứng thư trong log). Client hoặc kiểm toán viên chỉ cần tập hợp các mã băm anh chị em (\textit{audit path}) dọc theo đường dẫn từ nút lá lên đỉnh cây là có thể tự tính toán và đối soát xem chứng thư có thực sự tồn tại trong cây Merkle hay không mà không cần tải toàn bộ dữ liệu log.
+    \item \textbf{Bằng chứng tính nhất quán (Consistency Proof):} Cho phép chứng minh rằng trạng thái mới của cây (chứa $M$ nút) là sự mở rộng hợp lệ chỉ ghi thêm từ trạng thái cũ (chứa $N$ nút, với $N < M$), bảo toàn nguyên vẹn toàn bộ thứ tự và nội dung lịch sử trước đó mà không bị chia nhánh hay giả mạo góc nhìn (chống tấn công chia rẽ quan sát -- \textit{split-world attack}).
+    \item \textbf{Đỉnh cây đã ký (Signed Tree Head -- STH):} Định kỳ (thường vài giờ một lần), CT Log công bố STH mới nhất, bao gồm kích thước cây ($N$), dấu thời gian và giá trị Root Hash, được ký số bằng khóa bí mật của chính Log Server nhằm cam kết trạng thái công khai trước cộng đồng.
+\end{itemize}
+
+\subsubsection{Dấu thời gian chứng thư đã ký (Signed Certificate Timestamp -- SCT)}
+Để relying party (trình duyệt) có thể tin cậy rằng một chứng thư đã được cam kết công khai trước khi chấp nhận kết nối, RFC~9162 định nghĩa cấu trúc \textbf{Signed Certificate Timestamp (SCT)}. SCT là một chứng chỉ mật mã do CT Log phát hành và ký số, đóng vai trò là một cam kết ràng buộc pháp lý rằng chứng thư (hoặc tiền chứng thư) tương ứng sẽ được hợp nhất vào cây Merkle của Log trong khoảng thời gian tối đa xác định (\textit{Maximum Merge Delay -- MMD}, thông thường là 24 giờ).
+
+Trong thực tế triển khai Web PKI, SCT được chuyển giao đến trình duyệt qua một trong ba phương thức:
+\begin{enumerate}
+    \item \textbf{Nhúng trực tiếp vào chứng thư X.509 (X.509 Extension -- Phổ biến nhất):} Đây là cơ chế chuẩn mực của Web PKI. Trước khi phát hành chứng thư chính thức, CA tạo ra một \textbf{Tiền chứng thư (Precertificate)} mang định dạng đặc biệt chứa extension đặc thù \texttt{poison} (để ngăn precertificate bị sử dụng làm chứng thư máy chủ hợp lệ). CA gửi precertificate lên các CT Log, nhận về các SCT, sau đó nhúng danh sách SCT này vào trường mở rộng X.509 v3 của chứng thư cuối cùng trước khi ký phát hành. Phương thức này không đòi hỏi thay đổi cấu hình máy chủ Web và bảo đảm SCT luôn đi liền với chứng thư.
+    \item \textbf{Phần mở rộng bắt tay TLS (\textit{TLS Extension}):} Máy chủ Web nộp chứng thư lên CT Log một cách độc lập để lấy SCT, sau đó gửi kèm danh sách SCT cho client trong thông điệp bắt tay TLS mở rộng (\texttt{signed\_certificate\_timestamp}).
+    \item \textbf{Ghim kèm qua OCSP (\textit{OCSP Stapling}):} CA hoặc OCSP responder truy vấn SCT từ Log và nhúng SCT vào trường mở rộng của bản tin phản hồi OCSP. Máy chủ Web định kỳ tải phản hồi OCSP này và chuyển tiếp (staple) cho trình duyệt trong phiên TLS.
+\end{enumerate}
+
+Hình~\ref{fig:ct-architecture} minh họa tổng thể kiến trúc, các thực thể tham gia và luồng trao đổi dữ liệu trong hệ thống Certificate Transparency theo chuẩn RFC~9162.
+
+\begin{figure}[!htbp]
+\centering
+\input{report/figures/chap07/ct-architecture}
+\caption{Kiến trúc tương tác và luồng dữ liệu của Certificate Transparency (RFC~9162).}
+\label{fig:ct-architecture}
+\end{figure}
+
+\subsubsection{Hệ thống giám sát (Monitor) và Kiểm toán (Auditor)}
+Hệ sinh thái CT hoạt động dựa trên sự phối hợp của hai vai trò độc lập:
+\begin{itemize}
+    \item \textbf{Hệ thống giám sát (CT Monitors):} Là các dịch vụ tự động (thường do các hãng công nghệ lớn, nhà cung cấp dịch vụ bảo mật hoặc chính chủ sở hữu tên miền vận hành) liên tục kết nối tới tất cả các CT Log công khai để tải về các bản ghi mới. Khi phát hiện một chứng thư mới được phát hành cho tên miền thuộc quyền quản trị của mình mà không nằm trong kế hoạch cấp phát nội bộ, hệ thống Monitor sẽ kích hoạt cảnh báo khẩn cấp cho đội ngũ vận hành. Nhờ đó, tổ chức có thể phát hiện chứng thư mạo danh chỉ trong vòng vài phút đến vài giờ sau khi được cấp phát, thay vì mất hàng tháng như trong thảm họa DigiNotar.
+    \item \textbf{Kiểm toán viên (CT Auditors):} Có nhiệm vụ kiểm tra tính toàn vẹn và hành vi của chính các CT Log Server. Auditor xác minh tính hợp lệ của chữ ký STH, kiểm tra tính nhất quán (Consistency Proof) giữa các phiên bản log theo thời gian để bảo đảm Log không bị can thiệp, và kiểm tra bằng chứng hiện diện (Inclusion Proof) để xác nhận các SCT do client nộp lên thực sự đã được đưa vào Merkle Tree.
+\end{itemize}
+
+\subsubsection{Mối quan hệ và sự khác biệt giữa CT với kiểm tra thu hồi CRL/OCSP}
+Cần phân định rạch ròi bản chất kỹ thuật giữa Certificate Transparency và các cơ chế kiểm tra thu hồi (CRL/OCSP) đã nghiên cứu tại Chương~\ref{chap:x509-xac-thuc}:
+\begin{itemize}
+    \item \textbf{Về phạm vi và chức năng:} Cơ chế thu hồi (RFC~5280, RFC~6960) là công cụ \textit{truy vấn trạng thái thụ động} nhằm trả lời câu hỏi: \textit{``Chứng thư cụ thể này hiện tại có còn giá trị hiệu lực hay đã bị hủy bỏ?''}. Trong khi đó, CT (RFC~9162) là cơ chế \textit{giám sát công khai chủ động} nhằm trả lời câu hỏi: \textit{``Có những chứng thư nào trên thế giới đã được cấp phát cho tên miền này mà tôi không hay biết?''}.
+    \item \textbf{Hạn chế của CRL/OCSP trước nguy cơ CA thỏa hiệp:} Trong sự cố DigiNotar (Chương~\ref{chap:threat-security}), chứng thư giả mạo \texttt{*.google.com} được cấp phát chui mà hoàn toàn không có trong cơ sở dữ liệu của CA. Tại thời điểm đó, danh sách CRL của CA không hề liệt kê số sê-ri này, và máy chủ OCSP thậm chí trả lời trạng thái \texttt{good} do cơ chế mặc định coi các số sê-ri lạ là chưa bị thu hồi (Mục~\ref{subsec:good-vs-valid}). Do đó, kiểm tra CRL/OCSP hoàn toàn bất lực trong việc phát hiện chứng thư giả mạo nếu CA không biết mình đã cấp sai. Ngược lại, nếu CT được áp dụng bắt buộc, kẻ tấn công buộc phải nộp chứng thư lên CT Log công khai để trình duyệt chấp nhận kết nối; khi đó, hệ thống Monitor của Google sẽ lập tức phát hiện sự tồn tại của chứng thư lạ ngay trong ngày đầu tiên.
+    \item \textbf{Tính bổ trợ lẫn nhau:} CT và CRL/OCSP không thay thế nhau mà tạo thành một chu trình khép kín: CT đóng vai trò là cơ chế \textit{phát hiện sớm} (detection), còn CRL/OCSP đóng vai trò là công cụ \textit{xử lý khắc phục} (remediation). Sau khi Monitor phát hiện chứng thư cấp sai thông qua CT Log, chủ sở hữu tên miền liên hệ với CA hoặc Root Store để kích hoạt quy trình thu hồi khẩn cấp qua CRL và OCSP nhằm vô hiệu hóa chứng thư trên phạm vi toàn cầu.
+\end{itemize}
+
+\subsubsection{Giới hạn then chốt và Phân định phạm vi áp dụng}
+Dù mang lại bước tiến vượt bậc cho an ninh mạng, CT có các giới hạn thiết kế then chốt cần được nhận thức đúng đắn:
+\begin{enumerate}
+    \item \textbf{CT không tự ngăn chặn việc cấp phát sai:} CT là một hệ thống kiểm toán sau phát hành (\textit{post-issuance detection}). CT Log hoàn toàn không can thiệp vào quy trình thẩm tra hồ sơ hay quyết định ký phát của CA. CA độc hại hoặc bị xâm nhập vẫn có thể cấp phát chứng thư giả mạo và nộp thành công lên CT Log. SCT chỉ chứng minh chứng thư đã được công khai, không chứng minh chứng thư đó là hợp pháp. Kẻ tấn công vẫn có một cửa sổ thời gian ngắn để khai thác chứng thư trước khi bị hệ thống Monitor phát hiện và thu hồi.
+    \item \textbf{CT không thay thế quy trình xác minh X.509:} Trình duyệt và client vẫn bắt buộc phải thực thi trọn vẹn thuật toán thẩm định đường dẫn theo RFC~5280 (kiểm tra chữ ký số, chuỗi tin cậy, thời hạn hiệu lực, đối chiếu SAN, mục đích EKU) như đã phân tích tại Chương~\ref{chap:x509-xac-thuc}. Việc kiểm tra SCT chỉ là một bước điều kiện bổ sung trong chính sách tin cậy của client.
+    \item \textbf{Phân biệt Web PKI công khai và PKI nội bộ:}
+    \begin{itemize}
+        \item \textit{Đối với Web PKI công khai:} Các chương trình Root Store lớn (như Google Chrome, Apple Safari) bắt buộc mọi chứng thư TLS máy chủ muốn được tin cậy công cộng đều phải kèm theo số lượng SCT hợp lệ tối thiểu (thường từ 2 đến 3 SCT từ các CT Log độc lập được công nhận). Chứng thư thiếu SCT sẽ bị trình duyệt chặn kết nối và hiển thị cảnh báo an ninh nghiêm trọng.
+        \item \textit{Đối với PKI nội bộ (Private/Enterprise PKI):} CT thường \textbf{không được kích hoạt}. Việc nộp chứng thư nội bộ lên CT Log công khai sẽ vô tình làm lộ sơ đồ mạng, tên máy chủ bảo mật và cấu trúc hạ tầng nội bộ của doanh nghiệp ra ngoài Internet. Các tổ chức có thể tự triển khai CT Log nội bộ nếu muốn giám sát tập trung, nhưng phần lớn các PKI doanh nghiệp dựa vào kiểm soát quyền truy cập nội bộ và kiểm toán nhật ký CA.
+    \end{itemize}
+\end{enumerate}
+
+\noindent\textbf{Liên hệ với mô hình thực nghiệm trong báo cáo:} Cần nhấn mạnh rõ ràng rằng mô hình phòng lab với OpenSSL 3.5.9 được xây dựng tại Chương~\ref{chap:experiment} là một mô hình PKI nội bộ thử nghiệm độc lập hai tầng (\texttt{Lab Root CA} và \texttt{Lab Intermediate CA}). Môi trường lab tập trung thuần túy vào việc khảo sát hành vi kỹ thuật của thuật toán xác minh chuỗi tin cậy và cơ chế danh sách thu hồi CRL theo chuẩn RFC~5280; \textbf{nghiên cứu hoàn toàn chưa triển khai hoặc kiểm thử hệ thống CT Log, máy chủ Monitor hay kiểm tra chữ ký SCT trong mô hình lab này}.
+
+Để tổng kết cách tiếp cận an ninh toàn diện mà CT là một thành phần trọng yếu, Hình~\ref{fig:defense-in-depth-pki} khái quát mô hình phòng thủ chiều sâu 6 lớp của hệ thống PKI hiện đại, tích hợp từ nền tảng bảo vệ vật lý khóa gốc đến các cơ chế giám sát và ứng phó sự cố cấp toàn cầu.
+
+\clearpage
+\begin{figure}[!htbp]
+\centering
+\input{report/figures/chap07/defense-in-depth-pki}
+\caption{Mô hình phòng thủ chiều sâu 6 lớp trong quản trị và vận hành PKI hiện đại.}
+\label{fig:defense-in-depth-pki}
+\end{figure}
+
+\section{Tự động hóa và mật mã hậu lượng tử}
+\label{sec:tu-dong-hoa-pqc}
+
+\subsection{Tự động hóa vòng đời chứng thư với ACME}
 \label{sec:acme-automation}
-Cần liên hệ ACME theo RFC 8555~\cite{rfc8555}; phân biệt các hướng ký hậu lượng tử với cơ chế thiết lập khóa. Kiểm chứng lại mọi mốc quy định hiện hành từ nguồn chính thức trước khi đưa vào báo cáo cuối.
+
+\subsubsection{Sự cần thiết của tự động hóa trong quản trị PKI hiện đại}
+Trong mô hình thực nghiệm tại Chương~\ref{chap:experiment}, các thao tác trong vòng đời chứng thư --- từ sinh cặp khóa RSA, tạo CSR, ký phát qua CA, cài đặt cấu hình máy chủ, cho đến thu hồi và xuất bản CRL --- đều được thực thi thủ công thông qua các câu lệnh OpenSSL CLI. Cách tiếp cận thủ công này có giá trị sư phạm sâu sắc giúp bóc tách chi tiết từng tham số cấu hình và kiểm chứng phản ứng của thuật toán xác minh. Tuy nhiên, trong môi trường sản xuất thực tế với hàng nghìn dịch vụ vi mô (microservices), môi trường ảo hóa container và điện toán đám mây thay đổi linh hoạt từng phút, quản trị chứng thư thủ công bộc lộ những hạn chế chết người:
+\begin{itemize}
+    \item \textbf{Nguy cơ gián đoạn dịch vụ do hết hạn chứng thư (Outages):} Quên gia hạn chứng thư đúng hạn là một trong những nguyên nhân hàng đầu gây sập các dịch vụ trực tuyến lớn trên thế giới, dẫn đến thiệt hại nặng nề về kinh tế và uy tín thương hiệu.
+    \item \textbf{Lỗi cấu hình do thao tác con người (Human Error):} Quá trình tạo CSR và cấu hình chứng thư thủ công rất dễ gặp phải các sai sót như thiếu extension SAN (gây ra lỗi \texttt{error 62} như ở ca kiểm thử TC04), đặt sai cờ EKU (gây ra \texttt{error 26} ở TC08), hoặc quên đính kèm chứng thư trung gian trong chuỗi cấu hình web server (dẫn đến đứt chuỗi \texttt{error 20} ở TC06).
+    \item \textbf{Áp lực từ lộ trình rút ngắn thời hạn chứng thư của CA/Browser Forum:} Theo các quy định mới nhất của CA/Browser Forum Baseline Requirements~\cite{cabforum_br}, thời hạn tối đa của chứng thư TLS công khai đang bị rút ngắn nhanh chóng từ 398 ngày xuống 200 ngày (từ tháng 3/2026), 100 ngày (từ tháng 3/2027) và chỉ còn 47 ngày (từ tháng 3/2029). Ở chu kỳ gia hạn chỉ vài tuần một lần, việc vận hành thủ công hoàn toàn bất khả thi; tự động hóa trở thành yêu cầu sống còn bắt buộc đối với mọi quản trị viên hệ thống.
+\end{itemize}
+
+\subsubsection{Giao thức ACME (RFC 8555)}
+Để giải quyết bài toán trên, IETF đã chuẩn hóa giao thức \textbf{ACME (Automated Certificate Management Environment)} trong RFC~8555~\cite{rfc8555}. ACME là giao thức ứng dụng hướng truyền thông dựa trên chuẩn RESTful API qua kết nối bảo mật HTTPS (dùng định dạng JSON và chữ ký số JSON Web Signature -- JWS), cho phép các máy khách tự động hóa (như Certbot, Caddy, Traefik) tương tác trực tiếp với máy chủ CA (như Let's Encrypt hoặc hệ thống Private ACME CA nội bộ) để quản lý trọn vẹn vòng đời chứng thư mà không cần sự can thiệp của con người.
+
+Kiến trúc và các bước tương tác chuẩn mực của giao thức ACME theo RFC~8555 được mô tả trực quan tại Hình~\ref{fig:acme-workflow}, bao gồm các giai đoạn tuần tự:
+\begin{enumerate}
+    \item \textbf{Khởi tạo tài khoản (Account Creation):} ACME Client sinh một cặp khóa tài khoản bất đối xứng $(PK_{\mathrm{Acc}}, SK_{\mathrm{Acc}})$ và gửi khóa công khai $PK_{\mathrm{Acc}}$ lên máy chủ ACME qua yêu cầu \texttt{POST /new-account}. Cặp khóa này dùng để định danh và ký số xác thực mọi thông điệp điều khiển sau đó của client.
+    \item \textbf{Tạo đơn yêu cầu cấp phát (New Order):} Khi cần cấp chứng thư, client gửi yêu cầu \texttt{POST /new-order} chứa danh sách các định danh tên miền cần bảo vệ (ví dụ: \texttt{domain.test}). Máy chủ ACME phản hồi một đơn đặt hàng kèm theo các liên kết URL phục vụ việc xác thực quyền sở hữu tên miền (Authorization URLs).
+    \item \textbf{Xác minh quyền kiểm soát tên miền (Identifier Validation Challenges):} Đây là giai đoạn cốt lõi của quy trình Domain Validation (DV). CA đưa ra các thử thách kỹ thuật (\textit{Challenges}) buộc client phải chứng minh quyền kiểm soát thực tế đối với tên miền. Sau khi client thiết lập xong điều kiện thử thách, nó gửi thông báo sẵn sàng để CA tiến hành kiểm tra độc lập qua mạng.
+    \item \textbf{Hoàn tất đơn và nộp CSR (Finalize Order):} Khi CA đã xác nhận toàn bộ các định danh chuyển sang trạng thái hợp lệ (\texttt{status: valid}), client tự sinh cặp khóa máy chủ riêng biệt $(PK_{\mathrm{Server}}, SK_{\mathrm{Server}})$, tạo tệp yêu cầu ký chứng thư CSR (chứa $PK_{\mathrm{Server}}$ và bằng chứng sở hữu khóa PoP theo RFC~2986~\cite{rfc2986}), rồi gửi CSR lên endpoint \texttt{POST /finalize}.
+    \item \textbf{Ký phát, tải về và triển khai (Issuance \& Deployment):} CA tiến hành ký phát hành chứng thư X.509 v3 và cung cấp URL tải về. ACME Client tự động tải toàn bộ chuỗi chứng thư (\texttt{fullchain.pem}), ghi vào thư mục cấu hình của dịch vụ máy chủ (Nginx, Apache), và gửi tín hiệu khởi động lại nhẹ (\textit{graceful reload}) dịch vụ để áp dụng chứng thư mới mà không làm rớt các kết nối đang hoạt động.
+    \item \textbf{Gia hạn tự động (Automated Renewal):} ACME Client cấu hình một tác vụ chạy nền định kỳ (qua cron job hoặc systemd timer, thường chạy 2 lần/ngày) để kiểm tra ngày hết hạn của chứng thư. Khi thời hạn còn lại chạm ngưỡng cấu hình (thường là còn 30 ngày đối với chứng thư 90 ngày, hoặc tương ứng 1/3 chu kỳ hiệu lực), client sẽ tự động kích hoạt lại toàn bộ quy trình từ Bước~2 để cấp mới chứng thư thay thế hoàn toàn tự động.
+    \item \textbf{Thu hồi khi xảy ra sự cố (Automated Revocation):} Nếu khóa bí mật của máy chủ bị xâm nhập, ACME Client có thể gửi yêu cầu thu hồi có ký số lên endpoint \texttt{POST /revoke-cert} bằng khóa tài khoản hoặc chính khóa bí mật của chứng thư để yêu cầu CA lập tức hủy bỏ chứng thư trên hệ thống CRL và OCSP.
+\end{enumerate}
+
+\begin{figure}[!htbp]
+\centering
+\input{report/figures/chap07/acme-workflow}
+\caption{Luồng tương tác tự động hóa vòng đời chứng thư theo giao thức ACME (RFC~8555).}
+\label{fig:acme-workflow}
+\end{figure}
+
+\subsubsection{Các phương thức thử thách xác thực tên miền trong ACME}
+RFC~8555 định nghĩa các cơ chế thử thách kỹ thuật khác nhau nhằm phục vụ các mô hình hạ tầng mạng đa dạng. Bảng~\ref{tab:acme-challenges} phân tích và so sánh chi tiết ba phương thức thử thách phổ biến nhất: HTTP-01, DNS-01 và TLS-ALPN-01.
+
+\input{report/tables/acme-challenges-comparison}
+
+\subsubsection{Lợi ích và Giới hạn an ninh của tự động hóa}
+Việc ứng dụng ACME mang lại sự thay đổi mang tính cách mạng cho vận hành PKI: loại bỏ hoàn toàn các sự cố sập mạng do quên gia hạn chứng thư, tự động cấu hình chuẩn xác các trường mở rộng phức tạp theo RFC~5280, và giúp các tổ chức dễ dàng thích ứng với lộ trình rút ngắn thời hạn của CA/Browser Forum.
+
+Tuy vậy, tự động hóa \textbf{không loại bỏ hoàn toàn rủi ro bảo mật}, mà chuyển dịch rủi ro từ tầng thao tác thủ công sang tầng kiểm soát hạ tầng và phân quyền:
+\begin{itemize}
+    \item \textbf{Rủi ro lộ thông tin ủy quyền DNS (DNS API Token Compromise):} Để vượt qua thử thách DNS-01 cho chứng thư đại diện (Wildcard), ACME Client bắt buộc phải được cấp mã khóa API có quyền ghi vào máy chủ DNS. Nếu máy chủ web bị chiếm quyền điều khiển, kẻ tấn công có thể trích xuất API token này để chỉnh sửa toàn bộ các bản ghi DNS của tổ chức, chuyển hướng lưu lượng truy cập và chiếm đoạt hoàn toàn tên miền công ty.
+    \item \textbf{Bảo vệ khóa bí mật của máy chủ:} Dù việc cấp phát diễn ra tự động, khóa bí mật $SK_{\mathrm{Server}}$ vẫn được lưu trữ dưới dạng tệp tin cục bộ trên máy chủ ứng dụng nếu không được bảo vệ bằng mô-đun phần cứng an toàn (HSM/TPM). Nếu kẻ tấn công chiếm được quyền đọc tệp tin hệ thống, nguy cơ lộ khóa vẫn hiện hữu nguyên vẹn như đã phân tích trong mô hình đe dọa tại Chương~\ref{chap:threat-security}.
+    \item \textbf{Rủi ro gián đoạn tiến trình daemon tự động:} Khi hạ tầng thay đổi (ví dụ cập nhật luật tường lửa chặn cổng 80, đổi quyền phân quyền thư mục web root, hoặc token DNS hết hạn), tiến trình ACME Client có thể âm thầm thất bại trong việc gia hạn nhiều ngày liên tục. Nếu tổ chức không xây dựng hệ thống giám sát và cảnh báo độc lập, chứng thư vẫn sẽ bị hết hạn gây tê liệt dịch vụ.
+\end{itemize}
+
+\noindent\textbf{Liên hệ với mô hình thực nghiệm trong báo cáo:} Mặc dù phân tích sâu về kiến trúc ACME như một xu thế tất yếu của công nghiệp PKI, báo cáo khẳng định rõ rằng \textbf{mô hình lab OpenSSL tại Chương~\ref{chap:experiment} hoàn toàn chưa cài đặt hoặc kiểm thử giao thức ACME}. Toàn bộ các thao tác trong lab được thực thi bằng kịch bản dòng lệnh có chủ đích để bóc tách giải thuật; việc tích hợp giải pháp quản trị tự động hóa ACME là định hướng mở rộng cho các nghiên cứu triển khai thực tế tiếp theo.
+
+\subsection{Chuyển đổi sang mật mã hậu lượng tử}
+\label{sec:pqc-migration}
+
+\subsubsection{Mối đe dọa của máy tính lượng tử đối với PKI}
+Toàn bộ nền tảng an ninh của PKI đương đại dựa trên sự bất đối xứng về độ phức tạp tính toán của hai bài toán toán học kinh điển: bài toán phân tích thừa số nguyên (nền tảng của hệ mật RSA~\cite{rsa1978}) và bài toán logarit rời rạc trên trường hữu hạn hoặc trên đường cong elip (nền tảng của DSA, ECDSA và đàm phán khóa ECDH)~\cite{diffie1976new}. Các thuật toán cổ điển tốt nhất hiện nay trên máy tính truyền thống đòi hỏi thời gian tính toán siêu đa thức (sub-exponential time), khiến việc giải mã trở nên bất khả thi trong khoảng thời gian hàng nghìn năm.
+
+Tuy nhiên, vào năm 1994, nhà toán học Peter Shor đã công bố thuật toán lượng tử mang tên ông (\textbf{Thuật toán Shor})~\cite{shor1994}. Thuật toán Shor có khả năng giải quyết đồng thời cả bài toán phân tích thừa số nguyên và bài toán logarit rời rạc với độ phức tạp thời gian đa thức ($O((\log N)^3)$). Khi một máy tính lượng tử quy mô lớn chịu lỗi (Cryptographically Relevant Quantum Computer -- CRQC) xuất hiện trong thực tế, các thuật toán mật mã khóa công khai truyền thống như RSA-2048, RSA-4096, ECDSA P-256 hay Curve25519 sẽ bị bẻ gãy hoàn toàn trong thời gian vài giờ hoặc vài ngày.
+
+Hệ quả đối với PKI là vô cùng thảm khốc:
+\begin{itemize}
+    \item \textbf{Sụp đổ chuỗi tin cậy và mạo danh CA:} Kẻ tấn công lượng tử có thể suy dẫn ngược khóa bí mật $SK_{\mathrm{Root}}$ và $SK_{\mathrm{Sub}}$ từ khóa công khai nằm sẵn trong chứng thư số của CA. Khi đó, kẻ tấn công có thể tự ý ký phát bất kỳ chứng thư X.509 giả mạo nào mà mọi client đều chấp thuận là hợp lệ tuyệt đối, phá vỡ hoàn toàn nguyên lý định danh và chuỗi tin cậy được xây dựng suốt nửa thế kỷ qua.
+    \item \textbf{Mối đe dọa ``Thu thập ngay, giải mã sau'' (Harvest Now, Decrypt Later -- HNDL):} Đối với các dữ liệu mật có tính bảo mật dài hạn (bí mật nhà nước, hồ sơ y tế, thông tin tài chính), các tổ chức đối thủ hiện nay đang chủ động thu thập và lưu trữ lưu lượng mạng TLS đã mã hóa trên toàn cầu. Khi máy tính lượng tử hoàn thiện, toàn bộ các bản ghi lưu lượng trong quá khứ sẽ bị giải mã hàng loạt. Do đó, yêu cầu nâng cấp thuật toán mã hóa và thỏa thuận khóa sang hậu lượng tử là một đòi hỏi cấp bách ngay ở thời điểm hiện tại.
+\end{itemize}
+
+\subsubsection{Phân định hai nhóm chức năng mật mã hậu lượng tử của NIST}
+Trước mối đe dọa lượng tử, Viện Tiêu chuẩn và Công nghệ Quốc gia Hoa Kỳ (NIST) đã phát động chiến dịch chuẩn hóa Mật mã hậu lượng tử (Post-Quantum Cryptography -- PQC) kéo dài gần một thập kỷ. Vào tháng 8 năm 2024, NIST đã chính thức ban hành bộ tiêu chuẩn PQC đầu tiên trên thế giới.
+
+Trong thiết kế hệ thống PKI và giao thức truyền thông an toàn, việc \textbf{phân định rạch ròi giữa hai nhóm chức năng mật mã là nguyên tắc bắt buộc tuyệt đối}, tránh mọi sự nhầm lẫn về mặt kiến trúc:
+
+\paragraph{Nhóm 1: Cơ chế đóng gói khóa (Key Encapsulation Mechanism -- KEM):}
+\begin{itemize}
+    \item \textbf{Tiêu chuẩn đại diện:} \textbf{ML-KEM} (chuẩn đóng gói khóa dựa trên mạng tinh thể), chuẩn hóa tại \textbf{NIST FIPS 203} (tháng 8/2024), phát triển từ thuật toán đoạt giải CRYSTALS-Kyber~\cite{fips203}.
+    \item \textbf{Nền tảng toán học:} Dựa trên độ khó của bài toán Học có lỗi trên mạng tinh thể mô-đun (Module Learning With Errors -- MLWE).
+    \item \textbf{Vai trò chức năng:} ML-KEM được thiết kế chuyên biệt để thực hiện việc đàm phán, trao đổi hoặc đóng gói một khóa đối xứng bí mật chung giữa hai thực thể qua kênh mạng công cộng trong quá trình bắt tay TLS (thay thế cho trao đổi khóa Diffie-Hellman truyền thống).
+    \item \textbf{Lưu ý sống còn:} \textbf{ML-KEM hoàn toàn KHÔNG có chức năng tạo chữ ký số}. Do đó, \textbf{ML-KEM không bao giờ được sử dụng để ký chứng thư số X.509, không dùng cho thông điệp xác thực bắt tay \texttt{CertificateVerify}, và không dùng để ký danh sách thu hồi CRL}.
+\end{itemize}
+
+\paragraph{Nhóm 2: Chuẩn chữ ký số (Digital Signature Standards):}
+Nhóm này đóng vai trò là công cụ mật mã trực tiếp thay thế RSA và ECDSA trong việc ký phát chứng thư số X.509 của CA, ký xác thực danh tính trong bắt tay TLS, và ký xác thực tài liệu. NIST đã ban hành hai tiêu chuẩn chính thức và một tiêu chuẩn dự thảo:
+\begin{itemize}
+    \item \textbf{ML-DSA} (Module-Lattice-Based Digital Signature Standard), chuẩn hóa tại \textbf{NIST FIPS 204} (tháng 8/2024), phát triển từ thuật toán CRYSTALS-Dilithium~\cite{fips204}:
+    \begin{itemize}
+        \item \textit{Nền tảng toán học:} Dựa trên độ khó của các bài toán mạng tinh thể Module-LWE kết hợp với bài toán Tìm nghiệm nguyên ngắn (Short Integer Solution -- SIS).
+        \item \textit{Vai trò:} Đây là \textbf{thuật toán chữ ký số chính đa dụng được NIST khuyến nghị hàng đầu} cho toàn bộ hạ tầng PKI, chứng thư X.509 và giao thức TLS. Thuật toán cung cấp sự cân bằng lý tưởng nhất giữa tốc độ tính toán xuất sắc và kích thước khóa/chữ ký tương đối tối ưu.
+    \end{itemize}
+    \item \textbf{SLH-DSA} (Stateless Hash-Based Digital Signature Standard), chuẩn hóa tại \textbf{NIST FIPS 205} (tháng 8/2024), phát triển từ thuật toán SPHINCS+~\cite{fips205}:
+    \begin{itemize}
+        \item \textit{Nền tảng toán học:} Dựa hoàn toàn vào độ an toàn của hàm băm mật mã phi trạng thái (Stateless Hash Functions).
+        \item \textit{Vai trò:} Đóng vai trò là \textbf{thuật toán chữ ký số dự phòng chiến lược có độ tin cậy an ninh cao nhất}. Cơ sở toán học của SLH-DSA hoàn toàn độc lập với hình học mạng tinh thể; nếu trong tương lai xuất hiện bước đột phá toán học bẻ gãy bài toán mạng tinh thể của ML-DSA, SLH-DSA vẫn hoàn toàn an toàn chừng nào hàm băm mật mã chưa bị phá vỡ. SLH-DSA có ưu điểm là kích thước khóa công khai cực kỳ nhỏ gọn (chỉ 32--64 byte), nhưng nhược điểm lớn là kích thước chữ ký rất khổng lồ (lên tới hàng chục kilobyte).
+    \end{itemize}
+    \item \textbf{FN-DSA} (Fast-Fourier Lattice-Based Digital Signature Standard -- NIST FIPS 206 dự thảo, phát triển từ Falcon): Cung cấp chữ ký mạng tinh thể có kích thước nhỏ nhất, nhưng đòi hỏi tính toán số học dấu phẩy động phức tạp và rất nhạy cảm với tấn công rò rỉ kênh bên (side-channel attacks), đòi hỏi sự thận trọng đặc biệt khi triển khai phần cứng.
+\end{itemize}
+
+Bảng~\ref{tab:pqc-algorithms} tổng hợp đối chiếu toàn diện các đặc tính kỹ thuật, kích thước dữ liệu và vai trò giữa các thuật toán mật mã cổ điển và các chuẩn mật mã hậu lượng tử NIST vừa ban hành.
+
+\input{report/tables/pqc-algorithms-comparison}
+
+\subsubsection{Thách thức kỹ thuật khi chuyển đổi sang PKI hậu lượng tử}
+Việc nâng cấp PKI lên hậu lượng tử không phải là một thao tác cấu hình đơn giản mà là một cuộc đại tu hạ tầng kỹ thuật sâu rộng, vấp phải những thách thức công nghệ cốt lõi:
+
+\paragraph{1. Sự phình to đột biến về kích thước dữ liệu và phân mảnh mạng:}
+Như thể hiện tại Bảng~\ref{tab:pqc-algorithms} và minh họa trực quan tại Hình~\ref{fig:pqc-size-comparison}, trong khi cặp khóa/chữ ký của ECDSA P-256 chỉ tiêu tốn 65 byte và 64 byte (chưa tới 0,1~KB), thì một chữ ký ML-DSA-44 đòi hỏi tới 2.420 byte, và chữ ký của SLH-DSA-128s lên tới 7.856 byte. Khi triển khai một chuỗi chứng thư phân cấp hoàn chỉnh gồm 3 mắt xích (Root $\rightarrow$ Intermediate $\rightarrow$ Leaf), tổng dung lượng chuỗi chứng thư X.509 hậu lượng tử sẽ tăng vọt từ 2--3~KB lên tới 10--30~KB.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{pqc-size-comparison}
+\caption{So sánh kích thước khóa công khai và chữ ký số giữa các thuật toán mật mã cổ điển và chuẩn mật mã hậu lượng tử NIST.}
+\label{fig:pqc-size-comparison}
+\end{figure}
+
+Sự gia tăng kích thước này gây ra những hệ lụy kỹ thuật nghiêm trọng:
+\begin{itemize}
+    \item \textit{Vượt quá giới hạn MTU và Phân mảnh gói tin TCP/IP:} Đơn vị truyền dữ liệu cực đại (MTU) của mạng Ethernet tiêu chuẩn là 1.500 byte. Một chứng thư TLS cổ điển có thể nằm gọn trong 1--2 khung tin IP ban đầu. Ngược lại, chuỗi chứng thư hậu lượng tử buộc phải phân mảnh thành 10--20 gói tin IP trong giai đoạn bắt tay TLS. Tỷ lệ mất gói (packet loss) gia tăng theo cấp số nhân, khiến độ trễ bắt tay mạng (RTT) tăng đáng kể và gây nghẽn kết nối trên diện rộng.
+    \item \textit{Áp lực tài nguyên trên thiết bị nhúng và IoT:} Các bộ vi điều khiển (MCU) trong hệ thống nhúng thường chỉ có vài chục kilobyte bộ nhớ RAM khả dụng. Việc nạp và giải mã một chuỗi chứng thư X.509 PQC dung lượng hàng chục kilobyte có thể làm tràn bộ nhớ đệm, tê liệt thiết bị và tạo điều kiện cho các cuộc tấn công từ chối dịch vụ (DoS) cạn kiệt tài nguyên.
+\end{itemize}
+
+\paragraph{2. Không thể thay thế trực tiếp mà không điều chỉnh hệ thống:}
+Không thể đơn thuần thay đổi giá trị trường thuật toán trong chứng thư X.509 cũ sang PQC. Quá trình di trú đòi hỏi sự đồng bộ hóa trên toàn bộ chuỗi mắt xích công nghệ:
+\begin{itemize}
+    \item \textit{Chuẩn hóa định danh ASN.1 và Cấu trúc X.509:} Cần ban hành các mã định danh OID mới cho từng biến thể thuật toán PQC, định nghĩa lại cú pháp mã hóa DER cho cấu trúc \texttt{SubjectPublicKeyInfo} và trường giá trị chữ ký \texttt{signatureValue} trong RFC~5280 profile.
+    \item \textit{Nâng cấp ngăn xếp phần mềm và phần cứng an toàn (HSM):} Các mô-đun phần cứng an toàn (HSM) thế hệ cũ chỉ có vi xử lý tối ưu hóa cho phép nhân số nguyên lớn (RSA) hoặc phép toán nhân điểm đường cong elip (ECC). Để hỗ trợ PQC, các nhà sản xuất bắt buộc phải thiết kế lại chip mật mã hỗ trợ các phép toán ma trận mạng tinh thể hoặc biến đổi Fourier số học (NTT), đồng thời mở rộng bộ nhớ lưu trữ khóa bí mật chuyên dụng.
+\end{itemize}
+
+\paragraph{3. Năng lực linh hoạt mật mã (Crypto-Agility) và Mô hình chứng thư lai (Hybrid PKI):}
+Khái niệm \textbf{Linh hoạt mật mã (Crypto-Agility)} mô tả khả năng của một hệ sinh thái PKI trong việc chuyển đổi linh hoạt giữa các thuật toán mã hóa, các hàm băm và độ dài khóa khác nhau mà không làm đổ vỡ các giao thức mạng hay đòi hỏi viết lại toàn bộ phần mềm ứng dụng.
+
+Để bảo đảm tính tương thích ngược (backward compatibility) trong giai đoạn chuyển tiếp dự kiến kéo dài từ 5 đến 10 năm, cộng đồng công nghệ áp dụng chiến lược \textbf{Chứng thư lai (Hybrid Certificates)} hoặc \textbf{Cơ chế ký kép (Dual Signatures)}:
+\begin{itemize}
+    \item Trong quá trình bắt tay TLS, hai bên thỏa thuận một cơ chế lai (như kết hợp giữa thuật toán cổ điển X25519 với thuật toán hậu lượng tử ML-KEM-768). Dữ liệu chỉ bị giải mã khi kẻ tấn công bẻ gãy được đồng thời cả hai thuật toán, bảo vệ lưu lượng trước mối đe dọa HNDL mà vẫn tương thích với các thiết bị chỉ hiểu giao thức cổ điển.
+    \item Trong cấu trúc chứng thư X.509 lai (theo các dự thảo chuẩn hóa của IETF), chứng thư mang đồng thời khóa công khai cổ điển (ECDSA) và khóa PQC (ML-DSA). Các client hiện đại hỗ trợ PQC sẽ xác minh chữ ký hậu lượng tử, trong khi các client cũ vẫn có thể xác minh chữ ký ECDSA mà không bị gián đoạn hoạt động.
+\end{itemize}
+
+\paragraph{4. Quy trình di trú PQC trong tổ chức:}
+Để chuẩn bị cho kỷ nguyên hậu lượng tử, các tổ chức và doanh nghiệp cần khẩn trương thực hiện lộ trình di trú bài bản gồm các giai đoạn:
+\begin{enumerate}
+    \item \textbf{Kiểm kê mật mã toàn diện (Cryptographic Inventory / CBOM):} Thiết lập danh mục kiểm kê mật mã (Cryptographic Bill of Materials -- CBOM) nhằm nhận diện toàn bộ các vị trí đang sử dụng khóa RSA/ECC: từ các chứng thư máy chủ web, chứng thư ký mã phần mềm, chữ ký số tài liệu, đến các thư viện mã hóa nhúng trong mã nguồn ứng dụng và thiết bị phần cứng mạng.
+    \item \textbf{Đánh giá mức độ ưu tiên theo tuổi thọ dữ liệu:} Phân loại dữ liệu theo thời hạn yêu cầu bảo mật. Những dữ liệu cần giữ bí mật từ 10 năm trở lên phải được ưu tiên nâng cấp sang cơ chế lai ngay lập tức để phòng ngừa kịch bản HNDL.
+    \item \textbf{Kiểm thử tương thích và hiệu năng trong môi trường Staging:} Triển khai môi trường thử nghiệm với các thư viện mật mã mới (như OpenSSL 3.x với mô-đun OQS Provider), đo lường độ trễ bắt tay mạng, tỷ lệ phân mảnh gói tin và mức tiêu thụ tài nguyên phần cứng trước khi áp dụng vào môi trường vận hành thực tế.
+\end{enumerate}
+
+\paragraph{5. Đối chiếu quy định thời hạn hiệu lực của CA/Browser Forum:}
+Cần lưu ý rằng các mốc thời gian rút ngắn hiệu lực chứng thư theo Baseline Requirements v2.3.1 (Ballot SC-063) của CA/Browser Forum~\cite{cabforum_br} --- cụ thể là giảm thời hạn tối đa xuống 200 ngày (từ 15/03/2026), 100 ngày (từ 15/03/2027) và 47 ngày (từ 15/03/2029) --- là quy định áp dụng nghiêm ngặt cho \textbf{chứng thư máy chủ TLS trong hệ sinh thái Web PKI công khai}. Việc rút ngắn thời hạn này thúc đẩy mạnh mẽ tự động hóa và giúp cô lập rủi ro lộ khóa; tuy nhiên, quy định này \textbf{không áp dụng máy móc cho các hệ thống PKI nội bộ, hạ tầng điều khiển công nghiệp (SCADA) hay các thiết bị IoT chuyên dụng}, nơi chu kỳ bảo trì và điều kiện kỹ thuật đòi hỏi các chính sách thời hạn linh hoạt hơn.
+
+\noindent\textbf{Khẳng định phạm vi thực nghiệm của báo cáo:} Tương tự như với CT và ACME, báo cáo nghiên cứu nhấn mạnh rõ rằng mô hình thực nghiệm OpenSSL tại Chương~\ref{chap:experiment} \textbf{sử dụng hoàn toàn các thuật toán mật mã cổ điển} (RSA-4096 cho Root/Intermediate CA, RSA-2048 cho máy chủ Web, hàm băm SHA-256). Nghiên cứu hoàn toàn \textbf{chưa tiến hành thực nghiệm} đối với các thuật toán mật mã hậu lượng tử (ML-KEM, ML-DSA, SLH-DSA). Các phân tích chuyên sâu về PQC tại mục này đóng vai trò là khung nghiên cứu lý thuyết định hướng, vạch ra các thách thức kỹ thuật cốt lõi và lộ trình di trú cấp thiết để nhóm nghiên cứu tiếp tục mở rộng thực nghiệm trong các công trình tiếp theo.

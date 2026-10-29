@@ -11,9 +11,9 @@
 \midrule
 \textbf{TC02} & Chứng thư tự ký (không có chuỗi dẫn tới Trust Anchor cấu hình) & FAIL & FAIL & 2 & error 18: self-signed certificate & Khớp \\
 \midrule
-\textbf{TC03} & Thời điểm kiểm tra đặt tại mốc tương lai sau ngày hết hạn (\texttt{-attime}) & FAIL & FAIL & 2 & error 10: certificate has expired & Khớp \\
+\textbf{TC03} & Thời điểm kiểm tra đặt tại mốc tương lai sau hạn (\texttt{-attime} $+40$ ngày) & FAIL & FAIL & 2 & error 10: certificate has expired & Khớp \\
 \midrule
-\textbf{TC04} & Hostname truy vấn (\texttt{wrong.test}) không trùng khớp với SAN & FAIL & FAIL & 2 & error 62: hostname mismatch & Khớp \\
+\textbf{TC04} & Hostname truy vấn (\texttt{wrong.test}) không trùng khớp SAN (\texttt{server-a.test}) & FAIL & FAIL & 2 & error 62: hostname mismatch & Khớp \\
 \midrule
 \textbf{TC05} & Chữ ký số trên chứng thư bị can thiệp trực tiếp vào payload nhị phân & FAIL & FAIL & 2 & error 7: certificate signature failure (invalid padding) & Khớp \\
 \midrule

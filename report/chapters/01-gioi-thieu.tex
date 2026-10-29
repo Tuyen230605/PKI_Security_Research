@@ -61,7 +61,7 @@ Cần phân biệt rõ hai mức độ đe dọa khác nhau: (i) Eve tự ý tr�
 
 \begin{figure}[!htbp]
 \centering
-\input{report/figures/mitm-key-exchange}
+\input{report/figures/chap01/mitm-key-exchange}
 \caption{Mô hình trao đổi thông tin thông thường và kịch bản tấn công thay thế khóa của Eve.}
 \label{fig:mitm-key-exchange}
 \end{figure}
@@ -95,9 +95,9 @@ Mục tiêu của đề tài là phân tích kiến trúc PKI, cơ chế xác th
 
 Đề tài đặt ra ba giả thuyết nghiên cứu chính gắn liền với các câu hỏi nghiên cứu:
 \begin{itemize}
-    \item \textbf{Giả thuyết H1 (Về tính độc lập giữa chữ ký số và quyết định chấp nhận chứng thư):} Chữ ký số hợp lệ của CA không tự nó bảo đảm chứng thư được chấp nhận. Quyết định xác minh còn phụ thuộc vào các điều kiện kiểm tra được thực thi tại client, bao gồm việc xây dựng chuỗi tin cậy về Trust Anchor, kiểm tra thời hạn hiệu lực, danh tính máy chủ (SAN), mục đích sử dụng (EKU) và trạng thái thu hồi. Giả thuyết này gắn liền với RQ2 và được kiểm chứng qua các ca kiểm thử thực nghiệm (TC01--TC08, TC10).
-    \item \textbf{Giả thuyết H2 (Về độ trễ và sự phụ thuộc trong cơ chế thu hồi):} Trạng thái tin cậy của chứng thư mang tính thời gian thực và phụ thuộc vào chính sách của client; nếu client không chủ động kích hoạt kiểm tra thu hồi qua danh sách thu hồi (CRL), chứng thư bị thu hồi vẫn vượt qua quy trình thẩm định để được chấp nhận. Giả thuyết này gắn với RQ3 và được kiểm chứng trực tiếp qua ca TC07 (đối chiếu với mốc chuẩn TC01).
-    \item \textbf{Giả thuyết H3 (Về chi phí vận hành và tính khả thi triển khai):} Độ phức tạp tính toán và chi phí lưu lượng trong thẩm định đường dẫn có xu hướng tăng theo độ sâu của chuỗi phân cấp và kích thước danh sách thu hồi. Trong phạm vi đề tài, giả thuyết này được phân tích định tính dựa trên các chuẩn RFC (RFC~5280, RFC~6960) và chưa được kiểm chứng thực nghiệm bằng phép đo hiệu năng chuyên biệt.
+    \item \textbf{Giả thuyết H1 (Điều kiện cần của chữ ký số và vai trò chính sách client):} Chữ ký số hợp lệ của CA chỉ là điều kiện cần chứ chưa đủ để một chứng thư số được client chấp nhận. Quyết định xác minh phụ thuộc vào việc thỏa mãn đồng thời các ràng buộc ngữ cảnh mà chính sách của client thực thi, bao gồm việc chuỗi tin cậy dẫn tới Trust Anchor được cấu hình, thời điểm kiểm tra nằm trong hạn hiệu lực, danh tính máy chủ khớp SAN, mục đích sử dụng khớp EKU và trạng thái thu hồi (nếu client kích hoạt kiểm tra). Giả thuyết này gắn liền với RQ2 và được kiểm chứng qua các ca kiểm thử thực nghiệm (TC01--TC08, TC10).
+    \item \textbf{Giả thuyết H2 (Tính phụ thuộc ngữ cảnh và chính sách của quyết định xác minh):} Quyết định thẩm định của client mang tính động và phụ thuộc trực tiếp vào các tham số ngữ cảnh (thời điểm kiểm tra, tên máy chủ, Trust Anchor được chỉ định, mục đích kiểm tra) cùng chính sách kiểm tra thu hồi; việc thay đổi các tham số hoặc chính sách này trên cùng một chứng thư số sẽ trực tiếp làm đảo ngược quyết định thẩm định từ chấp thuận (\texttt{PASS}) sang từ chối (\texttt{FAIL}) hoặc ngược lại. Giả thuyết này gắn với RQ2, RQ3 và được kiểm chứng qua các ca kiểm thử (TC03, TC04, TC07, TC08) cùng các lần chạy đối chứng mở rộng.
+    \item \textbf{Giả thuyết H3 (Đánh đổi về chi phí vận hành và tính khả thi của cơ chế thu hồi):} Cơ chế kiểm tra thu hồi qua danh sách thu hồi (CRL) bộc lộ sự đánh đổi rõ rệt về chi phí vận hành; kích thước tệp danh sách và thời gian xử lý thẩm định của client có xu hướng gia tăng theo số lượng chứng thư bị thu hồi. Giả thuyết này gắn với RQ3 và được kiểm chứng một phần qua phân tích kiến trúc lý thuyết kết hợp phép đo đạc định lượng cục bộ với các quy mô danh sách thu hồi khác nhau.
 \end{itemize}
 
 Để hiện thực hóa mục tiêu và kiểm chứng các giả thuyết, đề tài tập trung giải quyết 4 câu hỏi nghiên cứu:

@@ -1,0 +1,60 @@
+\resizebox{0.94\textwidth}{!}{%
+\begin{tikzpicture}[
+    actor/.style={draw=black, very thick, fill=gray!15, rounded corners=5pt, text width=6.2cm, align=center, inner sep=7pt, font=\small\bfseries},
+    stepbox/.style={draw=black, thick, fill=white, rounded corners=4pt, text width=5.4cm, align=center, inner sep=5pt, font=\scriptsize},
+    actionbox/.style={draw=black, dashed, fill=gray!6, rounded corners=4pt, text width=5.4cm, align=center, inner sep=5pt, font=\scriptsize},
+    arrow/.style={-{Stealth[scale=1.1]}, thick, black},
+    dashedarrow/.style={-{Stealth[scale=1.05]}, thick, dashed, black}
+]
+
+    % Cột 1: ACME Client
+    \node[actor] (client) at (0, 15.0) {ACME Client\\[2pt]{\footnotesize (Certbot / Caddy / Quản trị tự động)}};
+    % Cột 2: ACME Server
+    \node[actor] (server) at (9.6, 15.0) {ACME Server (CA)\\[2pt]{\footnotesize (Let's Encrypt / Private ACME CA)}};
+
+    % Trục thời gian
+    \draw[thick, gray!60] (0, 14.1) -- (0, -1.6);
+    \draw[thick, gray!60] (9.6, 14.1) -- (9.6, -1.6);
+
+    % Bước 1: Khởi tạo tài khoản
+    \node[stepbox] (s1) at (0, 13.2) {Tạo cặp khóa tài khoản\\$(SK_{\mathrm{Acc}}, PK_{\mathrm{Acc}})$};
+    
+    % Mũi tên 1: Đăng ký tài khoản
+    \draw[arrow] (0, 11.9) -- (9.6, 11.9)
+        node[midway, above=2pt, font=\scriptsize\bfseries] {1. POST /new-account (Gửi $PK_{\mathrm{Acc}}$)};
+
+    % Bước 2: Tạo đơn cấp phát
+    \draw[arrow] (0, 10.6) -- (9.6, 10.6)
+        node[midway, above=2pt, font=\scriptsize\bfseries] {2. POST /new-order (Định danh \texttt{domain.test})};
+    
+    % Mũi tên 3: Trả về danh sách thử thách
+    \draw[arrow] (9.6, 9.3) -- (0, 9.3)
+        node[midway, above=2pt, font=\scriptsize] {3. Trả về URLs thử thách (\texttt{HTTP-01 / DNS-01})};
+
+    % Bước 3: Thiết lập thử thách
+    \node[actionbox] (s2) at (0, 7.8) {\textbf{Đáp ứng thử thách (Challenge):}\\Tạo tệp \texttt{/.well-known/acme-challenge/}\\hoặc tạo bản ghi DNS TXT tương ứng};
+
+    % Bước 4: Báo hiệu hoàn tất thử thách
+    \draw[arrow] (0, 6.3) -- (9.6, 6.3)
+        node[midway, above=2pt, font=\scriptsize\bfseries] {4. POST thử thách: Sẵn sàng kiểm tra};
+
+    % Bước 5: Xác thực độc lập
+    \node[stepbox] (s3) at (9.6, 4.8) {\textbf{Kiểm tra độc lập qua mạng:}\\Truy vấn HTTP cổng 80 hoặc DNS query\\để xác thực quyền sở hữu tên miền};
+    
+    % Mũi tên 5: Thông báo trạng thái hợp lệ
+    \draw[arrow] (9.6, 3.4) -- (0, 3.4)
+        node[midway, above=2pt, font=\scriptsize] {5. Trạng thái chứng thực: \texttt{status: valid}};
+
+    % Bước 6: Chốt đơn và nộp CSR
+    \draw[arrow] (0, 2.2) -- (9.6, 2.2)
+        node[midway, above=2pt, font=\scriptsize\bfseries] {6. POST /finalize (Nộp CSR chứa $PK_{\mathrm{Server}}$)};
+    
+    % Bước 7: Ký và tải chứng thư
+    \draw[arrow] (9.6, 1.0) -- (0, 1.0)
+        node[midway, above=2pt, font=\scriptsize\bfseries] {7. Trả về Chuỗi chứng thư X.509 (\texttt{fullchain.pem})};
+
+    % Bước 8: Tự động cài đặt và đặt lịch
+    \node[actionbox] (s4) at (0, -0.4) {\textbf{Tự động hóa hoàn tất:}\\Cài đặt chứng thư, reload dịch vụ Web\\và đặt lịch định kỳ (cron/timer) gia hạn};
+
+\end{tikzpicture}%
+}

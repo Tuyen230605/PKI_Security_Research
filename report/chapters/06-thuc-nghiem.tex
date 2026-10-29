@@ -8,9 +8,9 @@
 \label{subsec:exp-hypotheses}
 Để giải quyết các câu hỏi nghiên cứu (RQ) đặt ra tại Mục~\ref{sec:objectives-rqs}, thực nghiệm được thiết kế nhằm kiểm chứng ba giả thuyết kỹ thuật cốt lõi:
 \begin{itemize}
-    \item \textbf{Giả thuyết $H_1$ (Điều kiện cần của chữ ký số):} Chữ ký số hợp lệ chỉ là điều kiện cần chứ chưa đủ để một chứng thư số được client tin cậy. Chứng thư chỉ được chấp nhận khi thỏa mãn đồng thời toàn bộ các ràng buộc ngữ cảnh: chuỗi tin cậy tới Trust Anchor, thời hạn hiệu lực, định danh tên máy chủ, mục đích sử dụng và trạng thái thu hồi.
-    \item \textbf{Giả thuyết $H_2$ (Tính động của quyết định xác minh):} Việc thay đổi các tham số ngữ cảnh (thời điểm kiểm tra, tên máy chủ, danh mục Trust Anchor) hoặc trạng thái thu hồi sẽ làm thay đổi trực tiếp quyết định thẩm định của client từ chấp thuận (\texttt{PASS}) sang từ chối (\texttt{FAIL}).
-    \item \textbf{Giả thuyết $H_3$ (Giới hạn và chi phí vận hành của cơ chế xác minh):} Các cơ chế thẩm định trạng thái chứng thư có sự đánh đổi rõ rệt về chi phí và giới hạn vận hành; trong đó, cơ chế kiểm tra thu hồi qua danh sách CRL đòi hỏi chi phí lưu trữ, băng thông phân phối định kỳ và có độ trễ cập nhật nhất định giữa các lần phát hành.
+    \item \textbf{Giả thuyết $H_1$ (Điều kiện cần của chữ ký số và vai trò chính sách client):} Chữ ký số hợp lệ chỉ là điều kiện cần chứ chưa đủ để một chứng thư số được client chấp nhận. Chứng thư chỉ được tin cậy khi thỏa mãn đồng thời các ràng buộc ngữ cảnh mà chính sách xác minh của client thực thi (như chuỗi tin cậy dẫn tới Trust Anchor được cấu hình, thời điểm kiểm tra nằm trong hạn hiệu lực, định danh máy chủ khớp SAN, mục đích sử dụng khớp EKU, và trạng thái thu hồi nếu client kích hoạt kiểm tra).
+    \item \textbf{Giả thuyết $H_2$ (Tính phụ thuộc ngữ cảnh và chính sách của quyết định xác minh):} Quyết định thẩm định của client mang tính động và phụ thuộc trực tiếp vào các tham số ngữ cảnh (thời điểm kiểm tra, tên máy chủ, Trust Anchor chỉ định, mục đích kiểm tra) cùng chính sách kiểm tra thu hồi; việc thay đổi các tham số hoặc chính sách này trên cùng một chứng thư số sẽ trực tiếp làm đảo ngược quyết định thẩm định từ chấp thuận (\texttt{PASS}) sang từ chối (\texttt{FAIL}) hoặc ngược lại.
+    \item \textbf{Giả thuyết $H_3$ (Đánh đổi về chi phí vận hành và tính khả thi của cơ chế thu hồi):} Cơ chế kiểm tra thu hồi qua danh sách thu hồi (CRL) bộc lộ sự đánh đổi rõ rệt về chi phí vận hành; kích thước tệp danh sách và thời gian xử lý thẩm định của client có xu hướng gia tăng theo số lượng chứng thư bị thu hồi.
 \end{itemize}
 
 \subsection{Môi trường thực nghiệm}
@@ -26,7 +26,7 @@ Thông số môi trường thực tế được tự động kiểm tra và ghi 
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.92\textwidth]{report/figures/tcchap6.1/env-04-summary-environment.png}
+\includegraphics[width=0.92\textwidth]{env-04-summary-environment.png}
 \caption{Thông số môi trường hệ điều hành, phần cứng và phiên bản OpenSSL thực tế của bài lab.}
 \label{fig:env-summary}
 \end{figure}
@@ -36,11 +36,11 @@ Thông số môi trường thực tế được tự động kiểm tra và ghi 
 
 \subsection{Mô hình phân cấp chứng thư (PKI Hierarchy)}
 \label{subsec:pki-hierarchy}
-Hệ thống phòng lab thiết lập mô hình PKI phân cấp 2 tầng theo chuẩn RFC~5280~\cite{rfc5280} nhằm phản ánh đúng cấu trúc thực tế của Web PKI, được minh họa tại Hình~\ref{fig:lab-pki-hierarchy}.
+Hệ thống phòng lab thiết lập mô hình PKI phân cấp 2 tầng theo chuẩn RFC~5280~\cite{rfc5280} nhằm mô phỏng cấu trúc hai tầng phổ biến trong các hệ thống PKI, được minh họa tại Hình~\ref{fig:lab-pki-hierarchy}.
 
 \begin{figure}[!htbp]
 \centering
-\input{report/figures/lab-pki-hierarchy}
+\input{report/figures/chap06/lab-pki-hierarchy}
 \caption{Mô hình phân cấp chứng thư X.509 hai tầng triển khai trong phòng lab thực nghiệm.}
 \label{fig:lab-pki-hierarchy}
 \end{figure}
@@ -65,14 +65,16 @@ Hệ thống phòng lab thiết lập mô hình PKI phân cấp 2 tầng theo ch
 
 \subsection{Quy trình thực nghiệm}
 \label{subsec:exp-workflow}
-Quy trình được tự động hóa hoàn toàn thông qua tệp điều khiển \texttt{Makefile} theo các bước tuần tự:
+Quy trình được tự động hóa hoàn toàn thông qua tệp điều khiển \texttt{Makefile} và kịch bản Bash theo các bước tuần tự:
 \begin{enumerate}
     \item \texttt{make clean}: Dọn dẹp toàn bộ dữ liệu tạm và thư mục xuất bản cũ.
     \item \texttt{make ca}: Tạo cặp khóa RSA 4096-bit, khởi tạo cơ sở dữ liệu CA (\texttt{index.txt}, \texttt{serial}), và sinh chứng thư tự ký cho Root CA cùng Intermediate CA.
     \item \texttt{make servers}: Tạo khóa RSA 2048-bit, tạo CSR và ký cấp phát chứng thư cho các máy chủ mục tiêu với các extension tương ứng.
     \item \texttt{make revoke}: Thu hồi chứng thư \texttt{server-a.crt} bằng lệnh \texttt{openssl ca -revoke} với mã lý do \texttt{keyCompromise}, sau đó kết xuất danh sách thu hồi \texttt{ca.crl} bằng lệnh \texttt{openssl ca -gencrl}.
-    \item \texttt{make demo-test}: Kích hoạt script \texttt{demo/scripts/run\_tests.sh} để thực thi 10 ca kiểm thử (TC01--TC10), đối soát exit code và lưu vết kết quả ra tệp \url{demo/out/results.tsv}.
+    \item \texttt{make demo-test}: Kích hoạt script \texttt{demo/scripts/run\_tests.sh} để thực thi 10 ca kiểm thử (TC01--TC10), đối soát exit code và lưu vết kết quả ra tệp \url{demo/out/results.tsv}. Trong đó, ca TC03 tính toán mốc tương lai qua tham số \texttt{-attime} với công thức \texttt{\$((\$(date +\%s) + 40 * 86400))} (+40 ngày kể từ lúc sinh, vượt hạn 30 ngày); ca TC04 truy vấn kiểm tra với tên miền \texttt{wrong.test} (không khớp với SAN \texttt{server-a.test}).
 \end{enumerate}
+
+\noindent\textbf{Lưu ý về thời hạn hiệu lực của chứng thư lab:} Toàn bộ chứng thư máy chủ trong bài lab được cấu hình thời hạn hiệu lực là 30 ngày (từ 24/10/2026 đến 23/11/2026). Sau mốc 23/11/2026, nếu tái lập kiểm thử mà không tạo mới chứng thư, các ca kiểm thử đạt mốc chuẩn (TC01 và TC09) sẽ chuyển sang trạng thái \texttt{FAIL} do lỗi hết hạn tự nhiên (\texttt{error 10: certificate has expired}). Để tái lập chính xác kết quả sau mốc thời gian này, người đánh giá có thể thực hiện dọn dẹp và khởi tạo lại toàn bộ lab bằng lệnh \texttt{make clean \&\& make demo-test}, hoặc truyền bổ sung tham số mốc thời gian cố định \texttt{-attime <epoch>} nằm trong khoảng hiệu lực ban đầu (ví dụ: \texttt{-attime 1792800000}).
 
 \section{Test cases và kết quả}
 \label{sec:exp-results}
@@ -83,23 +85,23 @@ Quá trình kiểm thử thực hiện 10 ca kiểm thử độc lập (TC01--TC
 
 \input{report/tables/exp-results-table}
 
-Hình~\ref{fig:suite-summary} trích xuất toàn văn kết quả thực thi tự động 10 ca kiểm thử từ giao diện dòng lệnh, xác thực tính khớp tuyệt đối giữa kết quả quan sát thực nghiệm và kỳ vọng thiết kế.
+Hình~\ref{fig:suite-summary} trích xuất toàn văn kết quả thực thi tự động 10 ca kiểm thử từ giao diện dòng lệnh, thể hiện tính nhất quán giữa kết quả quan sát thực nghiệm và kỳ vọng thiết kế của bộ kiểm thử.
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\textwidth]{report/figures/tcchap6.1/testcase-suite-summary.png}
+\includegraphics[width=\textwidth]{testcase-suite-summary.png}
 \caption{Tổng hợp kết quả thực thi tự động bộ 10 ca kiểm thử PKI qua script \texttt{run\_tests.sh}.}
 \label{fig:suite-summary}
 \end{figure}
 
 \subsection{Phân tích chi tiết các trường hợp quan sát}
 \label{subsec:exp-analysis-cases}
-Dựa trên kết quả quan sát tại Bảng~\ref{tab:exp-results}, các ca kiểm thử được phân nhóm và phân tích chuyên sâu:
+Dựa trên kết quả quan sát tại Bảng~\ref{tab:exp-results}, các ca kiểm thử được phân nhóm và phân tích chuyên sâu theo nguyên tắc cô lập biến kiểm thử đối chiếu với mốc chuẩn TC01:
 \begin{itemize}
-    \item \textbf{Nhóm xác minh toàn vẹn mật mã (TC05):} Khi chữ ký số bị sửa đổi bit, quá trình giải mã chữ ký bằng khóa công khai của bên phát hành gặp lỗi đệm PKCS\#1 v1.5 (\textit{invalid padding}), OpenSSL lập tức dừng thuật toán và báo \texttt{error 7: certificate signature failure}. Đây là bằng chứng cho thấy kiểm tra chữ ký là điều kiện tiên quyết bắt buộc.
-    \item \textbf{Nhóm xác minh chuỗi tin cậy (TC02, TC06, TC10):} Nếu thiếu chứng thư trung gian (TC06) hoặc chứng thư thuộc một CA khác không nằm trong Trust Store (TC10), OpenSSL đều trả về \texttt{error 20} (\texttt{unable to get local issuer certificate}). Trong trường hợp client gặp một chứng thư tự ký không tin cậy (TC02), lỗi trả về là \texttt{error 18 (self-signed certificate)}.
-    \item \textbf{Nhóm xác minh ngữ cảnh ứng dụng (TC03, TC04, TC08):} Dù chữ ký đúng và chuỗi tin cậy hoàn hảo, OpenSSL vẫn từ chối chứng thư khi sai lệch thời gian (\texttt{error 10} ở TC03), sai tên máy chủ (\texttt{error 62} ở TC04), hoặc sai mục đích cấp phép (\texttt{error 26} ở TC08).
-    \item \textbf{Nhóm kiểm tra trạng thái thu hồi (TC07, TC09):} Với chứng thư đã bị đưa vào \texttt{ca.crl}, cờ \texttt{-crl\_check} đã giúp OpenSSL chặn đứng việc sử dụng chứng thư với \texttt{error 23 (certificate revoked)}. Ngược lại, chứng thư \texttt{server-b.crt} chưa bị thu hồi vẫn vượt qua kiểm tra an toàn (TC09).
+    \item \textbf{Nhóm xác minh toàn vẹn mật mã (TC05):} So với mốc chuẩn TC01, ca kiểm thử này giữ nguyên mọi tham số và chuỗi xác minh, chỉ thay đổi duy nhất một bit trong payload chữ ký DER. Quá trình giải mã chữ ký bằng khóa công khai của bên phát hành gặp lỗi đệm PKCS\#1 v1.5 (\textit{invalid padding}), OpenSSL lập tức dừng thuật toán và báo \texttt{error 7: certificate signature failure}. Đây là bằng chứng cho thấy kiểm tra chữ ký là điều kiện tiên quyết bắt buộc.
+    \item \textbf{Nhóm xác minh chuỗi tin cậy (TC02, TC06, TC10):} So với mốc chuẩn TC01, client giữ nguyên cấu hình xác minh nhưng nguồn gốc chứng thư mục tiêu hoặc chuỗi dẫn truyền bị thay đổi: bỏ qua cờ nạp Intermediate CA (\texttt{-untrusted}) ở TC06 dẫn đến đứt gãy chuỗi; chứng thư phát hành từ một CA độc lập không nằm trong Trust Store của client ở TC10; hoặc chứng thư tự ký mạo danh ở TC02. OpenSSL trả về \texttt{error 20} (\texttt{unable to get local issuer certificate}) cho TC06, TC10 và \texttt{error 18} (\texttt{self-signed certificate}) cho TC02.
+    \item \textbf{Nhóm xác minh ngữ cảnh ứng dụng (TC03, TC04, TC08):} So với mốc chuẩn TC01 (sở hữu chuỗi tin cậy và chữ ký chuẩn), các ca này cô lập và chỉ thay đổi duy nhất một biến tham số phía client: mốc thời gian thẩm định vượt hạn (\texttt{-attime}) ở TC03 gây ra \texttt{error 10}; tên miền truy vấn (\texttt{wrong.test}) ở TC04 gây ra \texttt{error 62}; hoặc sử dụng chứng thư mang EKU chuyên biệt cho client (\texttt{client-only.crt}) ở TC08 gây ra \texttt{error 26} khi client đòi hỏi mục đích máy chủ (\texttt{-purpose sslserver}).
+    \item \textbf{Nhóm kiểm tra trạng thái thu hồi (TC07, TC09):} So với mốc chuẩn TC01 (sử dụng cùng chứng thư \texttt{server-a.crt} vốn đã bị thu hồi trên CA), TC07 chỉ thay đổi duy nhất biến chính sách của client: bổ sung cờ kiểm tra thu hồi \texttt{-crl\_check} kèm tệp \texttt{ca.crl}, khiến OpenSSL lập tức từ chối với \texttt{error 23 (certificate revoked)}. Ngược lại, chứng thư \texttt{server-b.crt} chưa bị thu hồi vẫn vượt qua kiểm tra an toàn với cùng chính sách CRL nghiêm ngặt (TC09).
 \end{itemize}
 
 \section{Thảo luận và hạn chế}
@@ -108,23 +110,41 @@ Dựa trên kết quả quan sát tại Bảng~\ref{tab:exp-results}, các ca ki
 \subsection{Đánh giá và trả lời các giả thuyết nghiên cứu}
 \label{subsec:eval-hypotheses}
 
-\paragraph{Khẳng định Giả thuyết $H_1$:}
-Dữ liệu thực nghiệm từ Bảng~\ref{tab:exp-results} chứng minh $H_1$ hoàn toàn chính xác. Ngoại trừ TC05 bị hỏng chữ ký, toàn bộ 8 ca kiểm thử còn lại (TC02, TC03, TC04, TC06, TC07, TC08, TC10) đều sở hữu chữ ký số hợp lệ 100\% về mặt toán học do CA ký phát hành. Tuy nhiên, cả 8 trường hợp này đều bị OpenSSL trả về mã lỗi (\texttt{exit code 2}) và từ chối xác minh. Chỉ có TC01 và TC09 (thỏa mãn đồng thời toàn bộ các điều kiện ngữ cảnh) mới nhận được trạng thái \texttt{OK} (\texttt{exit code 0}). Điều này chứng minh chữ ký đúng chỉ là điều kiện cần.
+\paragraph{Đánh giá Giả thuyết $H_1$:}
+Dữ liệu thực nghiệm từ Bảng~\ref{tab:exp-results} ủng hộ giả thuyết $H_1$ trong phạm vi 10 ca kiểm thử với OpenSSL. Trong số các ca bị từ chối, ngoại trừ TC05 bị hỏng chữ ký mật mã và TC02 là chứng thư tự ký (không có chuỗi dẫn tới Trust Anchor được cấu hình), toàn bộ 6 ca còn lại (TC03, TC04, TC06, TC07, TC08, TC10) đều sở hữu chữ ký số hợp lệ về mặt toán học do CA ký phát hành. Dù vậy, cả 6 ca này đều bị OpenSSL trả về mã lỗi (\texttt{exit code 2}) và từ chối xác minh do vi phạm các ràng buộc chính sách. Đáng chú ý, tại mốc chuẩn TC01, chứng thư \texttt{server-a.crt} thực chất đã nằm trong danh sách thu hồi của CA nhưng vẫn được OpenSSL chấp nhận (\texttt{OK}) do client không kích hoạt kiểm tra CRL; trong khi ở TC09, chứng thư \texttt{server-b.crt} thỏa mãn đồng thời cả chuỗi tin cậy, ngữ cảnh và trạng thái chưa bị thu hồi trên CRL nên đạt \texttt{OK}. Kết quả này xác nhận chữ ký số hợp lệ chỉ là điều kiện cần; quyết định chấp nhận chứng thư phụ thuộc hoàn toàn vào các ràng buộc do chính sách của client thực thi.
 
-\paragraph{Khẳng định Giả thuyết $H_2$:}
-Dữ liệu thực nghiệm xác nhận tính tương đối của quyết định xác minh: Thay đổi mốc thời gian kiểm tra (\texttt{-attime}) làm đảo ngược kết quả từ \texttt{OK} sang \texttt{error 10}; thay đổi tên máy chủ truy vấn làm phát sinh \texttt{error 62}; thay đổi cờ mục đích kiểm tra (\texttt{-purpose sslserver}) phát hiện chứng thư sai EKU với \texttt{error 26}. Đặc biệt, với ca kiểm thử TC07, chứng thư bị thu hồi chỉ bị từ chối khi client kích hoạt cờ \texttt{-crl\_check}. Do lệnh \texttt{openssl verify} mặc định không kiểm tra thu hồi, nếu không truyền cờ này, chứng thư đã thu hồi vẫn sẽ được client chấp thuận. Quyết định xác minh phụ thuộc hoàn toàn vào cấu hình và chính sách của client tại thời điểm kiểm tra.
+\paragraph{Đánh giá Giả thuyết $H_2$:}
+Dữ liệu thực nghiệm xác nhận tính tương đối và phụ thuộc ngữ cảnh của quyết định xác minh: Thay đổi mốc thời gian kiểm tra (\texttt{-attime}) làm đảo ngược kết quả từ \texttt{OK} sang \texttt{error 10}; thay đổi tên máy chủ truy vấn làm phát sinh \texttt{error 62}; và việc kích hoạt cờ kiểm tra thu hồi (\texttt{-crl\_check}) ở TC07 trực tiếp chặn đứng chứng thư đã thu hồi mà trước đó đã vượt qua mốc chuẩn TC01. 
+
+Để kiểm chứng sâu hơn bản chất nhân quả của $H_2$ trên cùng một chứng thư số mà không thay đổi mã định danh của 10 ca kiểm thử chính, hai lần chạy đối chứng bổ sung được thực hiện trực tiếp trên hệ thống:
+\begin{itemize}
+    \item \textit{Đối chứng thay đổi Trust Anchor trên cùng chứng thư \texttt{server-a.crt}:} Giữ nguyên chứng thư và Intermediate CA hợp lệ, nhưng thay đổi cờ \texttt{-CAfile} từ Root CA của hệ thống sang Root CA độc lập (\texttt{other-ca/root.crt}). Kết quả thẩm định bị từ chối tại độ sâu 1 với thông báo: \\
+    \texttt{error 20: unable to get local issuer certificate} (\texttt{depth 1, exit 2}).
+    \item \textit{Đối chứng thay đổi chính sách mục đích trên cùng chứng thư \texttt{client-only.crt}:} Tại TC08, chứng thư này bị từ chối khi client yêu cầu mục đích \texttt{sslserver} (\texttt{error 26}). Khi giữ nguyên chứng thư và chuỗi tin cậy nhưng thay đổi chính sách phía client sang \texttt{-purpose sslclient}, OpenSSL chấp thuận thẩm định thành công: \\
+    \texttt{out/servers/client-only.crt: OK} (\texttt{exit code 0}).
+\end{itemize}
+Hai kết quả đối chứng này khẳng định rằng ngay cả khi chứng thư số và chữ ký không thay đổi, việc điều chỉnh chính sách kiểm tra của client (Trust Anchor được tin cậy hoặc mục đích sử dụng) sẽ trực tiếp đảo ngược quyết định thẩm định.
 
 \paragraph{Đánh giá Giả thuyết $H_3$:}
-Quá trình triển khai thực tế cho thấy cơ chế CRL bộc lộ chi phí vận hành rõ rệt: CA phải định kỳ phát hành tệp \texttt{ca.crl} mới trước mốc \texttt{nextUpdate}, và client phải tải toàn bộ tệp danh sách thu hồi về máy cục bộ. Do phạm vi bài lab tập trung vào tính đúng đắn chức năng (\textit{functional verification}) của quy trình xác minh đường dẫn tĩnh, đề tài chưa thực hiện đo lường hiệu năng (\textit{benchmark}) định lượng về độ trễ mạng hay mức tiêu thụ CPU/băng thông của CRL theo số lượng bản ghi thu hồi. Vì vậy, giả thuyết $H_3$ được xác nhận ở khía cạnh phân tích kiến trúc lý thuyết và quy trình cấu hình, chưa được kiểm chứng bằng số liệu thực nghiệm đo lường tải.
+Giả thuyết $H_3$ được kiểm chứng một phần qua thực nghiệm đo lường định lượng cục bộ với OpenSSL phiên bản 3.5.9, kết hợp phân tích kiến trúc lý thuyết RFC~5280. Để đánh giá chi phí vận hành của cơ chế CRL, đề tài tiến hành thực nghiệm đo lường dung lượng tệp danh sách thu hồi và thời gian thẩm định đường dẫn bằng lệnh \texttt{openssl verify} khi mở rộng số lượng mục thu hồi ($N$). Trên cùng cấu hình phần cứng ghi nhận tại Mục~\ref{subsec:exp-environment}, thời gian xác minh được lấy theo giá trị trung vị (\textit{median}) qua 10 lần thực thi độc lập:
+\begin{itemize}
+    \item Với $N = 0$ (CRL rỗng): Kích thước tệp CRL là 564 bytes ($\approx 0{,}55$~KB), thời gian thẩm định trung vị đạt 37{,}46~ms.
+    \item Với $N = 100$: Kích thước tệp CRL đạt 5.309 bytes ($\approx 5{,}18$~KB), thời gian thẩm định trung vị là 35{,}71~ms.
+    \item Với $N = 1.000$: Kích thước tệp CRL đạt 47.966 bytes ($\approx 46{,}84$~KB), thời gian thẩm định trung vị là 36{,}23~ms.
+    \item Với $N = 10.000$: Kích thước tệp CRL tăng vọt lên 474.532 bytes ($\approx 463{,}41$~KB, gấp khoảng 841 lần so với $N=0$), thời gian thẩm định trung vị tăng lên 86{,}46~ms (tăng gấp hơn 2{,}3 lần).
+\end{itemize}
+Kết quả thực nghiệm định lượng cho thấy dung lượng tệp CRL tăng tuyến tính theo số lượng bản ghi thu hồi ($\approx 47$~bytes/bản ghi), và chi phí nạp/xử lý thẩm định của client bắt đầu tăng rõ rệt khi danh sách mở rộng lên quy mô lớn ($N = 10.000$). Điều này ủng hộ nhận định của $H_3$ về sự đánh đổi tài nguyên và giới hạn mở rộng của cơ chế CRL truyền thống, đòi hỏi các giải pháp tối ưu như OCSP hoặc danh sách thu hồi rút gọn.
 
 \subsection{Hạn chế của bài lab}
 \label{subsec:lab-limitations}
-Mặc dù tái lập thành công các điều kiện biên của RFC~5280, bài lab tồn tại hai hạn chế chính cần ghi nhận:
+Mặc dù khảo sát và tái hiện được các điều kiện biên phổ biến theo chuẩn RFC~5280 trong môi trường lab, nghiên cứu tồn tại một số hạn chế kỹ thuật cần ghi nhận:
 \begin{itemize}
-    \item \textbf{Tính chất cục bộ của môi trường OpenSSL CLI:} Thực nghiệm sử dụng tiện ích dòng lệnh \texttt{openssl verify} trên mô hình Root CA nội bộ. Đây là phép thẩm định đường dẫn tĩnh ở tầng thư viện mật mã, không chạy qua tiến trình bắt tay mạng TLS 1.3 hoàn chỉnh (chưa kiểm tra các thông điệp \texttt{CertificateVerify} và \texttt{Finished}).
-    \item \textbf{Khoảng cách với hành vi Web PKI thực tế:} Trình duyệt web thương mại áp dụng các cơ chế linh hoạt hơn nhưng cũng phức tạp hơn so với OpenSSL thuần túy:
+    \item \textbf{Tính chất cục bộ của môi trường OpenSSL CLI:} Thực nghiệm sử dụng tiện ích dòng lệnh \texttt{openssl verify} phiên bản 3.5.9 trên mô hình Root CA nội bộ. Đây là phép thẩm định đường dẫn tĩnh ở tầng thư viện mật mã, không chạy qua tiến trình bắt tay mạng TLS 1.3 hoàn chỉnh (chưa kiểm tra các thông điệp \texttt{CertificateVerify} và \texttt{Finished}). Đồng thời, đề tài chưa mở rộng khảo sát đối sánh trên các thư viện mật mã khác (như GnuTLS, NSS, BoringSSL).
+    \item \textbf{Phạm vi kiểm tra thu hồi của cờ \texttt{-crl\_check}:} Trong OpenSSL, cờ \texttt{-crl\_check} chỉ thẩm định trạng thái thu hồi của chứng thư đích cuối chuỗi (leaf certificate). Để kiểm tra trạng thái thu hồi của toàn bộ các chứng thư trung gian trong chuỗi tin cậy, client bắt buộc phải cấu hình cờ \texttt{-crl\_check\_all} và cung cấp đầy đủ tệp CRL phát hành từ Root CA.
+    \item \textbf{Tính tiền định của dữ liệu tổng hợp:} Toàn bộ khóa và chứng thư số trong bài lab được sinh tổng hợp có chủ đích trong môi trường lab cô lập. Do các ca kiểm thử mang tính tiền định (deterministic), các điều kiện đầu vào giống nhau luôn mang lại kết quả thẩm định đồng nhất, vì vậy không đòi hỏi phương pháp lặp đo ngẫu nhiên thống kê trên các ca chức năng chính.
+    \item \textbf{Khoảng cách với hành vi Web PKI thực tế:} Hành vi của các trình duyệt web và client hiện đại trong thực tế có sự phân hóa đáng kể và linh hoạt hơn so với tiện ích OpenSSL thuần túy:
     \begin{itemize}
-        \item Trình duyệt hỗ trợ cơ chế AIA Fetching để chủ động tải chứng thư Intermediate CA bị thiếu qua mạng (trong khi OpenSSL báo lỗi ngay ở TC06 nếu thiếu \texttt{-untrusted}).
-        \item Phần lớn trình duyệt hiện đại đã loại bỏ việc kiểm tra CRL trực tiếp từ điểm phân phối (CDP) do vấn đề độ trễ và tính sẵn sàng, thay vào đó sử dụng danh sách thu hồi nén đẩy từ máy chủ cập nhật của hãng trình duyệt (như Google CRLSet, Mozilla OneCRL) hoặc áp dụng cơ chế OCSP Stapling. Do đó, cờ kiểm tra CRL tường minh trong lab không đại diện hoàn toàn cho hành vi mặc định của mọi client trên Internet.
+        \item Một số client và trình duyệt có thể hỗ trợ cơ chế AIA Fetching để chủ động truy vấn và tải chứng thư Intermediate CA còn thiếu qua mạng (trong khi OpenSSL báo lỗi ngay ở TC06 nếu thiếu cờ \texttt{-untrusted}). Tuy nhiên, tính năng này khác nhau tùy theo cấu hình cụ thể của từng client và chưa được khảo sát trong bài lab.
+        \item Nhiều trình duyệt web hiện đại đã loại bỏ việc tải và kiểm tra CRL trực tiếp từ điểm phân phối (CDP) theo cách OpenSSL thực hiện nhằm tránh rủi ro nghẽn mạng và độ trễ bắt tay; thay vào đó, các client áp dụng những cơ chế tối ưu như danh sách thu hồi rút gọn được đồng bộ định kỳ từ nhà phát triển trình duyệt (ví dụ Google CRLSet, Mozilla OneCRL) hoặc yêu cầu máy chủ gửi kèm phản hồi OCSP trong phiên TLS (OCSP Stapling). Chi tiết hành vi giữa các client trên Internet có sự khác biệt lớn và không hoàn toàn đồng nhất với các tham số dòng lệnh cục bộ của OpenSSL.
     \end{itemize}
 \end{itemize}

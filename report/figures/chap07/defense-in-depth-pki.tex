@@ -1,0 +1,54 @@
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[
+    layerbox/.style={draw=black, thick, fill=white, rounded corners=4pt, text width=14.8cm, align=left, inner sep=7pt, font=\small},
+    l1/.style={fill=gray!22, very thick},
+    l2/.style={fill=gray!18},
+    l3/.style={fill=gray!14},
+    l4/.style={fill=gray!10},
+    l5/.style={fill=gray!6},
+    l6/.style={fill=white},
+    arrow/.style={-{Stealth[scale=1.1]}, thick, black}
+]
+
+    % Lớp 1 (Cốt lõi / Trên cùng)
+    \node[layerbox, l1] (layer1) at (0, 0) {
+        \textbf{Lớp 1: Bảo vệ khóa riêng gốc (Cryptographic Key Protection)}\\[2pt]
+        {\scriptsize Lưu trữ khóa CA trong thiết bị phần cứng chuyên dụng HSM (FIPS 140-3 Level 3 / CC EAL 4+).\\[1pt]Root CA duy trì trạng thái ngoại tuyến (Offline Root), áp dụng cơ chế chia sẻ bí mật ngưỡng $m$-trên-$n$ khi kích hoạt tác vụ quản trị.}
+    };
+
+    % Lớp 2
+    \node[layerbox, l2, below=0.42cm of layer1] (layer2) {
+        \textbf{Lớp 2: Quản trị phát hành \& Kiểm soát chính sách (Issuance Governance)}\\[2pt]
+        {\scriptsize Xây dựng chính sách CP/CPS chuẩn RFC 3647, tuân thủ nghiêm ngặt CA/B Forum Baseline Requirements.\\[1pt]Thực thi bản ghi DNS CAA (RFC 8659) nhằm giới hạn chặt chẽ danh mục các CA được phép cấp phát chứng thư cho tên miền.}
+    };
+
+    % Lớp 3
+    \node[layerbox, l3, below=0.42cm of layer2] (layer3) {
+        \textbf{Lớp 3: Tự động hóa vòng đời chứng thư (Automated Lifecycle Management)}\\[2pt]
+        {\scriptsize Chuẩn hóa giao thức ACME (RFC 8555), tự động xác thực tên miền, cấp phát, cài đặt và gia hạn định kỳ.\\[1pt]Thích ứng với quy định CA/B Forum rút ngắn hạn chứng thư (200 ngày, 100 ngày, 47 ngày), triệt tiêu lỗi vận hành do con người.}
+    };
+
+    % Lớp 4
+    \node[layerbox, l4, below=0.42cm of layer3] (layer4) {
+        \textbf{Lớp 4: Thẩm định đa ngữ cảnh tại Client (Contextual Path Validation)}\\[2pt]
+        {\scriptsize Thực thi nghiêm ngặt RFC 5280: xây dựng chuỗi tin cậy, kiểm tra thời hạn, khớp SAN, mục đích EKU (TC01--TC10).\\[1pt]Không chỉ dựa vào chữ ký số toán học đơn thuần; áp dụng chính sách xác minh đồng bộ ở tầng ứng dụng và TLS.}
+    };
+
+    % Lớp 5
+    \node[layerbox, l5, below=0.42cm of layer4] (layer5) {
+        \textbf{Lớp 5: Giám sát công khai \& Minh bạch chứng thư (Public Monitoring \& Transparency)}\\[2pt]
+        {\scriptsize Bắt buộc nộp nhật ký Certificate Transparency (RFC 9162, Merkle Tree), thực thi kiểm tra chữ ký SCT tại client.\\[1pt]Hệ thống giám sát (Monitors) tự động phát hiện và cảnh báo tức thời khi CA cấp sai chứng thư cho tên miền.}
+    };
+
+    % Lớp 6
+    \node[layerbox, l6, below=0.42cm of layer5] (layer6) {
+        \textbf{Lớp 6: Thu hồi \& Ứng phó sự cố (Revocation \& Incident Response)}\\[2pt]
+        {\scriptsize Phân phối danh sách thu hồi CRL (RFC 5280), dịch vụ kiểm tra trực tuyến OCSP (RFC 6960), CRLite / OneCRL.\\[1pt]Quy trình thu hồi khẩn cấp khi lộ khóa, kế hoạch chuyển đổi thuật toán và di trú hậu lượng tử (PQC Migration).}
+    };
+
+    % Mũi tên trục bảo vệ đa tầng (từ Layer 6 lên Layer 1)
+    \draw[arrow] ([xshift=-8mm]layer6.south west) -- ([xshift=-8mm]layer1.north west)
+        node[midway, above=6pt, rotate=90, font=\footnotesize\bfseries] {Độ sâu bảo mật (Từ biên phòng thủ ngoài đến lõi mật mã)};
+
+\end{tikzpicture}%
+}

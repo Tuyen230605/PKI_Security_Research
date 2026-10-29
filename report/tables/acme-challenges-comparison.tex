@@ -1,0 +1,19 @@
+\begin{table}[!htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.3cm}>{\raggedright\arraybackslash}p{3.1cm}>{\centering\arraybackslash}p{1.9cm}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Phương thức thử thách} & \textbf{Cơ chế xác thực} & \textbf{Cổng mạng / Giao thức} & \textbf{Phù hợp kịch bản} & \textbf{Hạn chế và Rủi ro bảo mật} \\
+\midrule
+\textbf{HTTP-01} & Client đặt tệp token tại đường dẫn URL \texttt{/.well-known/}\allowbreak\texttt{acme-challenge/} & TCP 80 (HTTP) & Máy chủ Web đơn lẻ, có IP công cộng và mở cổng 80 & Không hỗ trợ cấp chứng thư đại diện (Wildcard); dễ bị tấn công MITM/BGP hijacking nếu mạng không an toàn. \\
+\midrule
+\textbf{DNS-01} & Client tạo bản ghi DNS TXT với tiền tố \texttt{\_acme-}\allowbreak\texttt{challenge} & Cổng 53 (DNS) & Toàn bộ hạ tầng, \textbf{bắt buộc đối với chứng thư Wildcard} (\texttt{*.domain}) & Yêu cầu cấp API token có quyền ghi vào máy chủ DNS; nếu lộ token DNS có thể bị chiếm đoạt toàn bộ tên miền. \\
+\midrule
+\textbf{TLS-ALPN-01} & Máy chủ đàm phán bắt tay TLS với giao thức ALPN \texttt{acme-tls/1} & TCP 443 (HTTPS / TLS) & Thiết bị cân bằng tải (Load Balancer), máy chủ ngược (Reverse Proxy) & Cấu hình phức tạp; khó triển khai trên hạ tầng hosting chia sẻ (Shared Hosting) hoặc đứng sau CDN bên thứ ba. \\
+\bottomrule
+\end{tabularx}
+\caption{So sánh các phương thức thử thách xác thực quyền sở hữu tên miền trong giao thức ACME (RFC~8555).}
+\label{tab:acme-challenges}
+\end{table}
+
